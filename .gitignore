@@ -1,0 +1,6 @@
+.ci/
+*.pyc
+__pytest_cache__/*
+*.swp
+ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
+output*
