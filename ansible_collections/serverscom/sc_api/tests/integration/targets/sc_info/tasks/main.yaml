@@ -5,10 +5,46 @@
     msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
   when: not sc_endpoint or not sc_token
 
-- name: Get info
+- name: Test invalid token
+  sc_info:
+    token: invalid
+    endpoint: '{{ sc_endpoint }}'
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 401
+
+- name: Simple get
   sc_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-  register: reg_info
+  register: test2
+  failed_when:
+    - test2 is not changed
+    - test2.locations|length < 1
+    - test2.regions|length < 1
+    - test2.locations[0].id is defined
+    - test2.locations[0].name is defined
+    - test2.locations[0].code is defined
+    - test2.regions[0].code is defined
+    - test2.regions[0].id is defined
+    - test2.regions[0].name is defined
+    - test2 is not success
 
-- debug: var=reg_info
+- name: Search for location
+  sc_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    scope: locations
+    search_pattern: US
+  register: test3
+  failed_when:
+    - test3.locations|length < 1
+    - test3.regions is undefined
+    - test3.locations[0].id is defined
+    - test3.locations[0].name is defined
+    - test3.locations[0].code is defined
+    - test3 is not success
+    - test3|json_query('locations[?code=="AMS1"]')|length == 0
+    - test3|json_query('locations[?code=="DFW1"]')|length > 0

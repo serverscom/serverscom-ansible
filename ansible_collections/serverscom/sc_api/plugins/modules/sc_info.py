@@ -33,6 +33,13 @@ options:
         - C(locations) limit query to baremetal locations
         - C(regions) limit query to cloud regions.
         - C(all) query both baremetal locations and cloud regions.
+
+    search_pattern:
+        type: str
+        description:
+            - Search pattern (locations only).
+            - By default search all.
+
     endpoint:
       type: str
       default: https://api.servers.com/v1
@@ -50,29 +57,6 @@ options:
 """
 
 RETURN = """
-limits:
-    description:
-        - Limits for API use (extraced from headers)
-    type: complex
-    returned: on success
-    contains:
-        limit:
-            type: int
-            description:
-              - Total limit for requests.
-              - Corresponds to X-RateLimit-Limit header of API reply.
-        remaining:
-            type: int
-            description:
-              - Remaining limit for requests.
-              - Corresponds to X-RateLimit-Remaining header of API reply.
-              - Causes warning if value is 0.
-        reset:
-            type: int
-            description:
-                - timestamp for the next limit reset.
-                - Corresponds to X-RateLimit-Reset header of API reply.
-
 locations:
     description:
         - List of locations for baremetal servers
@@ -122,6 +106,15 @@ regions:
             type: str
             description:
                 - Code for the location.
+api_url:
+    description: URL for the failed request
+    returned: on failure
+    type: str
+
+status_code:
+    description: Status code for the request
+    returned: always
+    type: int
 """
 
 EXAMPLES = """
@@ -141,3 +134,145 @@ EXAMPLES = """
 - name: Print remaining API request count
   debug: var=sc_info.limits.remaining
 """  # noqa
+
+
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils._text import to_text
+import requests
+import json
+import itertools
+
+__metaclass__ = type
+
+
+DEFAULT_API_ENDPOINT = 'https://api.servers.com/v1'
+
+
+class APIError(Exception):
+    def __init__(self, api_url, status_code, msg):
+        self.api_url = api_url
+        self.status_code = status_code
+        self.msg = msg
+
+    def fail(self):
+        return_value = {'failed': True, 'msg': self.msg}
+        if self.api_url:
+            return_value['api_url'] = self.api_url
+        if self.status_code:
+            return_value['status_code'] = self.status_code
+        return return_value
+
+
+class MultiPage(object):
+
+    per_page = 100
+
+    def __init__(self, request):
+        self.request = request
+
+    def __iter__(self):
+        self.session = requests.Session()
+        self.next = self.request
+        self.next.params.update({'per_page': self.per_page})
+        return self
+
+    def __next__(self):
+        if self.next.url:
+            prep_req = self.next.prepare()
+            resp = self.session.send(prep_req)
+            if resp.status_code == 401:
+                raise APIError(
+                    msg='401 Unauthorized. Check if token is valid.',
+                    status_code=resp.status_code,
+                    api_url=self.next.url
+                    )
+            if resp.status_code != 200:
+                raise APIError(
+                    msg=f'API Error: {resp.content }',
+                    status_code=resp.status_code,
+                    api_url=self.next_url
+                )
+            self.next.url = resp.links.get('next', {'url': None})['url']
+            try:
+                return resp.json()
+            except ValueError as e:
+                raise APIError(
+                    msg=f'API decoding error: {str(e)}, data: {resp.content}',
+                    status_code=resp.status_code,
+                    api_url=self.next_url
+                )
+        else:
+            raise StopIteration
+
+
+class API(object):
+    def __init__(self, endpoint, token):
+        self.endpoint = endpoint
+        self.token = token
+
+    def start_request(self, path, query):
+        req = requests.Request('GET', self.endpoint + path, params=query)
+        req.headers['Authorization'] = f'Bearer {self.token}'
+        return req
+
+
+class SC_Info(object):
+    def __init__(self, endpoint, token, scope, search_pattern):
+        self.scope = scope
+        self.search_pattern = search_pattern
+        self.API = API(endpoint, token)
+
+    def locations(self):
+        req = self.API.start_request(
+            path='/locations',
+            query={'search_pattern': self.search_pattern}
+        )
+        return list(itertools.chain.from_iterable(MultiPage(req)))
+
+    def regions(self):
+        req = self.API.start_request(
+            path='/cloud_computing/regions',
+            query={'search_pattern': self.search_pattern}
+        )
+        return list(itertools.chain.from_iterable(MultiPage(req)))
+
+    def run(self):
+
+        ret_data = {'changed': False}
+
+        try:
+            if self.scope in ['all', 'locations']:
+                ret_data["locations"] = self.locations()
+            if self.scope in ['all', 'regions']:
+                ret_data["regions"] = self.regions()
+        except APIError as e:
+            return e.fail()
+
+        return ret_data
+
+
+def main():
+    module = AnsibleModule(
+        argument_spec={
+            'scope': {
+                'type': 'str',
+                'choices': ['all', 'locations', 'regions'],
+                'default': 'all'
+            },
+            'search_pattern': {'type': str},
+            'token': {'type': 'str', 'no_log': True, 'required': True},
+            'endpoint': {'default': DEFAULT_API_ENDPOINT},
+        },
+        supports_check_mode=True
+    )
+    sc_info = SC_Info(
+        endpoint=module.params['endpoint'],
+        token=module.params['token'],
+        scope=module.params['scope'],
+        search_pattern=module.params['search_pattern'],
+    )
+    module.exit_json(**sc_info.run())
+
+
+if __name__ == '__main__':
+    main()
