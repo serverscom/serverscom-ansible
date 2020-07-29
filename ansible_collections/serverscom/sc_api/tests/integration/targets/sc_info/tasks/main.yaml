@@ -45,11 +45,11 @@
 - name: Check Test3
   assert:
     that:
-     - test3.locations|length >= 1
-     - test3.regions is undefined
-     - test3.locations[0]
-     - "'AMS1' not in test3|string"
-     - "'DFW1' in test3|string"
+      - test3.locations|length >= 1
+      - test3.regions is undefined
+      - test3.locations[0]
+      - "'AMS1' not in test3|string"
+      - "'DFW1' in test3|string"
 
 - name: Test3, Filter by features
   sc_info:
@@ -64,7 +64,7 @@
 - name: Check Test4
   assert:
     that:
-     - test4.locations|length >= 1
-     - test4.locations[0]
-     - '"disaggregated_public_ports" in test4.locations|to_nice_yaml'
-     - '"load_balancers_enabled: false" not in test4.locations|to_nice_yaml'
+      - test4.locations|length >= 1
+      - test4.locations[0]
+      - '"disaggregated_public_ports" in test4.locations|to_nice_yaml'
+      - '"load_balancers_enabled: false" not in test4.locations|to_nice_yaml'
