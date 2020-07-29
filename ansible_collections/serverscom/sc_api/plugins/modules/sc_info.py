@@ -37,8 +37,17 @@ options:
     search_pattern:
         type: str
         description:
-            - Search pattern (locations only).
-            - By default search all.
+            - Search substring in locations names.
+            - Case insensitive.
+
+    required_features:
+        type: list
+        description:
+            - Filter locations based on features.
+            - Seach both top-level features and supported_features.
+            - If more than one element specified, search for all of them
+              ('and' operation).
+        elements: str
 
     endpoint:
       type: str
@@ -60,6 +69,7 @@ RETURN = """
 locations:
     description:
         - List of locations for baremetal servers
+        - May contain additional flags for features for location
     returned: on success
     type: complex
     contains:
@@ -76,6 +86,7 @@ locations:
             type: str
             description:
                 - Code for the location.
+
         supported_features:
             type: list
             description:
@@ -138,9 +149,10 @@ EXAMPLES = """
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils._text import to_text
-import requests
 import json
 import itertools
+
+requests = None
 
 __metaclass__ = type
 
@@ -185,7 +197,7 @@ class MultiPage(object):
                     msg='401 Unauthorized. Check if token is valid.',
                     status_code=resp.status_code,
                     api_url=self.next.url
-                    )
+                )
             if resp.status_code != 200:
                 raise APIError(
                     msg=f'API Error: {resp.content }',
@@ -217,17 +229,41 @@ class API(object):
 
 
 class SC_Info(object):
-    def __init__(self, endpoint, token, scope, search_pattern):
+    def __init__(self, endpoint, token, scope,
+                 search_pattern, required_features):
         self.scope = scope
         self.search_pattern = search_pattern
+        self.required_features = required_features
         self.API = API(endpoint, token)
+
+    @staticmethod
+    def location_features(location):
+        features = set(location['supported_features'])
+        for key, value in location.items():
+            # fiter out both non-feature things like name, and
+            # disabled features,
+            if value is True:
+                features.add(key)
+        return features
 
     def locations(self):
         req = self.API.start_request(
             path='/locations',
             query={'search_pattern': self.search_pattern}
         )
-        return list(itertools.chain.from_iterable(MultiPage(req)))
+        all_locations = list(itertools.chain.from_iterable(MultiPage(req)))
+        locations = []
+        if self.required_features:
+            for loc in all_locations:
+                feature_match = not (
+                    set(self.required_features) - self.location_features(loc)
+                )
+                if feature_match:
+                    locations.append(loc)
+
+        else:
+            locations = all_locations
+        return locations
 
     def regions(self):
         req = self.API.start_request(
@@ -239,7 +275,6 @@ class SC_Info(object):
     def run(self):
 
         ret_data = {'changed': False}
-
         try:
             if self.scope in ['all', 'locations']:
                 ret_data["locations"] = self.locations()
@@ -259,17 +294,24 @@ def main():
                 'choices': ['all', 'locations', 'regions'],
                 'default': 'all'
             },
-            'search_pattern': {'type': str},
+            'search_pattern': {'type': 'str'},
             'token': {'type': 'str', 'no_log': True, 'required': True},
             'endpoint': {'default': DEFAULT_API_ENDPOINT},
+            'required_features': {'type': 'list'},
         },
         supports_check_mode=True
     )
+    try:
+        global requests
+        import requests
+    except Exception:
+        module.exit_fail(msg='This module needs requests library.')
     sc_info = SC_Info(
         endpoint=module.params['endpoint'],
         token=module.params['token'],
         scope=module.params['scope'],
         search_pattern=module.params['search_pattern'],
+        required_features=module.params['required_features'],
     )
     module.exit_json(**sc_info.run())
 
