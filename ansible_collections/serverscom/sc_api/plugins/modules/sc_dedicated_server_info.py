@@ -6,6 +6,7 @@
 
 
 from __future__ import (absolute_import, division, print_function)
+
 __metaclass__ = type
 
 
@@ -251,79 +252,15 @@ EXAMPLES = """
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils._text import to_text
 import json
-import itertools
-
-requests = None
+from ansible_collections.serverscom.sc_api.plugins.module_utils.api import (
+    DEFAULT_API_ENDPOINT,
+    APIError,
+    APIError404,
+    API
+)
 
 __metaclass__ = type
-
-
-DEFAULT_API_ENDPOINT = 'https://api.servers.com/v1'
-
-
-class APIError(Exception):
-    def __init__(self, api_url, status_code, msg):
-        self.api_url = api_url
-        self.status_code = status_code
-        self.msg = msg
-
-    def fail(self):
-        return_value = {'failed': True, 'msg': self.msg}
-        if self.api_url:
-            return_value['api_url'] = self.api_url
-        if self.status_code:
-            return_value['status_code'] = self.status_code
-        return return_value
-
-
-class APIError404(APIError):
-    pass
-
-
-class API(object):
-    def __init__(self, endpoint, token):
-        self.endpoint = endpoint
-        self.token = token
-
-    def start_request(self, path, query):
-        req = requests.Request('GET', self.endpoint + path, params=query)
-        req.headers['Authorization'] = f'Bearer {self.token}'
-        return req
-
-    def send_and_decode(self, request):
-        session = requests.Session()
-        prep_request = request.prepare()
-        response = session.send(prep_request)
-        if response.status_code == 401:
-            raise APIError(
-                msg='401 Unauthorized. Check if token is valid.',
-                status_code=response.status_code,
-                api_url=prep_request.url
-            )
-        if response.status_code == 404:
-            raise APIError404(
-                msg='404 Not Found.',
-                status_code=response.status_code,
-                api_url=prep_request.url
-            )
-
-        if response.status_code != 200:
-            raise APIError(
-                msg=f'API Error: {response.content }',
-                status_code=response.status_code,
-                api_url=prep_request.url
-            )
-        try:
-            decoded = response.json()
-        except ValueError as e:
-            raise APIError(
-                msg=f'API decoding error: {str(e)}, data: {response.content}',
-                status_code=response.status_code,
-                api_url=prep_request.url
-            )
-        return decoded
 
 
 class SC_Dedicated_Server_Info(object):
@@ -375,11 +312,7 @@ def main():
         },
         supports_check_mode=True
     )
-    try:
-        global requests
-        import requests
-    except Exception:
-        module.exit_fail(msg='This module needs requests library.')
+
     sc_dedicated_server_info = SC_Dedicated_Server_Info(
         endpoint=module.params['endpoint'],
         token=module.params['token'],
