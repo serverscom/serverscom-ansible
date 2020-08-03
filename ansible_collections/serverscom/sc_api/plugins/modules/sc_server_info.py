@@ -45,6 +45,7 @@ options:
       description:
         - ID of the server.
         - Translates to server_id in API.
+        - If ID is malformed, error 400 is returned.
 
     fail_on_absent:
       type: bool
@@ -277,46 +278,8 @@ class APIError(Exception):
         return return_value
 
 
-class MultiPage(object):
-
-    per_page = 100
-
-    def __init__(self, request):
-        self.request = request
-
-    def __iter__(self):
-        self.session = requests.Session()
-        self.next = self.request
-        self.next.params.update({'per_page': self.per_page})
-        return self
-
-    def __next__(self):
-        if self.next.url:
-            prep_req = self.next.prepare()
-            resp = self.session.send(prep_req)
-            if resp.status_code == 401:
-                raise APIError(
-                    msg='401 Unauthorized. Check if token is valid.',
-                    status_code=resp.status_code,
-                    api_url=self.next.url
-                )
-            if resp.status_code != 200:
-                raise APIError(
-                    msg=f'API Error: {resp.content }',
-                    status_code=resp.status_code,
-                    api_url=self.next_url
-                )
-            self.next.url = resp.links.get('next', {'url': None})['url']
-            try:
-                return resp.json()
-            except ValueError as e:
-                raise APIError(
-                    msg=f'API decoding error: {str(e)}, data: {resp.content}',
-                    status_code=resp.status_code,
-                    api_url=self.next_url
-                )
-        else:
-            raise StopIteration
+class APIError404(APIError):
+    pass
 
 
 class API(object):
@@ -329,17 +292,77 @@ class API(object):
         req.headers['Authorization'] = f'Bearer {self.token}'
         return req
 
+    def send_and_decode(self, request):
+        session = requests.Session()
+        prep_request = request.prepare()
+        response = session.send(prep_request)
+        if response.status_code == 401:
+            raise APIError(
+                msg='401 Unauthorized. Check if token is valid.',
+                status_code=response.status_code,
+                api_url=prep_request.url
+            )
+        if response.status_code == 404:
+            raise APIError404(
+                msg='404 Not Found.',
+                status_code=response.status_code,
+                api_url=prep_request.url
+            )
+
+        if response.status_code != 200:
+            raise APIError(
+                msg=f'API Error: {response.content }',
+                status_code=response.status_code,
+                api_url=prep_request.url
+            )
+        try:
+            decoded = response.json()
+        except ValueError as e:
+            raise APIError(
+                msg=f'API decoding error: {str(e)}, data: {response.content}',
+                status_code=response.status_code,
+                api_url=prep_request.url
+            )
+        return decoded
+
 
 class SC_Server_Info(object):
     def __init__(self, endpoint, token, name, fail_on_absent):
         self.API = API(endpoint, token)
-        self.name = name
+        self.server_id = name
         self.fail_on_absent = fail_on_absent
 
+    @staticmethod
+    def _is_server_ready(server_info):
+        if (
+            server_info.get('status') == 'active' and
+            server_info.get('power_status') == 'powered_on' and
+            server_info.get('operational_status') == 'normal'
+        ):
+            return True
+        else:
+            return False
+
     def run(self):
-        return {
-            'changed': False
-        }
+        req = self.API.start_request(
+            path=f'/hosts/dedicated_servers/{self.server_id}',
+            query=None
+        )
+        try:
+            server_info = self.API.send_and_decode(req)
+        except APIError404 as e:
+            if self.fail_on_absent:
+                raise e
+            return {
+                'changed': False,
+                'found': False,
+                'ready': False
+            }
+        module_output = server_info
+        module_output['found'] = True
+        module_output['ready'] = self._is_server_ready(server_info)
+        module_output['changed'] = False
+        return module_output
 
 
 def main():
@@ -363,7 +386,10 @@ def main():
         name=module.params['name'],
         fail_on_absent=module.params['fail_on_absent']
     )
-    module.exit_json(**sc_server_info.run())
+    try:
+        module.exit_json(**sc_server_info.run())
+    except APIError as e:
+        module.exit_json(**e.fail())
 
 
 if __name__ == '__main__':
