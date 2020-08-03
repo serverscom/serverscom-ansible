@@ -6,7 +6,7 @@
   when: not sc_endpoint or not sc_token
 
 - name: Test invalid token
-  sc_server_info:
+  sc_dedicated_server_info:
     token: invalid
     endpoint: '{{ sc_endpoint }}'
   register: test1
@@ -16,7 +16,7 @@
     - test1.status_code != 401
 
 - name: Test2, Absent server without failure
-  sc_server_info:
+  sc_dedicated_server_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     fail_on_absent: false
@@ -32,7 +32,7 @@
 
 
 - name: Test3, Absent server with failure
-  sc_server_info:
+  sc_dedicated_server_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     fail_on_absent: true
@@ -48,7 +48,7 @@
 
 #  may be flaky, need a real server in shutdown state
 - name: Test4, Information for real not ready server
-  sc_server_info:
+  sc_dedicated_server_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     fail_on_absent: false
@@ -70,7 +70,7 @@
 
 #  may be flaky, need a real server in running state
 - name: Test5, Information for real not ready server
-  sc_server_info:
+  sc_dedicated_server_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     fail_on_absent: false

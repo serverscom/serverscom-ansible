@@ -15,12 +15,12 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = """
 ---
-module: sc_server_info
+module: sc_dedicated_server_info
 version_added: "2.10"
 author: "George Shuklin (@amarao)"
-short_description: Information about existing baremetal server
+short_description: Information about existing dedicated server
 description: >
-    Retrive information about existing server.
+    Retrive information about existing dedicated baremetal server.
 
 options:
     endpoint:
@@ -326,7 +326,7 @@ class API(object):
         return decoded
 
 
-class SC_Server_Info(object):
+class SC_Dedicated_Server_Info(object):
     def __init__(self, endpoint, token, name, fail_on_absent):
         self.API = API(endpoint, token)
         self.server_id = name
@@ -380,14 +380,14 @@ def main():
         import requests
     except Exception:
         module.exit_fail(msg='This module needs requests library.')
-    sc_server_info = SC_Server_Info(
+    sc_dedicated_server_info = SC_Dedicated_Server_Info(
         endpoint=module.params['endpoint'],
         token=module.params['token'],
         name=module.params['name'],
         fail_on_absent=module.params['fail_on_absent']
     )
     try:
-        module.exit_json(**sc_server_info.run())
+        module.exit_json(**sc_dedicated_server_info.run())
     except APIError as e:
         module.exit_json(**e.fail())
 
