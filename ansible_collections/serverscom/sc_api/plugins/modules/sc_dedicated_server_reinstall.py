@@ -15,7 +15,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = """
 ---
-module: sc_server_reinstall
+module: sc_dedicated_server_reinstall
 version_added: "2.10"
 author: "George Shuklin (@amarao)"
 short_description: Reinstall baremetal server.
