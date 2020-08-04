@@ -1,4 +1,5 @@
 from __future__ import (absolute_import, division, print_function)
+import itertools
 
 
 __metaclass__ = type
@@ -112,3 +113,103 @@ class ScDedicatedServerInfo(object):
         module_output['ready'] = self._is_server_ready(server_info)
         module_output['changed'] = False
         return module_output
+
+
+class MultiPage(object):
+
+    per_page = 100
+
+    def __init__(self, request):
+        self.request = request
+        try:
+            import requests
+            self.requests = requests
+        except ImportError:
+            raise APIError(msg='This module needs requests library.')
+
+    def __iter__(self):
+        self.session = self.requests.Session()
+        self.next = self.request
+        self.next.params.update({'per_page': self.per_page})
+        return self
+
+    def __next__(self):
+        if self.next.url:
+            prep_req = self.next.prepare()
+            resp = self.session.send(prep_req)
+            if resp.status_code == 401:
+                raise APIError(
+                    status_code=resp.status_code,
+                    api_url=self.next.url,
+                    msg='401 Unauthorized. Check if token is valid.',
+                )
+            if resp.status_code != 200:
+                raise APIError(
+                    status_code=resp.status_code,
+                    api_url=self.next_url,
+                    msg=f'API Error: {resp.content }',
+                )
+            self.next.url = resp.links.get('next', {'url': None})['url']
+            try:
+                return resp.json()
+            except ValueError as e:
+                raise APIError(
+                    status_code=resp.status_code,
+                    api_url=self.next_url,
+                    msg=f'API decoding error: {str(e)}, data: {resp.content}',
+                )
+        else:
+            raise StopIteration
+
+
+class ScInfo(object):
+    def __init__(self, endpoint, token, scope,
+                 search_pattern, required_features):
+        self.scope = scope
+        self.search_pattern = search_pattern
+        self.required_features = required_features
+        self.API = API(endpoint, token)
+
+    @staticmethod
+    def location_features(location):
+        features = set(location['supported_features'])
+        for key, value in location.items():
+            # fiter out both non-feature things like name, and
+            # disabled features,
+            if value is True:
+                features.add(key)
+        return features
+
+    def locations(self):
+        req = self.API.start_request(
+            path='/locations',
+            query={'search_pattern': self.search_pattern}
+        )
+        all_locations = list(itertools.chain.from_iterable(MultiPage(req)))
+        locations = []
+        if self.required_features:
+            for loc in all_locations:
+                feature_match = not (
+                    set(self.required_features) - self.location_features(loc)
+                )
+                if feature_match:
+                    locations.append(loc)
+
+        else:
+            locations = all_locations
+        return locations
+
+    def regions(self):
+        req = self.API.start_request(
+            path='/cloud_computing/regions',
+            query={'search_pattern': self.search_pattern}
+        )
+        return list(itertools.chain.from_iterable(MultiPage(req)))
+
+    def run(self):
+        ret_data = {'changed': False}
+        if self.scope in ['all', 'locations']:
+            ret_data["locations"] = self.locations()
+        if self.scope in ['all', 'regions']:
+            ret_data["regions"] = self.regions()
+        return ret_data
