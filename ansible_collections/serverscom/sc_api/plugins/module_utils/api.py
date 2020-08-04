@@ -73,3 +73,42 @@ class API(object):
                 msg=f'API decoding error: {str(e)}, data: {response.content}',
             )
         return decoded
+
+
+class ScDedicatedServerInfo(object):
+    def __init__(self, endpoint, token, name, fail_on_absent):
+        self.API = API(endpoint, token)
+        self.server_id = name
+        self.fail_on_absent = fail_on_absent
+
+    @staticmethod
+    def _is_server_ready(server_info):
+        if (
+            server_info.get('status') == 'active' and
+            server_info.get('power_status') == 'powered_on' and
+            server_info.get('operational_status') == 'normal'
+        ):
+            return True
+        else:
+            return False
+
+    def run(self):
+        req = self.API.start_request(
+            path=f'/hosts/dedicated_servers/{self.server_id}',
+            query=None
+        )
+        try:
+            server_info = self.API.send_and_decode(req)
+        except APIError404 as e:
+            if self.fail_on_absent:
+                raise e
+            return {
+                'changed': False,
+                'found': False,
+                'ready': False
+            }
+        module_output = server_info
+        module_output['found'] = True
+        module_output['ready'] = self._is_server_ready(server_info)
+        module_output['changed'] = False
+        return module_output
