@@ -5,7 +5,7 @@
 from __future__ import (absolute_import, division, print_function)
 import pytest
 import mock
-from ansible_collections.serverscom.sc_api.plugins.modules.sc_dedicated_server_info import SC_Dedicated_Server_Info  # noqa
+from ansible_collections.serverscom.sc_api.plugins.modules.sc_dedicated_server_info import ScDedicatedServerInfo  # noqa
 
 
 __metaclass__ = type
@@ -22,7 +22,7 @@ def test_ready():
     si["operational_status"] = "normal"
     si["power_status"] = "powered_on"
     si["status"] = "active"
-    assert SC_Dedicated_Server_Info._is_server_ready(si) is True
+    assert ScDedicatedServerInfo._is_server_ready(si) is True
 
 
 def test_not_ready_pending():
@@ -30,7 +30,7 @@ def test_not_ready_pending():
     si["operational_status"] = "normal"
     si["power_status"] = "powered_on"
     si["status"] = "pending"
-    assert SC_Dedicated_Server_Info._is_server_ready(si) is False
+    assert ScDedicatedServerInfo._is_server_ready(si) is False
 
 
 def test_not_ready_off():
@@ -38,7 +38,7 @@ def test_not_ready_off():
     si["operational_status"] = "normal"
     si["power_status"] = "powered_off"
     si["status"] = "active"
-    assert SC_Dedicated_Server_Info._is_server_ready(si) is False
+    assert ScDedicatedServerInfo._is_server_ready(si) is False
 
 
 def test_not_ready_installing():
@@ -46,4 +46,4 @@ def test_not_ready_installing():
     si["operational_status"] = "installation"
     si["power_status"] = "powered_on"
     si["status"] = "active"
-    assert SC_Dedicated_Server_Info._is_server_ready(si) is False
+    assert ScDedicatedServerInfo._is_server_ready(si) is False

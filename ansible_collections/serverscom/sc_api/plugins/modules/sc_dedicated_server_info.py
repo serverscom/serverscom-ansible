@@ -263,7 +263,7 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.api import (
 __metaclass__ = type
 
 
-class SC_Dedicated_Server_Info(object):
+class ScDedicatedServerInfo(object):
     def __init__(self, endpoint, token, name, fail_on_absent):
         self.API = API(endpoint, token)
         self.server_id = name
@@ -313,7 +313,7 @@ def main():
         supports_check_mode=True
     )
 
-    sc_dedicated_server_info = SC_Dedicated_Server_Info(
+    sc_dedicated_server_info = ScDedicatedServerInfo(
         endpoint=module.params['endpoint'],
         token=module.params['token'],
         name=module.params['name'],

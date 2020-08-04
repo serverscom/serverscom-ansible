@@ -228,7 +228,7 @@ class API(object):
         return req
 
 
-class SC_Info(object):
+class ScInfo(object):
     def __init__(self, endpoint, token, scope,
                  search_pattern, required_features):
         self.scope = scope
@@ -306,7 +306,7 @@ def main():
         import requests
     except Exception:
         module.exit_fail(msg='This module needs requests library.')
-    sc_info = SC_Info(
+    sc_info = ScInfo(
         endpoint=module.params['endpoint'],
         token=module.params['token'],
         scope=module.params['scope'],
