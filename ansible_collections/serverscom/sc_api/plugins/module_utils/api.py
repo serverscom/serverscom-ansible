@@ -8,7 +8,11 @@ __metaclass__ = type
 DEFAULT_API_ENDPOINT = 'https://api.servers.com/v1'
 
 
-class APIError(Exception):
+class ModuleError(Exception):
+    pass
+
+
+class APIError(ModuleError):
     def __init__(self, msg, api_url=None, status_code=None):
         self.api_url = api_url
         self.status_code = status_code
@@ -23,62 +27,128 @@ class APIError(Exception):
         return return_value
 
 
+class DecodeError(APIError):
+    pass
+
+
+# special classes for well-known (and, may be, expected) HTTP/API errors
+class APIError401(APIError):
+    pass
+
+
 class APIError404(APIError):
     pass
 
 
-class API(object):
-    def __init__(self, endpoint, token):
-        self.endpoint = endpoint
-        self.token = token
+class Multipage():
+    def __init__(self, request):
+        pass
+
+    def fetch_more(self):
+        pass
+
+    def __next__(self):
+        if not self.queue:
+            if not self.fetch_more():
+                raise StopIteration
+            return self.queue.pop()
+
+
+class Api():
+    def __init__(self, token, endpoint=DEFAULT_API_ENDPOINT):
         try:
             import requests
             self.requests = requests
         except ImportError:
-            raise APIError(msg='This module needs requests library.')
+            raise ModuleError(
+                msg='This module needs requests library (python3-requests).')
+        self.session = requests.Session()
+        self.session.headers['User-Agent'] = 'ansible-module/sc_api/0.1'
+        self.session.headers['Authorization'] = f'Bearer {token}'
+        self.request = None
+        self.endpoint = endpoint
 
-    def start_request(self, path, query):
-        req = self.requests.Request('GET', self.endpoint + path, params=query)
-        req.headers['Authorization'] = f'Bearer {self.token}'
-        return req
+    def make_url(self, path):
+        return self.endpoint + path
 
-    def send_and_decode(self, request):
-        session = self.requests.Session()
-        prep_request = request.prepare()
-        response = session.send(prep_request)
+    def prepare_request(
+        self,
+        path,
+        method='GET',
+        path_paramter=None,
+        query_parameters=None
+    ):
+        '''return half-backed request'''
+        self.request = self.requests.Request(
+            method, self.make_url(path), params=query_parameters
+        )
+
+    def send_request(self):
+        '''send a single request/finishes request'''
+        prep_request = self.request.prepare()
+        response = self.session.send(prep_request)
+        self.request = None
         if response.status_code == 401:
             raise APIError(
                 status_code=response.status_code,
-                api_url=prep_request.url,
+                api_url=response.url,
                 msg='401 Unauthorized. Check if token is valid.',
             )
+
         if response.status_code == 404:
             raise APIError404(
                 status_code=response.status_code,
-                api_url=prep_request.url,
+                api_url=response.url,
                 msg='404 Not Found.',
             )
 
         if response.status_code != 200:
             raise APIError(
                 status_code=response.status_code,
-                api_url=prep_request.url,
+                api_url=response.url,
                 msg=f'API Error: {response.content }',
             )
+        return response
+
+    def decode(self, response):
         try:
             decoded = response.json()
         except ValueError as e:
-            raise APIError(
+            raise DecodeError(
+                api_url=response.url,
                 status_code=response.status_code,
-                api_url=prep_request.url,
                 msg=f'API decoding error: {str(e)}, data: {response.content}',
             )
         return decoded
 
+    def make_get_request(self, path, query_parameters):
+        'Used for simple GET request without pagination.'
+        self.prepare_request(path, path, query_parameters)
+        self.decode(self.send_request())
+
+    def is_next(self):
+        if self.request:
+            return bool(self.request.url)
+        return False
+
+    def prepare_next(self, response):
+        self.request.url = response.get('next', {'url': None})['url']
+        self.request.query_params = []
+
+    def make_multipage_request(self, path, query_parameters):
+        '''Used for GET request with expected pagination. Returns iterator?'''
+        self.prepare_request(path, path, query_parameters)
+        while(self.is_next()):
+            response = self.send_request()
+            list_from_api = response.decode()
+            for api_object in list_from_api:
+                yield api_object
+            self.prepare_next(response)
+
 
 class ScDedicatedServerInfo(object):
     def __init__(self, endpoint, token, name, fail_on_absent):
-        self.API = API(endpoint, token)
+        self.api = Api(token, endpoint)
         self.server_id = name
         self.fail_on_absent = fail_on_absent
 
@@ -94,12 +164,11 @@ class ScDedicatedServerInfo(object):
             return False
 
     def run(self):
-        req = self.API.start_request(
-            path=f'/hosts/dedicated_servers/{self.server_id}',
-            query=None
-        )
         try:
-            server_info = self.API.send_and_decode(req)
+            server_info = self.api.make_get_request(
+                path=f'/hosts/dedicated_servers/{self.server_id}',
+                query_parameters=None
+            )
         except APIError404 as e:
             if self.fail_on_absent:
                 raise e
@@ -115,60 +184,13 @@ class ScDedicatedServerInfo(object):
         return module_output
 
 
-class MultiPage(object):
-
-    per_page = 100
-
-    def __init__(self, request):
-        self.request = request
-        try:
-            import requests
-            self.requests = requests
-        except ImportError:
-            raise APIError(msg='This module needs requests library.')
-
-    def __iter__(self):
-        self.session = self.requests.Session()
-        self.next = self.request
-        self.next.params.update({'per_page': self.per_page})
-        return self
-
-    def __next__(self):
-        if self.next.url:
-            prep_req = self.next.prepare()
-            resp = self.session.send(prep_req)
-            if resp.status_code == 401:
-                raise APIError(
-                    status_code=resp.status_code,
-                    api_url=self.next.url,
-                    msg='401 Unauthorized. Check if token is valid.',
-                )
-            if resp.status_code != 200:
-                raise APIError(
-                    status_code=resp.status_code,
-                    api_url=self.next_url,
-                    msg=f'API Error: {resp.content }',
-                )
-            self.next.url = resp.links.get('next', {'url': None})['url']
-            try:
-                return resp.json()
-            except ValueError as e:
-                raise APIError(
-                    status_code=resp.status_code,
-                    api_url=self.next_url,
-                    msg=f'API decoding error: {str(e)}, data: {resp.content}',
-                )
-        else:
-            raise StopIteration
-
-
 class ScInfo(object):
     def __init__(self, endpoint, token, scope,
                  search_pattern, required_features):
         self.scope = scope
         self.search_pattern = search_pattern
         self.required_features = required_features
-        self.API = API(endpoint, token)
+        self.API = Api(token, endpoint)
 
     @staticmethod
     def location_features(location):
@@ -181,11 +203,10 @@ class ScInfo(object):
         return features
 
     def locations(self):
-        req = self.API.start_request(
+        all_locations = self.api.make_multipage_request(
             path='/locations',
-            query={'search_pattern': self.search_pattern}
+            query_parameters={'search_pattern': self.search_pattern}
         )
-        all_locations = list(itertools.chain.from_iterable(MultiPage(req)))
         locations = []
         if self.required_features:
             for loc in all_locations:
@@ -200,11 +221,9 @@ class ScInfo(object):
         return locations
 
     def regions(self):
-        req = self.API.start_request(
-            path='/cloud_computing/regions',
-            query={'search_pattern': self.search_pattern}
+        return list(
+            self.api.make_multipage_request('/cloud_computing/regions')
         )
-        return list(itertools.chain.from_iterable(MultiPage(req)))
 
     def run(self):
         ret_data = {'changed': False}
