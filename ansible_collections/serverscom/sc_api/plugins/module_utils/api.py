@@ -1,5 +1,4 @@
 from __future__ import (absolute_import, division, print_function)
-import itertools
 
 
 __metaclass__ = type
@@ -9,7 +8,14 @@ DEFAULT_API_ENDPOINT = 'https://api.servers.com/v1'
 
 
 class ModuleError(Exception):
-    pass
+    def __init__(self, msg):
+        self.msg = msg
+
+    def fail(self):
+        return {
+            'failed': True,
+            'msg': self.msg
+        }
 
 
 class APIError(ModuleError):
@@ -40,20 +46,6 @@ class APIError404(APIError):
     pass
 
 
-class Multipage():
-    def __init__(self, request):
-        pass
-
-    def fetch_more(self):
-        pass
-
-    def __next__(self):
-        if not self.queue:
-            if not self.fetch_more():
-                raise StopIteration
-            return self.queue.pop()
-
-
 class Api():
     def __init__(self, token, endpoint=DEFAULT_API_ENDPOINT):
         try:
@@ -63,20 +55,18 @@ class Api():
             raise ModuleError(
                 msg='This module needs requests library (python3-requests).')
         self.session = requests.Session()
-        self.session.headers['User-Agent'] = 'ansible-module/sc_api/0.1'
-        self.session.headers['Authorization'] = f'Bearer {token}'
         self.request = None
         self.endpoint = endpoint
+        self.token = token
 
     def make_url(self, path):
         return self.endpoint + path
 
-    def prepare_request(
+    def start_request(
         self,
+        method,
         path,
-        method='GET',
-        path_paramter=None,
-        query_parameters=None
+        query_parameters
     ):
         '''return half-backed request'''
         self.request = self.requests.Request(
@@ -85,9 +75,11 @@ class Api():
 
     def send_request(self):
         '''send a single request/finishes request'''
+
+        self.request.headers['Authorization'] = f'Bearer {self.token}'
+        self.request.headers['User-Agent'] = 'ansible-module/sc_api/0.1'
         prep_request = self.request.prepare()
         response = self.session.send(prep_request)
-        self.request = None
         if response.status_code == 401:
             raise APIError(
                 status_code=response.status_code,
@@ -123,8 +115,8 @@ class Api():
 
     def make_get_request(self, path, query_parameters):
         'Used for simple GET request without pagination.'
-        self.prepare_request(path, path, query_parameters)
-        self.decode(self.send_request())
+        self.start_request('GET', path, query_parameters)
+        return self.decode(self.send_request())
 
     def is_next(self):
         if self.request:
@@ -132,15 +124,15 @@ class Api():
         return False
 
     def prepare_next(self, response):
-        self.request.url = response.get('next', {'url': None})['url']
+        self.request.url = response.links.get('next', {'url': None})['url']
         self.request.query_params = []
 
-    def make_multipage_request(self, path, query_parameters):
+    def make_multipage_request(self, path, query_parameters=None):
         '''Used for GET request with expected pagination. Returns iterator?'''
-        self.prepare_request(path, path, query_parameters)
+        self.start_request('GET', path, query_parameters)
         while(self.is_next()):
             response = self.send_request()
-            list_from_api = response.decode()
+            list_from_api = self.decode(response)
             for api_object in list_from_api:
                 yield api_object
             self.prepare_next(response)
@@ -190,7 +182,7 @@ class ScInfo(object):
         self.scope = scope
         self.search_pattern = search_pattern
         self.required_features = required_features
-        self.API = Api(token, endpoint)
+        self.api = Api(token, endpoint)
 
     @staticmethod
     def location_features(location):
@@ -203,10 +195,10 @@ class ScInfo(object):
         return features
 
     def locations(self):
-        all_locations = self.api.make_multipage_request(
+        all_locations = list(self.api.make_multipage_request(
             path='/locations',
             query_parameters={'search_pattern': self.search_pattern}
-        )
+        ))
         locations = []
         if self.required_features:
             for loc in all_locations:

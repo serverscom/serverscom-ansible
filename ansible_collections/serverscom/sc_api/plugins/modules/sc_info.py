@@ -150,7 +150,7 @@ EXAMPLES = """
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.api import (
     DEFAULT_API_ENDPOINT,
-    APIError,
+    ModuleError,
     ScInfo
 )
 
@@ -182,7 +182,7 @@ def main():
     )
     try:
         module.exit_json(**sc_info.run())
-    except APIError as e:
+    except ModuleError as e:
         module.exit_json(**e.fail())
 
 
