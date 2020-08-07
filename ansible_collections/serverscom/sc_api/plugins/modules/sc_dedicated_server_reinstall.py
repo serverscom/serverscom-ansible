@@ -21,8 +21,8 @@ author: "George Shuklin (@amarao)"
 short_description: Reinstall baremetal server.
 description: >
     Reinstall the existing baremetal server. Existing data may be lost in
-    the process. No guranteed data removal (some data may be left).
-    No secure erase or wipe is performed during installation.
+    the process. No secure erase or wipe is performed during installation.
+    Some data may be preserved.
     Reinstallation request may fail for servers with custom hardware
     configuration (external drive shelves).
 
@@ -42,19 +42,18 @@ options:
         - You can create token for you account in https://portal.servers.com
           in Profile -> Public API section.
 
-    name:
-      aliases: [id]
+    server_id:
+      aliases: [name, id]
       type: str
       required: true
       description:
         - ID of the server to reinstall.
-        - Translates to server_id in API.
 
     hostname:
       type: str
       description:
         - Hostname for the server.
-        - Module will retrive old hostname if not specified.
+        - Module will retrive old server title if not specified.
         - Translates to hostname in API.
 
     drives_layout_template:
@@ -68,7 +67,7 @@ options:
             - C(raid0-simple) uses first drive as raid0 (or no raid in case
               of servers without hardware raid), and places /boot, swap
               and / on this drive.
-            - This option is implemented by the module (it generates layout
+            - This option is implemented by this module (it generates layout
               for drives['layout'] request to API based on built-in template).
 
     drives_layout:
@@ -76,10 +75,10 @@ options:
       type: list
       elements: dict
       description:
+        - Partitioning schema for drives during reinstallation.
         - Mutually exclusive with I(drives_layout_template).
-        - Partitioning of the drives during installation.
         - Translates to drives["layout"] in API.
-        - List of configuration for each raid or stand-alone drive.
+        - List of configuration for each raid or a stand-alone drive.
         - At least one layout should be provided.
         - Slot 0 must be used.
         - Partitioning should provide at least '/' (root) and /boot (for Linux)
@@ -289,7 +288,7 @@ def main():
         argument_spec={
             'token': {'type': 'str', 'no_log': True, 'required': True},
             'endpoint': {'default': DEFAULT_API_ENDPOINT},
-            'name': {'type': 'str', 'required': True, 'aliases': ['id']},
+            'server_id': {'type': 'str', 'required': True, 'aliases': ['id', 'name']},
             'hostname': {'type': 'str'},
             'drives_layout_template': {
                 'type': 'str',

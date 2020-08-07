@@ -1,0 +1,42 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+  when: not sc_endpoint or not sc_token
+
+- name: Test invalid token
+  sc_ssh_key:
+    token: invalid
+    endpoint: '{{ sc_endpoint }}'
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 401
+
+- name: Test2, Absent of absent key by name
+  sc_ssh_key:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    name: key that should not exits
+    state: absent
+  register: test2
+
+- name: Check Test2
+  assert:
+    that:
+      - test2 is not changed
+
+- name: Test3, Absent of absent by fingerprint
+  sc_ssh_key:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    fingerprint: '2a:aa:58:61:88:b3:b0:d9:a5:cf:46:4d:75:b1:15:b7'
+    state: absent
+  register: test3
+
+- name: Check Test3
+  assert:
+    that:
+      - test3 is not changed

@@ -1,10 +1,14 @@
 from __future__ import (absolute_import, division, print_function)
-
+import hashlib
+from textwrap import wrap
+import base64
 
 __metaclass__ = type
 
 
 DEFAULT_API_ENDPOINT = 'https://api.servers.com/v1'
+CHANGED = True
+NOT_CHANGED = False
 
 
 class ModuleError(Exception):
@@ -116,6 +120,14 @@ class Api():
     def make_get_request(self, path, query_parameters):
         'Used for simple GET request without pagination.'
         self.start_request('GET', path, query_parameters)
+        return self.decode(self.send_request())
+
+    def make_delete_request(self, path, body, query_parameters):
+        self.start_request('DELETE', path, body, query_parameters)
+        return self.decode(self.send_request())
+
+    def make_post_request(self, path, body, query_parameters):
+        self.start_request('POST', path, body, query_parameters)
         return self.decode(self.send_request())
 
     def is_next(self):
@@ -251,3 +263,109 @@ class ScCloudComputingRegionsInfo(object):
             self.search(self.regions())
         )
         return ret_data
+
+
+class ScSshKey(object):
+    def __init__(
+        self, endpoint, token, state, name, fingerprint,
+        public_key, replace, checkmode
+    ):
+        self.partial_match = []
+        self.full_match = []
+        self.any_match = []
+        self.api = Api(token, endpoint)
+        self.checkmode = checkmode
+        self.replace = replace
+        self.state = state
+        self.key_name = name
+        self.public_key = public_key
+        self.fingerprint = fingerprint
+        if public_key:
+            self.fingerprint = self.extract_fingerprint(public_key)
+            if fingerprint and self.fingerprint != fingerprint:
+                raise ModuleError(
+                    msg='Fingerprint does not match public_key'
+                )
+        if state == 'absent':
+            if not any([fingerprint, name, public_key]):
+                raise ModuleError(
+                    'Need at least one of name, fingerprint, public_key '
+                    'for state=absent'
+                )
+        if state == 'present':
+            if not public_key:
+                raise ModuleError(
+                    'Need public_key for state=present'
+                )
+
+    @staticmethod
+    def extract_fingerprint(public_key):
+        parts = public_key.split()
+        # real key is the largest word in the line
+        parts.sort(key=len, reverse=True)
+        the_key = base64.decodebytes(parts[0].encode('ascii'))
+        digest = hashlib.md5(the_key).hexdigest()
+        fingerprint = ':'.join(wrap(digest, 2))
+        return fingerprint
+
+    def get_ssh_keys(self):
+        return self.api.make_multipage_request('/ssh_keys')
+
+    def classify_matching_keys(self, key_list):
+        for key in key_list:
+            if (
+                key['name'] == self.key_name and
+                key['fingerprint'] == self.fingerprint
+            ):
+                self.full_match.append([key])
+                continue
+            if(
+                key['name'] == self.key_name or
+                key['fingerprint'] == self.fingerprint
+            ):
+                self.partial_match.append([key])
+                self.any_match.append([key])
+                continue
+
+    def add_key(self):
+        if not self.checkmode:
+            self.api.make_post_request(
+                path='/ssh_keys',
+                body=None,
+                query={'name': self.key_name, 'public_key': self.public_key}
+            )
+
+    def delete_keys(self, key_list):
+        if not self.checkmode:
+            for key in key_list:
+                self.api.make_delete_request(
+                    path=f'/ssh_keys/{key.fingerprint}',
+                    body=None,
+                    query=None
+                )
+
+    def state_absent(self):
+        if not self.any_match:
+            return NOT_CHANGED
+        self.delete_keys(self.any_match)
+        return CHANGED
+
+    def state_present(self):
+        changed = NOT_CHANGED
+        if self.full_match and not self.partial_match:
+            return NOT_CHANGED
+        if self.partial_match and self.replace:
+            self.delete_keys(self.partial_match)
+            changed = CHANGED
+        if not self.full_match:
+            self.add_key()
+            changed = CHANGED
+        return changed
+
+    def run(self):
+        self.classify_matching_keys(self.get_ssh_keys())
+        if self.state == 'absent':
+            changed = self.state_absent()
+        if self.state == 'present':
+            changed = self.state_present()
+        return {'changed': changed}
