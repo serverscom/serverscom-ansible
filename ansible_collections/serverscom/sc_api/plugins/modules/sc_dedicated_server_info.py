@@ -247,7 +247,23 @@ ready:
 """
 
 EXAMPLES = """
+- name: Get server info
+  sc_dedicated_server_info:
+    token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MzgxMjEsInR5cGUiOiJVc2VyIiwiYWNjZXNzX2dyYW50X2lkIjoyNjgwNywiZXhwIjoyMjI2OTk3NjMwfQ.rO4nGXNgXggjNmMJBLXovOh1coNrDWl4dGrGFupYXJE'
+    id: '0m592Zmn'
+  register: srv
+- name: Report server information
+  debug:
+    msg: 'Server {{ srv.name }} has IP {{ srv.public_ipv4_address }}'
 
+- name: Wait until server is ready
+  sc_dedicated_server_info:
+    token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MzgxMjEsInR5cGUiOiJVc2VyIiwiYWNjZXNzX2dyYW50X2lkIjoyNjgwNywiZXhwIjoyMjI2OTk3NjMwfQ.rO4nGXNgXggjNmMJBLXovOh1coNrDWl4dGrGFupYXJE'
+    id: '0m592Zmn'
+  register: srv
+  until: srv.ready
+  delay: 30
+  retries: 300
 """  # noqa
 
 
