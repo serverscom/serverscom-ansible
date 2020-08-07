@@ -176,10 +176,9 @@ class ScDedicatedServerInfo(object):
         return module_output
 
 
-class ScInfo(object):
-    def __init__(self, endpoint, token, scope,
+class ScBaremetalLocationsInfo(object):
+    def __init__(self, endpoint, token,
                  search_pattern, required_features):
-        self.scope = scope
         self.search_pattern = search_pattern
         self.required_features = required_features
         self.api = Api(token, endpoint)
@@ -212,15 +211,43 @@ class ScInfo(object):
             locations = all_locations
         return locations
 
+    def run(self):
+        ret_data = {'changed': False}
+        ret_data["locations"] = self.locations()
+        return ret_data
+
+
+class ScCloudComputingRegionsInfo(object):
+    def __init__(self, endpoint, token,
+                 search_pattern):
+        self.search_pattern = search_pattern
+        self.api = Api(token, endpoint)
+
+    @staticmethod
+    def location_features(location):
+        features = set(location['supported_features'])
+        for key, value in location.items():
+            # fiter out both non-feature things like name, and
+            # disabled features,
+            if value is True:
+                features.add(key)
+        return features
+
     def regions(self):
-        return list(
-            self.api.make_multipage_request('/cloud_computing/regions')
-        )
+        return self.api.make_multipage_request('/cloud_computing/regions')
+
+    def search(self, regions):
+        for region in regions:
+            if not self.search_pattern:
+                yield region
+            else:
+                if self.search_pattern.lower() in region['name'].lower() or \
+                   self.search_pattern.lower() in region['code'].lower():
+                    yield region
 
     def run(self):
         ret_data = {'changed': False}
-        if self.scope in ['all', 'locations']:
-            ret_data["locations"] = self.locations()
-        if self.scope in ['all', 'regions']:
-            ret_data["regions"] = self.regions()
+        ret_data['regions'] = list(
+            self.search(self.regions())
+        )
         return ret_data

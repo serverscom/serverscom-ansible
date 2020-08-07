@@ -15,29 +15,19 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = """
 ---
-module: sc_info
+module: sc_baremetal_locations_info
 version_added: "2.10"
 author: "George Shuklin (@amarao)"
-short_description: Information about available locations and regions.
+short_description: Information about available baremetal servers locations.
 description: >
-    Module gathers information about available locations
-    for baremetal servers and cloud regions.
+    Module searches for locations for baremetal servers, including
+    locations with dedicated servers.
 
 options:
-    scope:
-      type: str
-      choices: [all, locations, regions]
-      default: all
-      description:
-        - Scope of query
-        - C(locations) limit query to baremetal locations
-        - C(regions) limit query to cloud regions.
-        - C(all) query both baremetal locations and cloud regions.
-
     search_pattern:
         type: str
         description:
-            - Search substring in locations names.
+            - Search for substring in locations names.
             - Case insensitive.
 
     required_features:
@@ -99,24 +89,6 @@ locations:
                 - host_rescue_mode
                 - oob_public_access
 
-regions:
-    description: List of cloud compute regions
-    returned: on success
-    type: complex
-    contains:
-        id:
-            type: str
-            description:
-                - ID of the location.
-        name:
-            type: str
-            description:
-                - Name of the location.
-
-        code:
-            type: str
-            description:
-                - Code for the location.
 api_url:
     description: URL for the failed request
     returned: on failure
@@ -130,7 +102,7 @@ status_code:
 
 EXAMPLES = """
 - name: Gather information for avaliable regions
-  serverscom.sc_api.sc_info:
+  serverscom.sc_api.sc_baremetal_locations_info:
     token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MzgxMjEsInR5cGUiOiJVc2VyIiwiYWNjZXNzX2dyYW50X2lkIjoyNjgwNywiZXhwIjoyMjI2OTk3NjMwfQ.rO4nGXNgXggjNmMJBLXovOh1coNrDWl4dGrGFupYXJE'
   register: sc_info
 
@@ -138,12 +110,12 @@ EXAMPLES = """
   debug: var=item.name
   with_items: '{{ sc_info.locations }}'
 
-- name: Print all regions
-  debug: var=item.name
-  with_items: '{{ sc_info.regions }}'
-
-- name: Print remaining API request count
-  debug: var=sc_info.limits.remaining
+- name: Search for locations
+  sc_baremetal_locations_info:
+    token: '{{ mytoken }}'
+    search_pattern: 'US'
+    required_features:
+      - load_balancers_enabled
 """  # noqa
 
 
@@ -151,7 +123,7 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.api import (
     DEFAULT_API_ENDPOINT,
     ModuleError,
-    ScInfo
+    ScBaremetalLocationsInfo
 )
 
 
@@ -161,11 +133,6 @@ __metaclass__ = type
 def main():
     module = AnsibleModule(
         argument_spec={
-            'scope': {
-                'type': 'str',
-                'choices': ['all', 'locations', 'regions'],
-                'default': 'all'
-            },
             'search_pattern': {'type': 'str'},
             'token': {'type': 'str', 'no_log': True, 'required': True},
             'endpoint': {'default': DEFAULT_API_ENDPOINT},
@@ -173,10 +140,9 @@ def main():
         },
         supports_check_mode=True
     )
-    sc_info = ScInfo(
+    sc_info = ScBaremetalLocationsInfo(
         endpoint=module.params['endpoint'],
         token=module.params['token'],
-        scope=module.params['scope'],
         search_pattern=module.params['search_pattern'],
         required_features=module.params['required_features'],
     )

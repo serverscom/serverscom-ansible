@@ -6,7 +6,7 @@
   when: not sc_endpoint or not sc_token
 
 - name: Test invalid token
-  sc_info:
+  sc_baremetal_locations_info:
     token: invalid
     endpoint: '{{ sc_endpoint }}'
   register: test1
@@ -16,7 +16,7 @@
     - test1.status_code != 401
 
 - name: Test2, Simple get
-  sc_info:
+  sc_baremetal_locations_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
   register: test2
@@ -26,19 +26,14 @@
     that:
       - test2 is not changed
       - test2.locations|length >= 1
-      - test2.regions|length >= 1
       - test2.locations[0].id is defined
       - test2.locations[0].name is defined
       - test2.locations[0].code is defined
-      - test2.regions[0].code is defined
-      - test2.regions[0].id is defined
-      - test2.regions[0].name is defined
 
 - name: Test3, Search for location
-  sc_info:
+  sc_baremetal_locations_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    scope: locations
     search_pattern: US
   register: test3
 
@@ -46,16 +41,14 @@
   assert:
     that:
       - test3.locations|length >= 1
-      - test3.regions is undefined
       - test3.locations[0]
       - "'AMS1' not in test3|string"
       - "'DFW1' in test3|string"
 
 - name: Test3, Filter by features
-  sc_info:
+  sc_baremetal_locations_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    scope: locations
     required_features:
       - disaggregated_public_ports
       - load_balancers_enabled

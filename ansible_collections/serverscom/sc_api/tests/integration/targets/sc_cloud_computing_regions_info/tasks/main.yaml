@@ -1,0 +1,46 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+  when: not sc_endpoint or not sc_token
+
+- name: Test invalid token
+  sc_cloud_computing_regions_info:
+    token: invalid
+    endpoint: '{{ sc_endpoint }}'
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 401
+
+- name: Test2, Simple get
+  sc_cloud_computing_regions_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+  register: test2
+
+- name: Check Test2
+  assert:
+    that:
+      - test2 is not changed
+      - test2.regions|length >= 1
+      - test2.regions[0].id is defined
+      - test2.regions[0].name is defined
+      - test2.regions[0].code is defined
+
+- name: Test3, Search for location
+  sc_cloud_computing_regions_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    search_pattern: WAS
+  register: test3
+
+
+- name: Check Test3
+  assert:
+    that:
+      - test3.regions|length >= 1
+      - "'AMS1' not in test3|string"
+      - "'WAS1' in test3|string"
