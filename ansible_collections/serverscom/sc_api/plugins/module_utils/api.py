@@ -77,7 +77,7 @@ class Api():
             method, self.make_url(path), params=query_parameters
         )
 
-    def send_request(self):
+    def send_request(self, good_codes):
         '''send a single request/finishes request'''
 
         self.request.headers['Authorization'] = f'Bearer {self.token}'
@@ -98,7 +98,7 @@ class Api():
                 msg='404 Not Found.',
             )
 
-        if response.status_code != 200:
+        if response.status_code not in good_codes:
             raise APIError(
                 status_code=response.status_code,
                 api_url=response.url,
@@ -120,15 +120,17 @@ class Api():
     def make_get_request(self, path, query_parameters):
         'Used for simple GET request without pagination.'
         self.start_request('GET', path, query_parameters)
-        return self.decode(self.send_request())
+        return self.decode(self.send_request(good_codes=[200]))
 
     def make_delete_request(self, path, body, query_parameters):
-        self.start_request('DELETE', path, body, query_parameters)
-        return self.decode(self.send_request())
+        self.start_request('DELETE', path, query_parameters)
+        self.request.body = body
+        return self.send_request(good_codes=[204])
 
     def make_post_request(self, path, body, query_parameters):
-        self.start_request('POST', path, body, query_parameters)
-        return self.decode(self.send_request())
+        self.start_request('POST', path, query_parameters)
+        self.request.body = body
+        return self.decode(self.send_request(good_codes=[201]))
 
     def is_next(self):
         if self.request:
@@ -143,7 +145,7 @@ class Api():
         '''Used for GET request with expected pagination. Returns iterator?'''
         self.start_request('GET', path, query_parameters)
         while(self.is_next()):
-            response = self.send_request()
+            response = self.send_request(good_codes=[200])
             list_from_api = self.decode(response)
             for api_object in list_from_api:
                 yield api_object
@@ -297,6 +299,10 @@ class ScSshKey(object):
                 raise ModuleError(
                     'Need public_key for state=present'
                 )
+            if not name:
+                raise ModuleError(
+                    'Need name for state=present'
+                )
 
     @staticmethod
     def extract_fingerprint(public_key):
@@ -311,40 +317,42 @@ class ScSshKey(object):
     def get_ssh_keys(self):
         return self.api.make_multipage_request('/ssh_keys')
 
-    def classify_matching_keys(self, key_list):
+    @staticmethod
+    def classify_matching_keys(key_list, name, fingerprint):
+        full_match = []
+        partial_match = []
+        any_match = []
         for key in key_list:
-            if (
-                key['name'] == self.key_name and
-                key['fingerprint'] == self.fingerprint
-            ):
-                self.full_match.append([key])
-                continue
-            if(
-                key['name'] == self.key_name or
-                key['fingerprint'] == self.fingerprint
-            ):
-                self.partial_match.append([key])
-                self.any_match.append([key])
-                continue
+            if key['name'] == name or key['fingerprint'] == fingerprint:
+                any_match.append(key)
+                if key['name'] == name and key['fingerprint'] == fingerprint:
+                    full_match.append(key)
+                else:
+                    partial_match.append(key)
+        return (full_match, partial_match, any_match)
 
     def add_key(self):
         if not self.checkmode:
             self.api.make_post_request(
                 path='/ssh_keys',
                 body=None,
-                query={'name': self.key_name, 'public_key': self.public_key}
+                query_parameters={
+                    'name': self.key_name, 'public_key': self.public_key
+                }
             )
 
     def delete_keys(self, key_list):
         if not self.checkmode:
             for key in key_list:
                 self.api.make_delete_request(
-                    path=f'/ssh_keys/{key.fingerprint}',
+                    path=f'/ssh_keys/{key["fingerprint"]}',
                     body=None,
-                    query=None
+                    query_parameters=None
                 )
 
     def state_absent(self):
+        # import epdb
+        # epdb.serve()
         if not self.any_match:
             return NOT_CHANGED
         self.delete_keys(self.any_match)
@@ -363,7 +371,10 @@ class ScSshKey(object):
         return changed
 
     def run(self):
-        self.classify_matching_keys(self.get_ssh_keys())
+        self.full_match, self.partial_match, self.any_match = \
+            self.classify_matching_keys(
+                self.get_ssh_keys(), self.key_name, self.fingerprint
+            )
         if self.state == 'absent':
             changed = self.state_absent()
         if self.state == 'present':

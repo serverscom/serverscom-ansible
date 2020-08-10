@@ -40,3 +40,62 @@
   assert:
     that:
       - test3 is not changed
+
+- name: Test4, Register a new key in check mode
+  sc_ssh_key:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    public_key: '{{ lookup("file", "key1.pub") }}'
+    name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
+    state: present
+  check_mode: true
+  register: test4
+
+- name: Test4, try to remove it
+  sc_ssh_key:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    public_key: '{{ lookup("file", "key1.pub") }}'
+    name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
+    state: absent
+  register: test4_try2
+
+- name: Check Test4 again
+  assert:
+    that:
+      - test4 is changed
+      - test4_try2 is not changed
+
+- block:
+    - name: Test5, Register a new key
+      sc_ssh_key:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        public_key: '{{ lookup("file", "key1.pub") }}'
+        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
+        state: present
+      register: test5
+
+    - name: Test5, Register a new key second time
+      sc_ssh_key:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        public_key: '{{ lookup("file", "key1.pub") }}'
+        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
+        state: present
+      register: test6
+
+    - name: Check Test4 again
+      assert:
+        that:
+          - test4 is changed
+          - test4_try2 is not changed
+
+  always:
+    - name: Cleanup key1
+      sc_ssh_key:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        public_key: '{{ lookup("file", "key1.pub") }}'
+        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
+        state: absent
