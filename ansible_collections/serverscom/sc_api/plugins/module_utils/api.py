@@ -152,6 +152,53 @@ class Api():
             self.prepare_next(response)
 
 
+class ApiSimpleGet(object):
+    ''' Generic class for modules with single GET and no additional options.'''
+
+    path = None
+    response_key = None
+    query_parameters = None
+
+    def build_path(self):
+        if not self.path:
+            raise AssertionError("Class should have path defined.")
+        return self.path
+
+    def build_query_parameters(self):
+        return self.query_parameters
+
+    def __init__(self, endpoint, token):
+        self.api = Api(token, endpoint)
+
+    def process_response(self, response):
+        if not self.response_key:
+            raise AssertionError("Class should have response_key defined.")
+        return {
+            self.response_key: response,
+            'changed': 'False'
+        }
+
+    def run(self):
+        return self.process_response(
+            self.api.make_get_request(
+                self.build_path(),
+                self.build_query_parameters()
+            )
+        )
+
+
+class ApiMultipageGet(ApiSimpleGet):
+    ''' Generic class for modules with multipage GET and no options.'''
+
+    def run(self):
+        return self.process_response(
+            self.api.make_get_request(
+                self.build_path(),
+                self.build_query_parameters()
+            )
+        )
+
+
 class ScDedicatedServerInfo(object):
     def __init__(self, endpoint, token, name, fail_on_absent):
         self.api = Api(token, endpoint)
@@ -385,3 +432,8 @@ class ScSshKey(object):
         if self.state == 'present':
             changed = self.state_present()
         return {'changed': changed}
+
+
+class ScSshKeysInfo(ApiMultipageGet):
+    path = '/ssh_keys'
+    response_key = 'ssh_keys'

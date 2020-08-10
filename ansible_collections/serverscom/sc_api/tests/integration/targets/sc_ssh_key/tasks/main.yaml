@@ -1,11 +1,12 @@
 ---
+# This role tests both sc_ssh_key and sc_ssh_keys_info modules.
 - name: Check if there are sc_token and sc_endpoint variables
   no_log: true
   fail:
     msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
   when: not sc_endpoint or not sc_token
 
-- name: Test invalid token
+- name: Test invalid token 1
   sc_ssh_key:
     token: invalid
     endpoint: '{{ sc_endpoint }}'
@@ -14,6 +15,16 @@
     - test1 is success
     - sc_endpoint not in test1.api_url
     - test1.status_code != 401
+
+- name: Test invalid token 2
+  sc_ssh_keys_info:
+    token: invalid
+    endpoint: '{{ sc_endpoint }}'
+  register: test1_2
+  failed_when:
+    - test1_2 is success
+    - sc_endpoint not in test1.api_url
+    - test1_2.status_code != 401
 
 - name: Test2, Absent of absent key by name
   sc_ssh_key:
@@ -90,6 +101,17 @@
         that:
           - test5 is changed
           - test5_try2 is not changed
+
+    - name: Test5-info, get info about keys
+      sc_ssh_keys_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+      register: test5_keylist
+
+    - name: Check test5 keylist
+      assert:
+        that:
+          - "'1ea1c330-daee-11ea-ad4c-033b3ea18cbf' in test5_keylist.ssh_keys|string"
 
     - name: Test5, Delete a new key in check_mode
       sc_ssh_key:
