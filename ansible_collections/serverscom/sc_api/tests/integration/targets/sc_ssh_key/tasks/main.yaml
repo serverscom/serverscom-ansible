@@ -83,13 +83,48 @@
         public_key: '{{ lookup("file", "key1.pub") }}'
         name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
         state: present
-      register: test6
+      register: test5_try2
 
-    - name: Check Test4 again
+    - name: Check Test5 again
       assert:
         that:
-          - test4 is changed
-          - test4_try2 is not changed
+          - test5 is changed
+          - test5_try2 is not changed
+
+    - name: Test5, Delete a new key in check_mode
+      sc_ssh_key:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        public_key: '{{ lookup("file", "key1.pub") }}'
+        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
+        state: absent
+      register: test5_del1
+      check_mode: true
+
+    - name: Test5, Delete a new key for real
+      sc_ssh_key:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        public_key: '{{ lookup("file", "key1.pub") }}'
+        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
+        state: absent
+      register: test5_del2
+
+    - name: Test5, Delete a new key for real second time
+      sc_ssh_key:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        public_key: '{{ lookup("file", "key1.pub") }}'
+        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
+        state: absent
+      register: test5_del3
+
+    - name: Check Test5 deletions
+      assert:
+        that:
+          - test5_del1 is changed
+          - test5_del2 is changed
+          - test5_del3 is not changed
 
   always:
     - name: Cleanup key1
@@ -99,3 +134,63 @@
         public_key: '{{ lookup("file", "key1.pub") }}'
         name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
         state: absent
+      ignore_errors: true
+
+
+- block:
+    - name: Test6, Register key1
+      sc_ssh_key:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        public_key: '{{ lookup("file", "key1.pub") }}'
+        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
+        state: present
+
+    - name: Test6, set a new key with the same name without replace option
+      sc_ssh_key:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        public_key: '{{ lookup("file", "key2.pub") }}'
+        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
+        state: present
+      register: test6
+      failed_when: "'Error' not in test6.msg"
+
+    - name: Test7, set a new key with the same name with replace option
+      sc_ssh_key:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        public_key: '{{ lookup("file", "key2.pub") }}'
+        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
+        state: present
+        replace: true
+      register: test7_replace
+
+    - name: Test7, try again without replace
+      sc_ssh_key:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        public_key: '{{ lookup("file", "key2.pub") }}'
+        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
+        state: present
+      register: test7_second
+
+
+    - name: Check Test7
+      assert:
+        that:
+          - test7_replace is changed
+          - test7_second is not changed
+
+
+  always:
+    - name: Cleanup key1
+      sc_ssh_key:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        public_key: '{{ lookup("file", item) }}'
+        state: absent
+      loop:
+        - key1.pub
+        - key2.pub
+      ignore_errors: true

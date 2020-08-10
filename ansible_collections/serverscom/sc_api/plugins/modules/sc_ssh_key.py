@@ -146,7 +146,7 @@ def main():
         state=module.params['state'],
         public_key=module.params['public_key'],
         fingerprint=module.params['fingerprint'],
-        replace=module.params['fingerprint'],
+        replace=module.params['replace'],
         checkmode=module.check_mode
     )
     try:

@@ -362,6 +362,11 @@ class ScSshKey(object):
         changed = NOT_CHANGED
         if self.full_match and not self.partial_match:
             return NOT_CHANGED
+        if self.partial_match and not self.replace:
+            raise ModuleError(
+                'Error: Partial match found and no replace option. '
+                f'Partially matching keys: {repr(self.partial_match)}'
+            )
         if self.partial_match and self.replace:
             self.delete_keys(self.partial_match)
             changed = CHANGED
