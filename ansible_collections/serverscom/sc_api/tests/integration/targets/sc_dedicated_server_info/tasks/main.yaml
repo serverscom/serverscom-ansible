@@ -69,12 +69,12 @@
       - test4.ready == false
 
 #  may be flaky, need a real server in running state
-- name: Test5, Information for real not ready server
+- name: Test5, Information for real and ready server
   sc_dedicated_server_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     fail_on_absent: false
-    id: 'GmyMB8m0'
+    id: 'ApOr4a1O'
   register: test5
 
 - debug: var=test5

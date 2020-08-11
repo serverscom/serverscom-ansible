@@ -142,7 +142,7 @@ options:
 
 
     operating_system_id:
-      type: str
+      type: int
       description:
         - id of the operating system to install on the server.
         - Module will retrive and reuse old operating system if
@@ -153,7 +153,7 @@ options:
       elements: str
       description:
         - Array of fingerprints of public ssh keys to add for root user.
-        - Keys must be registered before use.
+        - Keys must be registered before use by module M(sc_ssh_key).
         - Mutually exclusive with I(ssh_key_name).
         - Server is reinstalled with root password only if no I(ssh_keys) or
           I(ssh_key_name) specified.
@@ -203,84 +203,16 @@ EXAMPLES = """
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils._text import to_text
-import json
-import itertools
+from ansible_collections.serverscom.sc_api.plugins.module_utils.api import (
+    DEFAULT_API_ENDPOINT,
+    ModuleError,
+    ScDedicatedServerReinstall
+)
+
 
 requests = None
 
 __metaclass__ = type
-
-
-DEFAULT_API_ENDPOINT = 'https://api.servers.com/v1'
-
-
-class APIError(Exception):
-    def __init__(self, api_url, status_code, msg):
-        self.api_url = api_url
-        self.status_code = status_code
-        self.msg = msg
-
-    def fail(self):
-        return_value = {'failed': True, 'msg': self.msg}
-        if self.api_url:
-            return_value['api_url'] = self.api_url
-        if self.status_code:
-            return_value['status_code'] = self.status_code
-        return return_value
-
-
-class MultiPage(object):
-
-    per_page = 100
-
-    def __init__(self, request):
-        self.request = request
-
-    def __iter__(self):
-        self.session = requests.Session()
-        self.next = self.request
-        self.next.params.update({'per_page': self.per_page})
-        return self
-
-    def __next__(self):
-        if self.next.url:
-            prep_req = self.next.prepare()
-            resp = self.session.send(prep_req)
-            if resp.status_code == 401:
-                raise APIError(
-                    msg='401 Unauthorized. Check if token is valid.',
-                    status_code=resp.status_code,
-                    api_url=self.next.url
-                )
-            if resp.status_code != 200:
-                raise APIError(
-                    msg=f'API Error: {resp.content }',
-                    status_code=resp.status_code,
-                    api_url=self.next_url
-                )
-            self.next.url = resp.links.get('next', {'url': None})['url']
-            try:
-                return resp.json()
-            except ValueError as e:
-                raise APIError(
-                    msg=f'API decoding error: {str(e)}, data: {resp.content}',
-                    status_code=resp.status_code,
-                    api_url=self.next_url
-                )
-        else:
-            raise StopIteration
-
-
-class API(object):
-    def __init__(self, endpoint, token):
-        self.endpoint = endpoint
-        self.token = token
-
-    def start_request(self, path, query):
-        req = requests.Request('GET', self.endpoint + path, params=query)
-        req.headers['Authorization'] = f'Bearer {self.token}'
-        return req
 
 
 def main():
@@ -288,27 +220,48 @@ def main():
         argument_spec={
             'token': {'type': 'str', 'no_log': True, 'required': True},
             'endpoint': {'default': DEFAULT_API_ENDPOINT},
-            'server_id': {'type': 'str', 'required': True, 'aliases': ['id', 'name']},
+            'server_id': {
+                'type': 'str',
+                'required': True,
+                'aliases': ['id', 'name']
+            },
             'hostname': {'type': 'str'},
             'drives_layout_template': {
                 'type': 'str',
                 'choices': ['raid1-simple', 'raid0-simple']
             },
             'drives_layout': {'type': 'list'},
-            'operating_system_id': {'type': 'str'},
+            'operating_system_id': {'type': 'int'},
             'ssh_keys': {'type': 'list'},
             'ssh_key_name': {'type': 'str'},
             'wait': {'type': 'int', 'default': 86400},
             'update_interval': {'type': 'int', 'default': 60},
         },
-        supports_check_mode=True
+        supports_check_mode=True,
+        mutually_exclusive=[
+            ['ssh_keys', 'ssh_key_name'],
+            ['drives_layout', 'drives_layout_template']
+        ],
+        required_one_of=[['drives_layout', 'drives_layout_template']]
     )
     try:
-        global requests
-        import requests
-    except Exception:
-        module.exit_fail(msg='This module needs requests library.')
-    # module.exit_json(**sc_info.run())
+        sc_dedicated_server_reinstall = ScDedicatedServerReinstall(
+            endpoint=module.params['endpoint'],
+            token=module.params['token'],
+            server_id=module.params['server_id'],
+            hostname=module.params['hostname'],
+            drives_layout_template=module.params['drives_layout_template'],
+            drives_layout=module.params['drives_layout'],
+            operating_system_id=module.params['operating_system_id'],
+            ssh_keys=module.params['ssh_keys'],
+            ssh_key_name=module.params['ssh_key_name'],
+            wait=module.params['wait'],
+            update_interval=module.params['update_interval'],
+            checkmode=module.check_mode
+        )
+        module.exit_json(**sc_dedicated_server_reinstall.run())
+    except ModuleError as e:
+        module.exit_json(**e.fail())
 
 
 if __name__ == '__main__':

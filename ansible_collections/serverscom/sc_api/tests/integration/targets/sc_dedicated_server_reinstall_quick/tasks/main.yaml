@@ -1,0 +1,73 @@
+---
+# module tests for errors. Should be relatively fast.
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+  when: not sc_endpoint or not sc_token
+
+- name: Test invalid token
+  sc_dedicated_server_reinstall:
+    token: invalid
+    endpoint: '{{ sc_endpoint }}'
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 401
+
+# should make a get to server before doing reinstall
+- name: Test2, Error on absent server with incomplete data
+  sc_dedicated_server_reinstall:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    id: '{{ non_existing_server_id }}'
+    drives_layout_template: raid1-simple
+  register: test2
+  failed_when: false
+
+- name: Check Test2
+  assert:
+    that:
+      - test2 is not changed
+      - test2.status_code == 404
+      - "'v1/hosts/dedicated_servers/gd0EL519' in test2.api_url"
+
+# should make a get to server before doing reinstall
+- name: Test3, Error on absent ssh key
+  sc_dedicated_server_reinstall:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    id: '{{ existing_server_id }}'
+    drives_layout_template: raid1-simple
+    ssh_key_name: should-not-exists
+    operating_system_id: '42'
+    hostname: somename
+  register: test3
+  failed_when: false
+
+- name: Check Test3
+  assert:
+    that:
+      - test3 is not changed
+      - '"Unable to find registered ssh key" in test3.msg'
+
+- name: Test4, Error on absent server with all information
+  sc_dedicated_server_reinstall:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    id: '{{ non_existing_server_id }}'
+    drives_layout_template: raid1-simple
+    ssh_keys:
+      - '58:e5:58:e9:38:10:82:57:d9:82:11:8c:f6:44:68:e8'
+    operating_system_id: '42'
+    hostname: somename
+  register: test4
+  failed_when: false
+
+- name: Check Test4
+  assert:
+    that:
+      - test4 is not changed
+      - test4.status_code == 404
+      - '"v1/hosts/dedicated_servers/gd0EL519/reinstall" in test4.api_url'

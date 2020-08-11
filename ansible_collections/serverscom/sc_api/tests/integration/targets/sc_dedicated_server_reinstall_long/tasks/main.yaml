@@ -1,0 +1,34 @@
+---
+# tests for real reinstallation. Are long as hell
+# about 40 minutes per task.
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+  when: not sc_endpoint or not sc_token
+
+- name: Debug info about server
+  sc_dedicated_server_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    name: '{{ existing_server_id }}'
+  register: info
+
+- debug: var=info
+
+- name: Test1, reinstall with all data present in wait mode.
+  sc_dedicated_server_reinstall:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    id: '{{ existing_server_id }}'
+    drives_layout_template: raid1-simple
+    operating_system_id: 2
+    hostname: ansible_module_reinstall
+  register: test1
+
+- name: Check Test1
+  assert:
+    that:
+      - test1 is changed
+
+- fail:

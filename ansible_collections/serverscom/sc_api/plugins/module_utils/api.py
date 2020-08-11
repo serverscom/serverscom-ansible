@@ -129,7 +129,7 @@ class Api():
 
     def make_post_request(self, path, body, query_parameters):
         self.start_request('POST', path, query_parameters)
-        self.request.body = body
+        self.request.json = body
         return self.decode(self.send_request(good_codes=[201]))
 
     def is_next(self):
@@ -156,7 +156,7 @@ class ApiSimpleGet(object):
     ''' Generic class for modules with single GET and no additional options.'''
 
     path = None
-    response_key = None
+
     query_parameters = None
 
     def build_path(self):
@@ -171,12 +171,8 @@ class ApiSimpleGet(object):
         self.api = Api(token, endpoint)
 
     def process_response(self, response):
-        if not self.response_key:
-            raise AssertionError("Class should have response_key defined.")
-        return {
-            self.response_key: response,
-            'changed': 'False'
-        }
+        response['changed'] = False
+        return response
 
     def run(self):
         return self.process_response(
@@ -189,6 +185,15 @@ class ApiSimpleGet(object):
 
 class ApiMultipageGet(ApiSimpleGet):
     ''' Generic class for modules with multipage GET and no options.'''
+    response_key = None
+
+    def process_response(self, response):
+        if not self.response_key:
+            raise AssertionError("Class should have response_key defined.")
+        return {
+            self.response_key: response,
+            'changed': 'False'
+        }
 
     def run(self):
         return self.process_response(
@@ -437,3 +442,128 @@ class ScSshKey(object):
 class ScSshKeysInfo(ApiMultipageGet):
     path = '/ssh_keys'
     response_key = 'ssh_keys'
+
+
+class ScDedicatedServerReinstall(object):
+    def __init__(
+        self,
+        endpoint,
+        token,
+        server_id,
+        hostname,
+        drives_layout_template,
+        drives_layout,
+        operating_system_id,
+        ssh_keys,
+        ssh_key_name,
+        wait,
+        update_interval,
+        checkmode
+    ):
+        self.api = Api(token, endpoint)
+        self.old_server_data = None
+        self.server_id = server_id
+        self.hostname = self.get_hostname(hostname)
+        self.drives_layout = self.get_drives_layout(drives_layout,
+                                                    drives_layout_template)
+        self.operating_system_id = self.get_operating_system_id(
+            operating_system_id
+        )
+        self.ssh_keys = self.get_ssh_keys(ssh_keys, ssh_key_name)
+        self.wait = wait
+        self.update_interval = update_interval
+        self.checkmode = checkmode
+
+    def get_server_data(self):
+        if self.old_server_data:
+            return
+        self.old_server_data = self.api.make_get_request(
+            path=f'/hosts/dedicated_servers/{self.server_id}',
+            query_parameters=None
+        )
+
+    def get_ssh_key_by_name(self, ssh_key_name):
+        api_keys = self.api.make_multipage_request('/ssh_keys')
+        for key in api_keys:
+            if key['name'] == ssh_key_name:
+                return key['fingerprint']
+        raise ModuleError(
+            f'Unable to find registered ssh key with name "{ssh_key_name}"'
+        )
+
+    def get_hostname(self, hostname):
+        if hostname:
+            return hostname
+        self.get_server_data()
+        return self.old_server_data['hostname']
+
+    def get_operating_system_id(self, operating_system_id):
+        if operating_system_id:
+            return operating_system_id
+        self.get_server_data()
+        cfg = self.old_server_data.get('configuration_details')
+        if not cfg or 'operating_system_id' not in cfg:
+            raise ModuleError(
+                "no operating_system_id was given, and unable to get old"
+                "operating_system_id"
+            )
+        return cfg['operating_system_id']
+
+    def get_ssh_keys(self, ssh_keys, ssh_key_name):
+        if ssh_keys:
+            return ssh_keys
+        if not ssh_key_name:
+            return []
+        key = self.get_ssh_key_by_name(ssh_key_name)
+        return [key]
+
+    @staticmethod
+    def get_drives_layout(layout, template):
+        if layout:
+            return layout
+        else:
+            return [{
+                'slot_positions': [0, 1],
+                'raid': 1,
+                'partitions': [
+                    {
+                        "target": "/boot",
+                        "size": 500,
+                        "fill": False,
+                        "fs": "ext4"
+
+                    },
+                    {
+                        "target": "swap",
+                        "size": 4096,
+                        "fill": False
+                    },
+                    {
+                        "target": "/",
+                        "fill": True,
+                        "fs": "ext4"
+
+                    }
+                ]
+            }]
+
+    def make_request_body(self):
+        return {
+            # 'hostname': self.hostname,
+            'hostname': 'test',
+            'operating_system_id': self.operating_system_id,
+            'ssh_keys': self.ssh_keys,
+            'drives': {
+                'layout': self.drives_layout,
+            }
+        }
+
+    def run(self):
+        if self.checkmode:
+            return {'changed': True}
+        result = self.api.make_post_request(
+            path=f'/hosts/dedicated_servers/{self.server_id}/reinstall',
+            body=self.make_request_body(),
+            query_parameters=None
+        )
+        raise ModuleError(str(result))
