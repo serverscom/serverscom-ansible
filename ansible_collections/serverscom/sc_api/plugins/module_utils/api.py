@@ -127,10 +127,10 @@ class Api():
         self.request.body = body
         return self.send_request(good_codes=[204])
 
-    def make_post_request(self, path, body, query_parameters):
+    def make_post_request(self, path, body, query_parameters, good_codes):
         self.start_request('POST', path, query_parameters)
         self.request.json = body
-        return self.decode(self.send_request(good_codes=[201]))
+        return self.decode(self.send_request(good_codes))
 
     def is_next(self):
         if self.request:
@@ -390,7 +390,8 @@ class ScSshKey(object):
                 body=None,
                 query_parameters={
                     'name': self.key_name, 'public_key': self.public_key
-                }
+                },
+                good_codes=[201]
             )
 
     def delete_keys(self, key_list):
@@ -564,6 +565,8 @@ class ScDedicatedServerReinstall(object):
         result = self.api.make_post_request(
             path=f'/hosts/dedicated_servers/{self.server_id}/reinstall',
             body=self.make_request_body(),
-            query_parameters=None
+            query_parameters=None,
+            good_codes=[202]
         )
-        raise ModuleError(str(result))
+        result['changed'] = True
+        return result

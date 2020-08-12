@@ -7,16 +7,8 @@
     msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
   when: not sc_endpoint or not sc_token
 
-- name: Debug info about server
-  sc_dedicated_server_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
-    name: '{{ existing_server_id }}'
-  register: info
 
-- debug: var=info
-
-- name: Test1, reinstall with all data present in wait mode.
+- name: Test1, reinstall with all data present in no-wait mode
   sc_dedicated_server_reinstall:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
@@ -24,11 +16,25 @@
     drives_layout_template: raid1-simple
     operating_system_id: 2
     hostname: ansible_module_reinstall
+    wait: 0
   register: test1
+
+- debug: var=test1
 
 - name: Check Test1
   assert:
     that:
       - test1 is changed
+      - test1.operational_status == 'installation'
+      - test1.id == existing_server_id
 
-- fail:
+# this is LONG
+- name: wait until installtion is done
+  sc_dedicated_server_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    name: '{{ existing_server_id }}'
+  register: info
+  until: info.ready == 1
+  delay: 60
+  retries: 60

@@ -179,8 +179,10 @@ options:
             - When server become 'ready' after reinstallation,
               it can still be in booting state for some time
               and do not answer ssh/ping request.
-              Use M(wait_for_connection) module to wait server
-              become available though ssh.
+              Use M(wait_for_connection) module to wait the server
+              to become available though ssh.
+            - Installation may start few minutes later than request,
+              during this time server is responding with 'old' ssh.
 
     update_interval:
         type: int
