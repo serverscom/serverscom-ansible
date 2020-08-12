@@ -2,6 +2,7 @@ from __future__ import (absolute_import, division, print_function)
 import hashlib
 from textwrap import wrap
 import base64
+import time
 
 __metaclass__ = type
 
@@ -18,6 +19,19 @@ class ModuleError(Exception):
     def fail(self):
         return {
             'failed': True,
+            'msg': self.msg
+        }
+
+
+class TimeOutError(ModuleError):
+    def __init__(self, msg, timeout):
+        self.msg = msg
+        self.timeout = timeout
+
+    def fail(self):
+        return {
+            'failed': True,
+            'timeout': self.timeout,
             'msg': self.msg
         }
 
@@ -461,6 +475,12 @@ class ScDedicatedServerReinstall(object):
         update_interval,
         checkmode
     ):
+        if wait:
+            if int(wait) < int(update_interval):
+                raise ModuleError(
+                    f"Update interval ({update_interval}) is longer "
+                    f"than wait time ({wait}"
+                )
         self.api = Api(token, endpoint)
         self.old_server_data = None
         self.server_id = server_id
@@ -559,6 +579,25 @@ class ScDedicatedServerReinstall(object):
             }
         }
 
+    def wait_for_server(self):
+        ready = False
+        start_time = time.time()
+        while not ready:
+            time.sleep(self.update_interval)
+            elapsed = time.time() - start_time
+            if elapsed > self.wait:
+                raise TimeOutError(
+                    msg="Server is not ready.",
+                    timeout=elapsed
+                )
+            server_info = self.api.make_get_request(
+                path=f'/hosts/dedicated_servers/{self.server_id}',
+                query_parameters=None
+            )
+            ready = ScDedicatedServerInfo._is_server_ready(server_info)
+        server_info['ready'] = True
+        return server_info
+
     def run(self):
         if self.checkmode:
             return {'changed': True}
@@ -568,5 +607,7 @@ class ScDedicatedServerReinstall(object):
             query_parameters=None,
             good_codes=[202]
         )
+        if self.wait:
+            result = self.wait_for_server()
         result['changed'] = True
         return result

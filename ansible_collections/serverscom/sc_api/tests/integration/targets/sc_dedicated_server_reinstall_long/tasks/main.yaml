@@ -8,7 +8,7 @@
   when: not sc_endpoint or not sc_token
 
 
-- name: Test1, reinstall with all data present in no-wait mode
+- name: Test1, successfull reinstall in no-wait mode
   sc_dedicated_server_reinstall:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
@@ -36,5 +36,56 @@
     name: '{{ existing_server_id }}'
   register: info
   until: info.ready == 1
-  delay: 60
-  retries: 60
+  delay: 30
+  retries: 180
+
+- name: Test2, reinstall with wait-mode with very short wait time
+  sc_dedicated_server_reinstall:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    id: '{{ existing_server_id }}'
+    drives_layout_template: raid1-simple
+    operating_system_id: 2
+    hostname: ansible_module_reinstall2
+    wait: 10
+    update_interval: 5
+  register: test2
+  failed_when: false
+
+- debug: var=test2
+
+- name: Check Test2
+  assert:
+    that:
+      - test2.timeout > 10
+      - "'Server is not ready' in test2.msg"
+
+# this is LONG
+- name: wait until installtion is done 2
+  sc_dedicated_server_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    name: '{{ existing_server_id }}'
+  register: info
+  until: info.ready == 1
+  delay: 30
+  retries: 180
+
+- name: Test3, reinstall with wait-mode
+  sc_dedicated_server_reinstall:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    id: '{{ existing_server_id }}'
+    drives_layout_template: raid1-simple
+    operating_system_id: 2
+    hostname: ansible_module_reinstall2
+    wait: 3600
+    update_interval: 300
+  register: test3
+
+- debug: var=test3
+
+- name: Check Test3
+  assert:
+    that:
+      - test3.ready
