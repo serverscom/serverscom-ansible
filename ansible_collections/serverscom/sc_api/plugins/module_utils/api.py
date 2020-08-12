@@ -205,8 +205,8 @@ class ApiMultipageGet(ApiSimpleGet):
         if not self.response_key:
             raise AssertionError("Class should have response_key defined.")
         return {
-            self.response_key: response,
-            'changed': 'False'
+            'changed': False,
+            self.response_key: response
         }
 
     def run(self):
@@ -254,6 +254,11 @@ class ScDedicatedServerInfo(object):
         module_output['ready'] = self._is_server_ready(server_info)
         module_output['changed'] = False
         return module_output
+
+
+class ScBaremetalServersInfo(ApiMultipageGet):
+    path = '/hosts'
+    response_key = 'baremetal_servers'
 
 
 class ScBaremetalLocationsInfo(object):
@@ -516,7 +521,12 @@ class ScDedicatedServerReinstall(object):
         if hostname:
             return hostname
         self.get_server_data()
-        return self.old_server_data['hostname']
+        if 'title' not in self.old_server_data:
+            raise ModuleError(
+                "Unable to retrive old title for the server. "
+                "use hostname option to specify the hostname for reinstall."
+            )
+        return self.old_server_data['title']
 
     def get_operating_system_id(self, operating_system_id):
         if operating_system_id:
@@ -540,40 +550,49 @@ class ScDedicatedServerReinstall(object):
 
     @staticmethod
     def get_drives_layout(layout, template):
+        partitions_template = [
+            {
+                "target": "/boot",
+                "size": 500,
+                "fill": False, "fs": "ext4"
+            },
+            {
+                "target": "swap",
+                "size": 4096,
+                "fill": False
+            },
+            {
+                "target": "/",
+                "fill": True,
+                "fs": "ext4"
+            }
+        ]
+        rai1_simple = [{
+            'slot_positions': [0, 1],
+            'raid': 1,
+            'partitions': partitions_template
+        }]
+        raid0_simple = [{
+            'slot_positions': [0],
+            'raid': 0,
+            'partitions': partitions_template
+        }]
+        templates = {
+            'raid1-simple': rai1_simple,
+            'raid0-simple': raid0_simple
+        }
         if layout:
             return layout
+        if template not in templates:
+            raise ModuleError("Invalid drives_layout_template.")
         else:
-            return [{
-                'slot_positions': [0, 1],
-                'raid': 1,
-                'partitions': [
-                    {
-                        "target": "/boot",
-                        "size": 500,
-                        "fill": False,
-                        "fs": "ext4"
-
-                    },
-                    {
-                        "target": "swap",
-                        "size": 4096,
-                        "fill": False
-                    },
-                    {
-                        "target": "/",
-                        "fill": True,
-                        "fs": "ext4"
-
-                    }
-                ]
-            }]
+            return templates[template]
 
     def make_request_body(self):
         return {
-            # 'hostname': self.hostname,
-            'hostname': 'test',
+            'hostname': self.hostname,
             'operating_system_id': self.operating_system_id,
-            'ssh_keys': self.ssh_keys,
+            'ssh_key_fingerprints': self.ssh_keys,
             'drives': {
                 'layout': self.drives_layout,
             }
@@ -582,6 +601,7 @@ class ScDedicatedServerReinstall(object):
     def wait_for_server(self):
         ready = False
         start_time = time.time()
+        elapsed = 0
         while not ready:
             time.sleep(self.update_interval)
             elapsed = time.time() - start_time
@@ -596,6 +616,7 @@ class ScDedicatedServerReinstall(object):
             )
             ready = ScDedicatedServerInfo._is_server_ready(server_info)
         server_info['ready'] = True
+        server_info['elapsed'] = elapsed
         return server_info
 
     def run(self):

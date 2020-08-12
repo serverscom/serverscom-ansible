@@ -14,8 +14,8 @@
     endpoint: '{{ sc_endpoint }}'
     id: '{{ existing_server_id }}'
     drives_layout_template: raid1-simple
-    operating_system_id: 2
-    hostname: ansible_module_reinstall
+    operating_system_id: 49
+    hostname: reinstall
     wait: 0
   register: test1
 
@@ -45,8 +45,8 @@
     endpoint: '{{ sc_endpoint }}'
     id: '{{ existing_server_id }}'
     drives_layout_template: raid1-simple
-    operating_system_id: 2
-    hostname: ansible_module_reinstall2
+    operating_system_id: 49
+    hostname: reinstall2
     wait: 10
     update_interval: 5
   register: test2
@@ -71,16 +71,17 @@
   delay: 30
   retries: 180
 
-- name: Test3, reinstall with wait-mode
+- name: Test3, reinstall with wait-mode with raid1-template
   sc_dedicated_server_reinstall:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     id: '{{ existing_server_id }}'
     drives_layout_template: raid1-simple
-    operating_system_id: 2
-    hostname: ansible_module_reinstall2
+    operating_system_id: 49
     wait: 3600
-    update_interval: 300
+    update_interval: 30
+    ssh_keys:
+      - f7:90:27:e6:97:5e:6d:ad:31:51:65:26:8d:82:ac:f9
   register: test3
 
 - debug: var=test3
@@ -89,3 +90,15 @@
   assert:
     that:
       - test3.ready
+
+- name: Test4, reinstall with raid0_tempalte
+  sc_dedicated_server_reinstall:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    id: '{{ existing_server_id }}'
+    drives_layout_template: raid0-simple
+    operating_system_id: 49
+    hostname: raid0test
+    ssh_key_name: amarao
+    wait: 3600
+    update_interval: 30

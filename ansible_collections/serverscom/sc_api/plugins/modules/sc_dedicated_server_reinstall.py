@@ -60,10 +60,10 @@ options:
         type: str
         choices: [raid1-simple, raid0-simple]
         description:
-            - Mutually exclusive with i(drives_layout).
-            - Provides a template to use instead of drives_layout
+            - Mutually exclusive with I(drives_layout).
+            - Provides a template to use instead of I(drives_layout).
             - C(raid1-simple) uses two first drives to create RAID1,
-              partition /boot (500Mb), swap (2Gb) and / (all other space).
+              partition /boot (500Mb), swap (4Gb) and / (all other space).
             - C(raid0-simple) uses first drive as raid0 (or no raid in case
               of servers without hardware raid), and places /boot, swap
               and / on this drive.

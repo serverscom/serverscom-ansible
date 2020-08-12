@@ -83,7 +83,7 @@
   assert:
     that:
       - test5 is success
-      - test5.id == 'GmyMB8m0'
+      - test5.id == 'ApOr4a1O'
       - test5.configuration|length > 0
       - test5.configuration_details|length > 0
       - test5.found
