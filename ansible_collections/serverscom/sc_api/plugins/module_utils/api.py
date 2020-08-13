@@ -646,6 +646,19 @@ class ScCloudComputingFlavorsInfo(ApiMultipageGet):
         return f'/cloud_computing/regions/{self.region_id}/flavors'
 
 
+class ScCloudComputingInstancesInfo(ApiMultipageGet):
+
+    response_key = 'cloud_instances'
+    path = '/cloud_computing/instances'
+
+    def __init__(self, token, endpoint, region_id):
+        self.api = Api(token, endpoint)
+        if region_id:
+            self.query_parameters = {
+                'region_id': region_id
+            }
+
+
 class ScCloudComputingOpenstackCredentials(ApiSimpleGet):
 
     def __init__(self, token, endpoint, region_id):

@@ -1,0 +1,63 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+  when: not sc_endpoint or not sc_token
+
+- name: Test invalid token
+  sc_cloud_computing_instances_info:
+    token: invalid
+    endpoint: '{{ sc_endpoint }}'
+    region_id: 424242
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 401
+
+- name: Test2, List for non-existing region
+  sc_cloud_computing_instances_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    region_id: 42424242
+  register: test2
+
+- name: Check Test2
+  assert:
+    that:
+      - test2 is not changed
+      - test2.cloud_instances == []
+
+- name: Test3, Get all instances in one region
+  sc_cloud_computing_instances_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    region_id: 1
+  register: test3
+
+- name: Check Test3
+  assert:
+    that:
+      - test3 is not changed
+      - test3.cloud_instances|length > 0
+      - test3.cloud_instances[0].id
+      - test3.cloud_instances[0].region_id == 1
+      - test3.cloud_instances[0].region_code
+      - test3.cloud_instances[0].flavor_id
+      - test3.cloud_instances[0].flavor_name
+      - test3.cloud_instances[0].image_id
+      - test3.cloud_instances[0].name
+      - test3.cloud_instances[0].status
+
+- name: Test4, Get all instances in all regions
+  sc_cloud_computing_instances_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+  register: test4
+
+- name: Check Test4
+  assert:
+    that:
+      - test4 is not changed
+      - test4.cloud_instances|length > 0
