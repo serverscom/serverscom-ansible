@@ -659,6 +659,12 @@ class ScCloudComputingInstancesInfo(ApiMultipageGet):
             }
 
 
+class ScCloudComputingInstanceInfo(ApiSimpleGet):
+    def __init__(self, token, endpoint, instance_id):
+        self.api = Api(token, endpoint)
+        self.path = f'/cloud_computing/instances/{instance_id}'
+
+
 class ScCloudComputingOpenstackCredentials(ApiSimpleGet):
 
     def __init__(self, token, endpoint, region_id):

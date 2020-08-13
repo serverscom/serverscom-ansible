@@ -20,7 +20,7 @@ DOCUMENTATION = """
 module: sc_cloud_computing_instances_info
 version_added: "2.10"
 author: "George Shuklin (@amarao)"
-short_description: List of available flavors
+short_description: List of cloud computing instances
 description: >
     Return list of all instances in a given region
 
