@@ -634,7 +634,7 @@ class ScDedicatedServerReinstall(object):
         return result
 
 
-class ScCloudComputingFlavorsInfo   (ApiMultipageGet):
+class ScCloudComputingFlavorsInfo(ApiMultipageGet):
 
     response_key = 'cloud_flavors'
 
@@ -644,3 +644,13 @@ class ScCloudComputingFlavorsInfo   (ApiMultipageGet):
 
     def build_path(self):
         return f'/cloud_computing/regions/{self.region_id}/flavors'
+
+
+class ScCloudComputingOpenstackCredentials(ApiSimpleGet):
+
+    def __init__(self, token, endpoint, region_id):
+        self.api = Api(token, endpoint)
+        self.region_id = region_id
+
+    def build_path(self):
+        return f'/cloud_computing/regions/{self.region_id}/credentials'

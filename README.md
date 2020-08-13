@@ -51,3 +51,4 @@ List of modules
 * `sc_ssh_key` - SSH key management.
 * `sc_ssh_keys_info` - List of registered SSH keys.
 * `sc_cloud_computing_flavors_info` - List of flavors in a given region
+* `sc_cloud_computing_openstack_credentials` - Credentials to Openstack API
