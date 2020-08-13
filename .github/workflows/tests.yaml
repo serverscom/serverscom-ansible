@@ -85,5 +85,19 @@ jobs:
         if: ${{ endsWith(github.ref, steps.version.outputs.version) }}
         uses: actions/upload-artifact@v2
         with:
-          name: collection
+          name: sc_api
           path: ansible_collections/serverscom/sc_api/serverscom-sc_api-${{ steps.version.outputs.version }}.tar.gz
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ endsWith(github.ref, needs.build.outputs.version) }}
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: sc_api
+      - name: Debug output
+        run: ls -la serverscom-sc_api-${{needs.build.outputs.version }}.tar.gz
+      - name: Upload collection to galaxy
+        run: ansible-galaxy collection publish serverscom-sc_api-${{ needs.build.outputs.version }}.tar.gz --api-key="${{ secrets.GALAXY_API_TOKEN }}"
