@@ -50,4 +50,4 @@ List of modules
 * `sc_dedicated_server_reinstall` - Reinstallation of a dedicated server
 * `sc_ssh_key` - SSH key management.
 * `sc_ssh_keys_info` - List of registered SSH keys.
-
+* `sc_cloud_computing_flavors_info` - List of flavors in a given region

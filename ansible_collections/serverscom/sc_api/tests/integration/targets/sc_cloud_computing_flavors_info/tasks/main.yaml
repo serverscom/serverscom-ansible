@@ -1,0 +1,59 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+  when: not sc_endpoint or not sc_token
+
+- name: Test invalid token
+  sc_cloud_computing_flavors_info:
+    token: invalid
+    endpoint: '{{ sc_endpoint }}'
+    region_id: 424242
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 401
+
+- name: Test2, List for non-existing region
+  sc_cloud_computing_flavors_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    region_id: 424242
+  register: test2
+  failed_when: test2.status_code!=404
+
+- debug: var=test2
+- name: Check Test2
+  assert:
+    that:
+      - test2 is not changed
+      - "'v1/cloud_computing/regions/424242/flavors' in test2.api_url"
+      - test2.status_code == 404
+
+- name: Test3, Get all regions
+  sc_cloud_computing_regions_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+  register: reg_info
+
+- name: Test3, Get all flavors from all regions
+  sc_cloud_computing_flavors_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    region_id: '{{ item.id }}'
+  register: test3
+  loop: '{{ reg_info.regions }}'
+
+# - debug: var=test3
+- name: Check Test3
+  assert:
+    that:
+      - test3.results[0] is not changed
+      - test3.results[0].cloud_flavors|length > 0
+      - test3.results[0].cloud_flavors[0].id
+      - test3.results[0].cloud_flavors[0].disk > 0
+      - test3.results[0].cloud_flavors[0].name
+      - test3.results[0].cloud_flavors[0].ram > 0
+      - test3.results[0].cloud_flavors[0].vcpus > 0

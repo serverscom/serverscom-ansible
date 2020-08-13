@@ -632,3 +632,15 @@ class ScDedicatedServerReinstall(object):
             result = self.wait_for_server()
         result['changed'] = True
         return result
+
+
+class ScCloudComputingFlavorsInfo   (ApiMultipageGet):
+
+    response_key = 'cloud_flavors'
+
+    def __init__(self, token, endpoint, region_id):
+        self.api = Api(token, endpoint)
+        self.region_id = region_id
+
+    def build_path(self):
+        return f'/cloud_computing/regions/{self.region_id}/flavors'
