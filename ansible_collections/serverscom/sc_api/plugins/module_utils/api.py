@@ -206,12 +206,12 @@ class ApiMultipageGet(ApiSimpleGet):
             raise AssertionError("Class should have response_key defined.")
         return {
             'changed': False,
-            self.response_key: response
+            self.response_key: list(response)
         }
 
     def run(self):
         return self.process_response(
-            self.api.make_get_request(
+            self.api.make_multipage_request(
                 self.build_path(),
                 self.build_query_parameters()
             )
@@ -673,3 +673,84 @@ class ScCloudComputingOpenstackCredentials(ApiSimpleGet):
 
     def build_path(self):
         return f'/cloud_computing/regions/{self.region_id}/credentials'
+
+
+class ScCloudComputingInstanceReinstall(object):
+    def __init__(
+        self,
+        endpoint,
+        token,
+        instance_id,
+        image_id,
+        wait_for_active,
+        wait_for_rebuilding,
+        update_interval,
+        checkmode
+    ):
+        if not wait_for_rebuilding and wait_for_active:
+            raise ModuleError(
+                f'Unsupported mode: wait_for_rebuilding={wait_for_rebuilding} '
+                f'and wait_for_active={wait_for_active}.'
+            )
+        self.api = Api(token, endpoint)
+        self.instance_id = instance_id
+        self.image_id = self.get_image_id(image_id)
+        self.wait_for_active = wait_for_active
+        self.wait_for_rebuilding = wait_for_rebuilding
+        self.update_interval = update_interval
+        self.checkmode = checkmode
+
+    def get_instance(self):
+        return self.api.make_get_request(
+            path=f'/cloud_computing/instances/{self.instance_id}',
+            query_parameters=None
+        )
+
+    def get_image_id(self, image_id):
+        if image_id:
+            return image_id
+        old_image_id = self.get_instance().get('image_id')
+        if not old_image_id:
+            raise ModuleError(
+                "Can't find old image id of instance. "
+                "Use image_id option."
+            )
+        return old_image_id
+
+    def wait_for(self, desired_status, timeout):
+        if not timeout:
+            return {}
+        start_time = time.time()
+        elapsed = 0
+        while elapsed < timeout:
+            time.sleep(timeout)
+            elapsed = time.time() - start_time
+            instance = self.get_instance()
+            status = instance.get('status')
+            if not status:
+                ModuleError("Status is not defined in API answer.")
+            if status == desired_status:
+                return instance
+        raise TimeOutError(
+            f'Timeout waiting for {desired_status}, '
+            f'last status was {status}',
+            timeout=timeout
+        )
+
+    def run(self):
+        if self.checkmode:
+            instance = self.get_instance()
+            instance['changed'] = True
+            return instance
+        instance = self.api.make_post_request(
+            path=f'/cloud_computing/instances/{self.instance_id}/reinstall',
+            body=None,
+            query_parameters={
+                'image_id': self.image_id
+            },
+            good_codes=[202]
+        )
+        instance = self.wait_for('REBUILDING', self.wait_for_rebuilding)
+        instance = self.wait_for('ACTIVE', self.wait_for_active)
+        instance['changed'] = True
+        return instance
