@@ -646,6 +646,18 @@ class ScCloudComputingFlavorsInfo(ApiMultipageGet):
         return f'/cloud_computing/regions/{self.region_id}/flavors'
 
 
+class ScCloudComputingImagesInfo(ApiMultipageGet):
+
+    response_key = 'cloud_images'
+
+    def __init__(self, token, endpoint, region_id):
+        self.api = Api(token, endpoint)
+        self.region_id = region_id
+
+    def build_path(self):
+        return f'/cloud_computing/regions/{self.region_id}/images'
+
+
 class ScCloudComputingInstancesInfo(ApiMultipageGet):
 
     response_key = 'cloud_instances'
@@ -754,3 +766,24 @@ class ScCloudComputingInstanceReinstall(object):
         instance = self.wait_for('ACTIVE', self.wait_for_active)
         instance['changed'] = True
         return instance
+
+
+class ScCloudComputingInstanceCreate(object):
+    def __init__(
+        self,
+        endpoint,
+        token,
+        region_id,
+        name,
+        image_id,
+        flavor_id,
+        gpn_enabled,
+        ipv6_enabled,
+        ssh_key_fingerprint,
+        ssh_key_name,
+        backup_copies,
+        wait,
+        update_interval,
+        checkmode
+    ):
+    pass
