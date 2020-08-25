@@ -17,12 +17,12 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 
 DOCUMENTATION = """
 ---
-module: sc_cloud_computing_instance_create
+module: sc_cloud_computing_instance
 version_added: "2.10"
 author: "George Shuklin (@amarao)"
-short_description: Create a new cloud computing instance
+short_description: Create or delete a cloud computing instance
 description: >
-    Create a new cloud computing instance.
+    Allow to declare cloud computing instances as presend or absent.
 
 options:
     endpoint:
@@ -40,24 +40,40 @@ options:
         - You can create token for you account in https://portal.servers.com
           in Profile -> Public API section.
 
+    state:
+      type: str
+      choices: [absent, present]
+      required: true
+      description:
+        - State of instance.
+        - C(present) requires additional information for creation.
+        - C(absent) requires either C(id) or C(name).
+        - If I(state)=C(absent) with C(name) and there are multiple instances
+          with the same name, module fails.
+
     region_id:
       type: int
-      required: true
       description:
         - Id of the cloud region for the instance
         - Use M(sc_cloud_computing_regions_info) to get list of available
           regions.
+        - Required for I(state)=C(present).
+        - May be used for I(state)=C(absent) to narrow search to one region.
+
     name:
       type: str
-      required: true
       description:
         - Name of the instance.
         - Will be used as hostname for the new instance.
+        - Required for I(state)=C(present).
+        - May be used for I(state)=C(absent) instead of I(id).
 
     image_id:
       type: str
       description:
         - Id of the image or snapshot to build instance from.
+        - Required for I(state)=C(present).
+        - Ignored for I(state)=C(absent).
 
     flavor_id:
       type: str
@@ -65,6 +81,8 @@ options:
         - Id of the flavor to use.
         - Some flavors may be needed for certain images.
         - Different flavors have different mothly price.
+        - Required for I(state)=C(present).
+        - Ignored for I(state)=C(absent).
 
     gpn_enabled:
         type: bool
@@ -73,6 +91,8 @@ options:
           - Enable Global Private network for the instance.
           - Local Private network is always allocated for instances regardless
             of Global Private network status.
+          - Is used only for for I(state)=C(present).
+          - Ignored for I(state)=C(absent).
 
     ipv6_enabled:
         type: bool
@@ -80,6 +100,8 @@ options:
         description:
           - Enable IPv6.
           - Currently enable IPv6 only on public (internet) interface.
+          - Is used only for for I(state)=C(present).
+          - Ignored for I(state)=C(absent).
 
     ssh_key_fingerprint:
         type: str
@@ -90,6 +112,8 @@ options:
           - Mutually exclusive with I(ssh_key_name)
           - Instance is created with password if no I(ssh_key_fingerprint)
             or I(ssh_key_name) is used.
+          - Is used only for for I(state)=C(present).
+          - Ignored for I(state)=C(absent).
 
     ssh_key_name:
         type: str
@@ -99,6 +123,8 @@ options:
           - Mutually exclusive with I(ssh_key_fingerprint)
           - Instance is created with password if no I(ssh_key_fingerprint)
             or I(ssh_key_name) is used.
+          - Is used only for for I(state)=C(present).
+          - Ignored for I(state)=C(absent).
 
     backup_copies:
         type: int
@@ -106,14 +132,18 @@ options:
         description:
           - Number of daily backups to keep.
           - Value C(0) disables daily backups.
+          - Is used only for for I(state)=C(present).
+          - Ignored for I(state)=C(absent).
 
     wait:
       type: int
       required: false
       default: 600
       description:
-        - Time to wait until instance become ACTIVE.
-        - Value C(0) is used to disable wait for ACTIVE state.
+        - Time to wait until instance get to the desired state.
+        - I(state)=C(present) waits for ACTIVE.
+        - I(state)=C(absent) waits for instance to disappear.
+        - Value C(0) is used to disable wait.
         - If C(0) is set, module works in 'fire-and-forget' mode.
         - ACTIVE state doesn't mean that instance is ready to accept ssh
           connections. Use M(wait_for_connection) module wait until instance
@@ -253,25 +283,23 @@ status_code:
 """
 
 EXAMPLES = """
-- name: List all flavors
-  sc_cloud_computing_instance_info:
+- name: Delete instance by ID
+  sc_cloud_computing_instance:
     token: '{{ sc_token }}'
     instance_id: M7e5Ba2v
-  register: instance
+    state: absent
+    wait: 60
+    update_interval: 5
 
-- name: Print information about instance
-  debug:
-    msg: |
-      Instance {{ instance.name }} has IP {{ instance.public_ipv4_address }}
-
-- name: Waiting for instance to become ACTIVE
-  sc_cloud_computing_instance_info:
+- name: Delete instance by name in region 3
+  sc_cloud_computing_instance:
     token: '{{ sc_token }}'
-    instance_id: M7e5Ba2v
-  register: instance
-  until: instance.status == 'ACTIVE'
-  delay: 10
-  retries: 30
+    name: test
+    region_id: 3
+    state: absent
+    wait: 60
+    update_interval: 5
+
 """
 
 
@@ -288,22 +316,34 @@ __metaclass__ = type
 def main():
     module = AnsibleModule(
         argument_spec={
-            'token': {'type': 'str', 'no_log': True, 'required': True},
+            'token': {'no_log': True, 'required': True},
             'endpoint': {'default': DEFAULT_API_ENDPOINT},
-            'region_id': {'type': 'int', 'required': True},
-            'name': {'type': 'str', 'required': True},
-            'image_id': {'type': 'str', 'required': True},
-            'flavor_id': {'type': 'str', 'required': True},
+            'state': {
+                'type': 'str',
+                'choices': ['present', 'absent'],
+                'required': True
+            },
+            'id': {},
+            'region_id': {'type': 'int'},
+            'name': {},
+            'image_id': {},
+            'flavor_id': {},
             'gpn_enabled': {'type': 'bool', 'default': False},
             'ipv6_enabled': {'type': 'bool', 'default': False},
-            'ssh_key_fingerprint': {'type': 'str'},
-            'ssh_key_name': {'type': 'str'},
+            'ssh_key_fingerprint': {},
+            'ssh_key_name': {},
             'backup_copies': {'type': 'int', 'default': 5},
             'wait': {'type': 'int', 'default': 600},
             'update_interval': {'type': 'int', 'default': 5},
         },
         mutually_exclusive=[
             ['ssh_key_name', 'ssh_key_fingerprint'],
+        ],
+        required_if=[
+            [
+                "state", "present",
+                ["region_id", "image_id", "flavor_id"]
+            ]
         ],
         supports_check_mode=True
     )
