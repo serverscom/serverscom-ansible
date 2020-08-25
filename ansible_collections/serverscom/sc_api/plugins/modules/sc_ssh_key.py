@@ -130,7 +130,11 @@ def main():
         argument_spec={
             'token': {'type': 'str', 'no_log': True, 'required': True},
             'endpoint': {'default': DEFAULT_API_ENDPOINT},
-            'state': {'type': 'str', 'choices': ['present', 'absent']},
+            'state': {
+                'type': 'str',
+                'choices': ['present', 'absent'],
+                'required': True
+            },
             'name': {},
             'public_key': {},
             'fingerprint': {},

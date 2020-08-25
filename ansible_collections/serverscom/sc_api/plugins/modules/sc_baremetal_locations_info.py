@@ -32,12 +32,12 @@ options:
 
     required_features:
         type: list
+        elements: str
         description:
             - Filter locations based on features.
             - Seach both top-level features and supported_features.
             - If more than one element specified, search for all of them
               ('and' operation).
-        elements: str
 
     endpoint:
       type: str
@@ -136,7 +136,7 @@ def main():
             'search_pattern': {'type': 'str'},
             'token': {'type': 'str', 'no_log': True, 'required': True},
             'endpoint': {'default': DEFAULT_API_ENDPOINT},
-            'required_features': {'type': 'list'},
+            'required_features': {'type': 'list', 'elements': 'str'},
         },
         supports_check_mode=True
     )

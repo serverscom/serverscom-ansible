@@ -51,6 +51,12 @@ options:
         - If I(state)=C(absent) with C(name) and there are multiple instances
           with the same name, module fails.
 
+    instance_id:
+      type: str
+      description:
+        - ID of the instance for I(state)=C(absent).
+        - Ignored for I(state)=C(present).
+
     region_id:
       type: int
       description:
@@ -323,7 +329,7 @@ def main():
                 'choices': ['present', 'absent'],
                 'required': True
             },
-            'id': {},
+            'instance_id': {},
             'region_id': {'type': 'int'},
             'name': {},
             'image_id': {},

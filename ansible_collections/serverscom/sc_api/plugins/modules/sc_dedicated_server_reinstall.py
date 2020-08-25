@@ -71,7 +71,6 @@ options:
               for drives['layout'] request to API based on built-in template).
 
     drives_layout:
-      required: true
       type: list
       elements: dict
       description:
@@ -232,9 +231,12 @@ def main():
                 'type': 'str',
                 'choices': ['raid1-simple', 'raid0-simple']
             },
-            'drives_layout': {'type': 'list'},
+            'drives_layout': {
+                'type': 'list',
+                'elements': 'dict'
+            },
             'operating_system_id': {'type': 'int'},
-            'ssh_keys': {'type': 'list'},
+            'ssh_keys': {'type': 'list', 'elements': 'str'},
             'ssh_key_name': {'type': 'str'},
             'wait': {'type': 'int', 'default': 86400},
             'update_interval': {'type': 'int', 'default': 60},
