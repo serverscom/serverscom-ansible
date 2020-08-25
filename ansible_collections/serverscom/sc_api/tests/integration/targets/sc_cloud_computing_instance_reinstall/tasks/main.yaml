@@ -17,8 +17,8 @@
     - test1.status_code != 401
 
 - sc_cloud_computing_instances_info:
-      token: '{{ sc_token }}'
-      endpoint: '{{ sc_endpoint }}'
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
   register: info
 - debug: var=info
 

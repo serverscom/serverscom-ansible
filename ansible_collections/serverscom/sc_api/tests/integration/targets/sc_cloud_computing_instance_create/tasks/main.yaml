@@ -20,11 +20,11 @@
 
 - name: Test2, Install for invalid region
   sc_cloud_computing_instance_create:
-      token: '{{ sc_token }}'
-      endpoint: '{{ sc_endpoint }}'
-      region_id: 42424242
-      image_id: 'no-no-no'
-      name: 'no-no-no'
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    region_id: 42424242
+    image_id: 'no-no-no'
+    name: 'no-no-no'
   register: test2
   failed_when: false
 
