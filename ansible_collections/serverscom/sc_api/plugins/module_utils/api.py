@@ -66,7 +66,8 @@ class APIError404(APIError):
 
 class Api():
     def __init__(self, token, endpoint=DEFAULT_API_ENDPOINT):
-        # pylint: disable=import-outside-toplevel, raise-missing-from
+        # pylint: disable=bad-option-value, import-outside-toplevel
+        # pylint: disable=bad-option-value, raise-missing-from
         try:
             import requests  # noqa
             self.requests = requests
@@ -122,7 +123,7 @@ class Api():
         return response
 
     def decode(self, response):
-        # pylint: disable=raise-missing-from
+        # pylint: disable=bad-option-value, raise-missing-from
         try:
             decoded = response.json()
         except ValueError as e:
