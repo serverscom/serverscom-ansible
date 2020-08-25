@@ -18,7 +18,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = """
 ---
 module: sc_ssh_keys_info
-version_added: "2.10"
+version_added: "1.0.0"
 author: "George Shuklin (@amarao)"
 short_description: Return all registered ssh public keys.
 description: >

@@ -18,7 +18,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = """
 ---
 module: sc_cloud_computing_instances_info
-version_added: "2.10"
+version_added: "1.0.0"
 author: "George Shuklin (@amarao)"
 short_description: List of cloud computing instances
 description: >

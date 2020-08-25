@@ -18,7 +18,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = """
 ---
 module: sc_cloud_computing_instance_reinstall
-version_added: "2.10"
+version_added: "1.0.0"
 author: "George Shuklin (@amarao)"
 short_description: Reinstall cloud computing instance
 description: >
@@ -70,7 +70,7 @@ options:
       default: 300
       description:
         - Time to wait until instance become ACTIVE again.
-        - Value C(0) is used to disable wait for ACTIVE state.
+        - Value C(0) is used to disable wait for ACTIVE status.
         - Does not affect rebuild wait time.
         - If instance is not become active in I(wait) seconds, module fails.
 
@@ -79,7 +79,7 @@ options:
       required: false
       default: 60
       description:
-        - Time to wait for instance switch to REBUILDING state.
+        - Time to wait for instance switch to REBUILDING status.
         - Value C(0) is used to disable wait for REBUILDING state.
         - I(wait_for_rebuilding)=C(0) and non-zero I(wait_for_active)
           is not supported.

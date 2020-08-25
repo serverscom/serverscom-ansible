@@ -66,11 +66,12 @@ class APIError404(APIError):
 
 class Api():
     def __init__(self, token, endpoint=DEFAULT_API_ENDPOINT):
+        # pylint: disable=import-outside-toplevel, raise-missing-from
         try:
-            import requests
+            import requests  # noqa
             self.requests = requests
         except ImportError:
-            raise ModuleError(
+            raise ModuleError(  # noqa
                 msg='This module needs requests library (python3-requests).')
         self.session = requests.Session()
         self.request = None
@@ -121,6 +122,7 @@ class Api():
         return response
 
     def decode(self, response):
+        # pylint: disable=raise-missing-from
         try:
             decoded = response.json()
         except ValueError as e:
@@ -773,6 +775,7 @@ class ScCloudComputingInstanceCreate(object):
         self,
         endpoint,
         token,
+        instance_id,
         region_id,
         name,
         image_id,
@@ -786,4 +789,4 @@ class ScCloudComputingInstanceCreate(object):
         update_interval,
         checkmode
     ):
-    pass
+        self.api = Api(token, endpoint)

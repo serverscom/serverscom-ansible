@@ -17,7 +17,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
 DOCUMENTATION = """
 ---
 module: sc_baremetal_servers_info
-version_added: "2.10"
+version_added: "1.1.0"
 author: "George Shuklin (@amarao)"
 short_description: Information about existing dedicated servers
 description: >
