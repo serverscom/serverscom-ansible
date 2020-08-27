@@ -920,6 +920,7 @@ class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
         endpoint, token,
         instance_id, region_id, name,
         wait, update_interval,
+        retry_on_conficts,
         checkmode
     ):
         self.checkmode = checkmode
@@ -927,6 +928,7 @@ class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
         self.region_id = region_id
         self.name = name
         self.instance_id = instance_id
+        self.retry_on_conflicts = retry_on_conficts
 
     def wait_for_disappearance(self, instance_id):
         start_time = time.time()
