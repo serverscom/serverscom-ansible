@@ -64,6 +64,10 @@ class APIError404(APIError):
     pass
 
 
+class APIError409(APIError):
+    pass
+
+
 class Api():
     def __init__(self, token, endpoint=DEFAULT_API_ENDPOINT):
         # pylint: disable=bad-option-value, import-outside-toplevel
@@ -113,7 +117,12 @@ class Api():
                 api_url=response.url,
                 msg='404 Not Found.',
             )
-
+        if response.status_code == 409:
+            raise APIError409(
+                status_code=response.status_code,
+                api_url=response.url,
+                msg='409 Conflict. ' + str(response.content),
+            )
         if response.status_code not in good_codes:
             raise APIError(
                 status_code=response.status_code,
@@ -139,10 +148,10 @@ class Api():
         self.start_request('GET', path, query_parameters)
         return self.decode(self.send_request(good_codes=[200]))
 
-    def make_delete_request(self, path, body, query_parameters):
+    def make_delete_request(self, path, body, query_parameters, good_codes):
         self.start_request('DELETE', path, query_parameters)
         self.request.body = body
-        return self.send_request(good_codes=[204])
+        return self.send_request(good_codes)
 
     def make_post_request(self, path, body, query_parameters, good_codes):
         self.start_request('POST', path, query_parameters)
@@ -422,7 +431,8 @@ class ScSshKey(object):
                 self.api.make_delete_request(
                     path=f'/ssh_keys/{key["fingerprint"]}',
                     body=None,
-                    query_parameters=None
+                    query_parameters=None,
+                    good_codes=[204]
                 )
 
     def state_absent(self):
@@ -771,23 +781,200 @@ class ScCloudComputingInstanceReinstall(object):
         return instance
 
 
-class ScCloudComputingInstanceCreate(object):
+class ScCloudComputingInstance(object):
+    """Common methods for ScCloudComputingInstanceCreate and
+       ScCloudComputingInstanceDelete.
+    """
+
+    def region_query(self):
+        if self.region_id:
+            return {'region_id': self.region_id}
+        else:
+            return {}
+
+    def find_instance_by_name(self, name):
+        instances = self.api.make_multipage_request(
+            path='/cloud_computing/instances',
+            query_parameters=self.region_query()
+        )
+        found = []
+        for instance in instances:
+            if instance['name'] == name:
+                found.append(instance)
+        if len(found) > 1:
+            raise ModuleError(
+                f'Multiple instances found with name {name}'
+            )
+        if len(found) == 0:
+            return None
+        return found[0]
+
+    def find_instance_by_id(self, instance_id):
+        try:
+            return self.api.make_get_request(
+                path=f'/cloud_computing/instances/{instance_id}',
+                query_parameters=None
+            )
+        except APIError404:
+            return None
+
+    def find_instance(self):
+        if self.instance_id:
+            return self.find_instance_by_id(self.instance_id)
+        if self.name:
+            return self.find_instance_by_name(self.name)
+        raise ModuleError("No instance_id or name was specified")
+
+    def wait_for_status(self, status):
+        pass
+
+
+class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
     def __init__(
         self,
-        endpoint,
-        token,
-        instance_id,
-        region_id,
-        name,
-        image_id,
-        flavor_id,
-        gpn_enabled,
-        ipv6_enabled,
-        ssh_key_fingerprint,
-        ssh_key_name,
+        endpoint, token,
+        region_id, name, image_id, flavor_id,
+        gpn_enabled, ipv6_enabled,
+        ssh_key_fingerprint, ssh_key_name,
         backup_copies,
-        wait,
-        update_interval,
+        wait, update_interval,
         checkmode
     ):
+        self.checkmode = checkmode
         self.api = Api(token, endpoint)
+        if region_id is None:
+            raise ModuleError("region_id is mandatory for state=present.")
+        self.region_id = region_id
+        if not name:
+            raise ModuleError("Name is mandatory for state=present.")
+        self.name = name
+        self.instance_id = None
+        # NAME ?
+        self.flavor_id = flavor_id
+        # NAME ?
+        self.image_id = image_id
+        self.gpn_enabled = gpn_enabled
+        self.ipv6_enabled = ipv6_enabled
+        self.ssh_key_fingerprint = self.get_ssh_key_fingerprint(
+            ssh_key_fingerprint,
+            ssh_key_name
+        )
+        self.backup_copies = backup_copies
+        self.wait = wait
+        self.update_interval = update_interval
+        self.checkmode = checkmode
+
+    def get_ssh_key_fingerprint(self, ssh_key_fingerprint, ssh_key_name):
+        if ssh_key_fingerprint:
+            return ssh_key_fingerprint
+        if ssh_key_name:
+            ssh_keys = self.api.make_multipage_request(
+                path='/ssh_keys',
+                query_parameters=None
+            )
+            for key in ssh_keys:
+                if key['name'] == ssh_key_name:
+                    return key['fingerprint']
+            raise ModuleError(f"Unable to find ssh key {ssh_key_name}")
+        return None
+
+    def create_instance(self):
+        body = {
+            'region_id': self.region_id,
+            'name': self.name,
+            'flavor_id': self.flavor_id,
+            'image_id': self.image_id,
+            'gpn_enabled': bool(self.gpn_enabled),
+            'ipv6_enabled': bool(self.ipv6_enabled),
+        }
+        if self.ssh_key_fingerprint:
+            body['ssh_key_fingerprint'] = self.ssh_key_fingerprint
+        if self.backup_copies:
+            body['backup_copies'] = self.backup_copies
+        instance = self.api.make_post_request(
+            path='/cloud_computing/instances',
+            body=body,
+            query_parameters=None,
+            good_codes=[202]
+        )
+        return instance
+
+    def wait_for(self, instance):
+        return instance
+
+    def run(self):
+        if self.find_instance():
+            return {'changed': CHANGED}
+        if not self.checkmode:
+            instance = self.create_instance()
+            instance = self.wait_for(instance)
+        else:
+            instance = {}
+        instance['changed'] = True
+        return instance
+
+
+class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
+    def __init__(
+        self,
+        endpoint, token,
+        instance_id, region_id, name,
+        wait, update_interval,
+        checkmode
+    ):
+        self.checkmode = checkmode
+        self.api = Api(token, endpoint)
+        self.region_id = region_id
+        self.name = name
+        self.instance_id = instance_id
+
+    def wait_for_disappearance(self, instance_id):
+        start_time = time.time()
+        instance = self.find_instance_by_id(instance_id)
+        while (instance):
+            time.sleep(self.update_interval)
+            elapsed = time.time() - start_time
+            if elapsed > self.wait:
+                raise TimeOutError(
+                    msg=f"Timeout while waiting instance {instance_id}"
+                    f" to disappear. Last status was {instance['status']}",
+                    timeout=elapsed
+                )
+        return instance
+
+    def delete_instance(self):
+        # pylint: disable=bad-option-value, raise-missing-from
+        start_time = time.time()
+        instance = self.find_instance()
+        if not instance:
+            return NOT_CHANGED
+        instance_id = instance['id']
+        while instance:
+            if self.checkmode:
+                return CHANGED
+            try:
+                self.api.make_delete_request(
+                    path=f'/cloud_computing/instances/{instance_id}',
+                    query_parameters=None,
+                    body=None,
+                    good_codes=[202]
+                )
+            except APIError409:
+                if not self.retry_on_conficts:
+                    raise
+                else:
+                    elapsed = time.time() - start_time
+                    if elapsed > self.wait:
+                        raise TimeOutError(
+                            msg=f"Timeout retrying delete for"
+                                f" instance {instance_id}",
+                            timeout=elapsed
+                        )
+                    time.sleep(self.update_interval)
+            self.wait_for_disappearance(instance_id)
+        return CHANGED
+
+    def run(self):
+        return {
+            'changed': self.delete_instance()
+        }

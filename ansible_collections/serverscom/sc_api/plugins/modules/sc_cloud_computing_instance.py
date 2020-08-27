@@ -137,6 +137,7 @@ options:
         default: 5
         description:
           - Number of daily backups to keep.
+          - Default value (if not specified) is 5.
           - Value C(0) disables daily backups.
           - Is used only for for I(state)=C(present).
           - Ignored for I(state)=C(absent).
@@ -154,6 +155,10 @@ options:
         - ACTIVE state doesn't mean that instance is ready to accept ssh
           connections. Use M(wait_for_connection) module wait until instance
           finishes booting.
+        - wait time is independent for I(retry_on_conflicts) and status wait.
+        - If instance is in conflicting state, first module will retry up to
+          I(wait) seconds to delete it, and then wait for I(wait) seconds for
+          it do disappear.
 
     update_interval:
       type: int
@@ -162,6 +167,14 @@ options:
       description:
         - Polling interval for waiting.
         - Every polling request is reducing API ratelimits.
+
+    retry_on_conficts:
+      type: bool
+      default: True
+      description:
+        - Retry delete requiest for I(state)=C(absent) if instance
+          is in conflicting state (code 409).
+        - Retries are controlled by wait/update_interval values.
 """
 
 RETURN = """
@@ -224,7 +237,7 @@ status:
     - CREATING, BUILDING, REBUILDING, PROVISIONING, DELETING and DELETED
       stages of lifecycle.
     - AWAITING_UPGRADE_CONFIRM - instance is waiting for confirm
-      (instances are autoconfirm in 24hr.)
+      (instances are autoconfirm in 72hr.)
     - UPGRADING, REVERTING_UPGRADE - stages of upgrade lifecycle.
     - CREATING_SNAPSHOT - Instance snapshot is creating.
     - BUSY - Instance is not available for API operations.
@@ -254,12 +267,12 @@ private_ipv4_address:
     - IPv4 address for instance.
     - May be missing if no private network is connected to the instance.
   returned: on success
-ipv6_enabled:
+ipv6:
   type: bool
   description:
     - Flag if IPv6 was enabled for instance.
   returned: on success
-gpn_enabled:
+gpn:
   type: bool
   description:
     - Flag is Global Private Network was enabled for instance.
@@ -313,7 +326,8 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.api import (
     DEFAULT_API_ENDPOINT,
     ModuleError,
-    ScCloudComputingInstanceCreate
+    ScCloudComputingInstanceCreate,
+    ScCloudComputingInstanceDelete
 )
 
 __metaclass__ = type
@@ -334,8 +348,8 @@ def main():
             'name': {},
             'image_id': {},
             'flavor_id': {},
-            'gpn_enabled': {'type': 'bool', 'default': False},
-            'ipv6_enabled': {'type': 'bool', 'default': False},
+            'gpn': {'type': 'bool', 'default': False},
+            'ipv6': {'type': 'bool', 'default': False},
             'ssh_key_fingerprint': {},
             'ssh_key_name': {},
             'backup_copies': {'type': 'int', 'default': 5},
@@ -353,25 +367,36 @@ def main():
         ],
         supports_check_mode=True
     )
-
-    create = ScCloudComputingInstanceCreate(
-        endpoint=module.params['endpoint'],
-        token=module.params['token'],
-        region_id=module.params['region_id'],
-        name=module.params['name'],
-        image_id=module.params['image_id'],
-        flavor_id=module.params['flavor_id'],
-        gpn_enabled=module.params['gpn_enabled'],
-        ipv6_enabled=module.params['ipv6_enabled'],
-        ssh_key_fingerprint=module.params['ssh_key_fingerprint'],
-        ssh_key_name=module.params['ssh_key_name'],
-        backup_copies=module.params['backup_copies'],
-        wait=module.params['wait'],
-        update_interval=module.params['update_interval'],
-        checkmode=module.check_mode
-    )
     try:
-        module.exit_json(**create.run())
+        if module.params['state'] == 'present':
+            instance = ScCloudComputingInstanceCreate(
+                endpoint=module.params['endpoint'],
+                token=module.params['token'],
+                region_id=module.params['region_id'],
+                name=module.params['name'],
+                image_id=module.params['image_id'],
+                flavor_id=module.params['flavor_id'],
+                gpn_enabled=module.params['gpn'],
+                ipv6_enabled=module.params['ipv6'],
+                ssh_key_fingerprint=module.params['ssh_key_fingerprint'],
+                ssh_key_name=module.params['ssh_key_name'],
+                backup_copies=module.params['backup_copies'],
+                wait=module.params['wait'],
+                update_interval=module.params['update_interval'],
+                checkmode=module.check_mode
+            )
+        elif module.params['state'] == 'absent':
+            instance = ScCloudComputingInstanceDelete(
+                endpoint=module.params['endpoint'],
+                token=module.params['token'],
+                instance_id=module.params['instance_id'],
+                region_id=module.params['region_id'],
+                name=module.params['name'],
+                wait=module.params['wait'],
+                update_interval=module.params['update_interval'],
+                checkmode=module.check_mode
+            )
+        module.exit_json(**instance.run())
     except ModuleError as e:
         module.exit_json(**e.fail())
 

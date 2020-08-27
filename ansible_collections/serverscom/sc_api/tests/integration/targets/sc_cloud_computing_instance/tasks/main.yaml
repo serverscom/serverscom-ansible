@@ -1,0 +1,140 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+  when: not sc_endpoint or not sc_token
+
+- name: Test1 invalid token
+  sc_cloud_computing_instance:
+    token: invalid
+    endpoint: '{{ sc_endpoint }}'
+    instance_id: noID
+    state: absent
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 401
+
+
+# - sc_cloud_computing_instances_info:
+#       token: '{{ sc_token }}'
+#       endpoint: '{{ sc_endpoint }}'
+#   register: info
+#
+# - debug: var=info
+
+- name: Test2, state=absent of absent instance by id
+  sc_cloud_computing_instance:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    instance_id: dQKnqxAR
+    state: absent
+  register: test2
+
+- name: Check Test2
+  assert:
+    that:
+      - test2 is not changed
+
+- name: Test3, state=absent for absent instance by name
+  sc_cloud_computing_instance:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    name: 603838e8-e844-11ea-a4e0-7f7652cefc07
+    state: absent
+  register: test3
+
+- name: Check test3
+  assert:
+    that:
+      - test3 is not changed
+
+- name: Test4, state=absent for absent instance by name with wrong region
+  sc_cloud_computing_instance:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    name: 603838e8-e844-11ea-a4e0-7f7652cefc08
+    region_id: 4242424242
+    state: absent
+  register: test4
+
+- name: Check test4
+  assert:
+    that:
+      - test4 is not changed
+
+- name: Test5 prep, Get image id
+  sc_cloud_computing_images_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    region_id: 0
+  register: img_info
+
+- name: Test5 prep, Get flavor id
+  sc_cloud_computing_flavors_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    region_id: 0
+  register: flavor_info
+
+- name: Test5
+  block:
+    - name: Test5, create instance in check mode
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: present
+        region_id: 0
+        flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
+        image_id: '{{ img_info.cloud_images[0].id }}'
+        name: ec354674-e844-11ea-ac53-83e1244f3049
+        backup_copies: 0
+        gpn: true
+        ipv6: true
+      # check_mode: true
+      register: test5
+
+    # - name: Tes5, get listances
+    - debug: var=test5
+
+    - name: Check test5
+      assert:
+        that:
+          - test5 is changed
+
+  always:
+    - name: Test5 Cleanup
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: absent
+        name: ec354674-e844-11ea-ac53-83e1244f3049
+        wait: 15
+        update_interval: 5
+      register: cleanup_status
+      until: cleanup_status is success
+      # retries: 120
+      # delay: 5
+
+# - debug: var=test3
+#
+# - name: Check Test3
+#   assert:
+#     that:
+#       - test3 is changed
+#
+# - fail:
+# - name: Test3, Reinstall existing instance no image
+#   sc_cloud_computing_instance_create:
+#     token: '{{ sc_token }}'
+#     endpoint: '{{ sc_endpoint }}'
+#     instance_id: 'pjqZRnM5'
+#   register: test3
+#
+# - name: Check Test3
+#   assert:
+#     that:
+#       - test3 is changed
+#       - test3.name == 'rebuildme'

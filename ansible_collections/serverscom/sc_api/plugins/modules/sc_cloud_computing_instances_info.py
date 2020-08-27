@@ -106,7 +106,7 @@ cloud_instances:
         - CREATING, BUILDING, REBUILDING, PROVISIONING, DELETING and DELETED
           stages of lifecycle.
         - AWAITING_UPGRADE_CONFIRM - instance is waiting for confirm
-          (instances are autoconfirm in 24hr.)
+          (instances are autoconfirm in 72hr.)
         - UPGRADING, REVERTING_UPGRADE - stages of upgrade lifecycle.
         - CREATING_SNAPSHOT - Instance snapshot is creating.
         - BUSY - Instance is not available for API operations.
