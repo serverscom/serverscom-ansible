@@ -920,7 +920,7 @@ class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
         endpoint, token,
         instance_id, region_id, name,
         wait, update_interval,
-        retry_on_conficts,
+        retry_on_conflicts,
         checkmode
     ):
         self.checkmode = checkmode
@@ -928,20 +928,30 @@ class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
         self.region_id = region_id
         self.name = name
         self.instance_id = instance_id
-        self.retry_on_conflicts = retry_on_conficts
+        if update_interval > wait:
+            raise ModuleError(
+                f"update interval ({update_interval}) "
+                f"is longer than wait ({wait})"
+            )
+        self.wait = wait
+        self.update_interval = update_interval
+        self.retry_on_conflicts = retry_on_conflicts
 
-    def wait_for_disappearance(self, instance_id):
-        start_time = time.time()
-        instance = self.find_instance_by_id(instance_id)
-        while (instance):
-            time.sleep(self.update_interval)
-            elapsed = time.time() - start_time
-            if elapsed > self.wait:
-                raise TimeOutError(
-                    msg=f"Timeout while waiting instance {instance_id}"
-                    f" to disappear. Last status was {instance['status']}",
-                    timeout=elapsed
-                )
+    def wait_for_disappearance(self, instance):
+        try:
+            start_time = time.time()
+            instance = self.find_instance_by_id(instance['id'])
+            while (instance):
+                time.sleep(self.update_interval)
+                elapsed = time.time() - start_time
+                if elapsed > self.wait:
+                    raise TimeOutError(
+                        msg=f"Timeout while waiting instance {instance['id']}"
+                        f" to disappear. Last status was {instance['status']}",
+                        timeout=elapsed
+                    )
+        except APIError404:  # instance not found - it's what we've expected
+            pass
         return instance
 
     def delete_instance(self):
@@ -962,7 +972,7 @@ class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
                     good_codes=[202]
                 )
             except APIError409:
-                if not self.retry_on_conficts:
+                if not self.retry_on_conflicts:
                     raise
                 else:
                     elapsed = time.time() - start_time
@@ -973,7 +983,7 @@ class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
                             timeout=elapsed
                         )
                     time.sleep(self.update_interval)
-            self.wait_for_disappearance(instance_id)
+            self.wait_for_disappearance(instance)
         return CHANGED
 
     def run(self):

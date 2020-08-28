@@ -111,12 +111,10 @@
         endpoint: '{{ sc_endpoint }}'
         state: absent
         name: ec354674-e844-11ea-ac53-83e1244f3049
-        wait: 15
+        wait: 150
         update_interval: 5
       register: cleanup_status
-      until: cleanup_status is success
-      # retries: 120
-      # delay: 5
+      # until: cleanup_status is success
 
 # - debug: var=test3
 #

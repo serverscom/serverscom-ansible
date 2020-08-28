@@ -168,7 +168,7 @@ options:
         - Polling interval for waiting.
         - Every polling request is reducing API ratelimits.
 
-    retry_on_conficts:
+    retry_on_conflicts:
       type: bool
       default: True
       description:
@@ -355,7 +355,7 @@ def main():
             'backup_copies': {'type': 'int', 'default': 5},
             'wait': {'type': 'int', 'default': 600},
             'update_interval': {'type': 'int', 'default': 5},
-            'retry_on_conficts': {'type': 'bool', 'default': True}
+            'retry_on_conflicts': {'type': 'bool', 'default': True}
         },
         mutually_exclusive=[
             ['ssh_key_name', 'ssh_key_fingerprint'],
@@ -395,7 +395,7 @@ def main():
                 name=module.params['name'],
                 wait=module.params['wait'],
                 update_interval=module.params['update_interval'],
-                retry_on_conficts=module.params['retry_on_conficts'],
+                retry_on_conflicts=module.params['retry_on_conflicts'],
                 checkmode=module.check_mode
             )
         module.exit_json(**instance.run())
