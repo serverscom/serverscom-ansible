@@ -50,11 +50,13 @@ options:
         - C(absent) requires either C(id) or C(name).
         - If I(state)=C(absent) with C(name) and there are multiple instances
           with the same name, module fails.
+        - Mutually exclusive with I(instance_id).
 
     instance_id:
       type: str
       description:
         - ID of the instance for I(state)=C(absent).
+        - Mutually exclusive with I(name)
         - Ignored for I(state)=C(present).
 
     region_id:
@@ -78,6 +80,19 @@ options:
       type: str
       description:
         - Id of the image or snapshot to build instance from.
+        - Mutually exclusive with I(image_regexp).
+        - Required for I(state)=C(present).
+        - Ignored for I(state)=C(absent).
+
+    image_regexp:
+      type: str
+      description:
+        - Regular expression to use to find an image or a snapshot to
+          build instance from.
+        - Regular expressions are based on python 're' module.
+        - First found image is used if few images matches.
+        - Use I(image_id) for exact image selection.
+        - Mutually exclusive with I(image_id).
         - Required for I(state)=C(present).
         - Ignored for I(state)=C(absent).
 
@@ -87,8 +102,21 @@ options:
         - Id of the flavor to use.
         - Some flavors may be needed for certain images.
         - Different flavors have different mothly price.
+        - Mutually exclusive with I(flavor_name).
         - Required for I(state)=C(present).
         - Ignored for I(state)=C(absent).
+
+    flavor_name:
+      type: str
+      description:
+        - Name of the flavor to use.
+        - Flavor name is checked for exact match.
+        - Some flavors may be needed for certain images.
+        - Different flavors have different mothly price.
+        - Mutually exclusive with I(flavor_id).
+        - Required for I(state)=C(present).
+        - Ignored for I(state)=C(absent).
+
 
     gpn:
         type: bool
@@ -349,7 +377,9 @@ def main():
             'region_id': {'type': 'int'},
             'name': {},
             'image_id': {},
+            'image_regexp': {},
             'flavor_id': {},
+            'flavor_name': {},
             'gpn': {'type': 'bool', 'default': False},
             'ipv6': {'type': 'bool', 'default': False},
             'ssh_key_fingerprint': {},
@@ -361,11 +391,14 @@ def main():
         },
         mutually_exclusive=[
             ['ssh_key_name', 'ssh_key_fingerprint'],
+            ['name', 'instance_id'],
+            ['flavor_name', 'flavor_id'],
+            ['image_regexp', 'image_id']
         ],
         required_if=[
             [
                 "state", "present",
-                ["region_id", "image_id", "flavor_id"]
+                ["region_id"]
             ]
         ],
         supports_check_mode=True
@@ -378,7 +411,9 @@ def main():
                 region_id=module.params['region_id'],
                 name=module.params['name'],
                 image_id=module.params['image_id'],
+                image_regexp=module.params['image_regexp'],
                 flavor_id=module.params['flavor_id'],
+                flavor_name=module.params['flavor_name'],
                 gpn_enabled=module.params['gpn'],
                 ipv6_enabled=module.params['ipv6'],
                 ssh_key_fingerprint=module.params['ssh_key_fingerprint'],

@@ -3,6 +3,7 @@ import hashlib
 from textwrap import wrap
 import base64
 import time
+import re
 
 __metaclass__ = type
 
@@ -832,7 +833,9 @@ class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
     def __init__(
         self,
         endpoint, token,
-        region_id, name, image_id, flavor_id,
+        region_id, name,
+        image_id, image_regexp,
+        flavor_id, flavor_name,
         gpn_enabled, ipv6_enabled,
         ssh_key_fingerprint, ssh_key_name,
         backup_copies,
@@ -849,9 +852,8 @@ class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
         self.name = name
         self.instance_id = None
         # NAME ?
-        self.flavor_id = flavor_id
-        # NAME ?
-        self.image_id = image_id
+        self.flavor_id = self.get_flavor_id(flavor_id, flavor_name)
+        self.image_id = self.get_image_id(image_id, image_regexp)
         self.gpn_enabled = gpn_enabled
         self.ipv6_enabled = ipv6_enabled
         self.ssh_key_fingerprint = self.get_ssh_key_fingerprint(
@@ -876,6 +878,26 @@ class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
                     return key['fingerprint']
             raise ModuleError(f"Unable to find ssh key {ssh_key_name}")
         return None
+
+    def get_image_id(self, image_id, image_regexp):
+        if image_id and image_regexp:
+            raise ModuleError("Both image_id and image_regexp are present.")
+        if image_id:
+            return image_id
+        elif image_regexp:
+            raise NotImplementedError
+        else:
+            raise ModuleError('Need either image_id or image_regexp.')
+
+    def get_flavor_id(self, flavor_id, flavor_name):
+        if flavor_id and flavor_name:
+            raise ModuleError("Both flavor_id and flavor_name are present.")
+        if flavor_id:
+            return flavor_id
+        elif flavor_name:
+            raise NotImplementedError()
+        else:
+            raise ModuleError('Need either flavor_id or flavor_name.')
 
     def create_instance(self):
         body = {
@@ -971,6 +993,7 @@ class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
             instance = self.find_instance()
 
     def retry_to_delete(self, instance):
+        # pylint: disable=bad-option-value, raise-missing-from
         start_time = time.time()
         while instance:
             try:
