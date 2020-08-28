@@ -901,13 +901,15 @@ class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
     def wait_for(self, instance):
         start_time = time.time()
         instance = self.find_instance_by_id(instance['id'])
+        if not self.wait:
+            return instance
         while instance['status'] != 'ACTIVE':
             time.sleep(self.update_interval)
             elapsed = time.time() - start_time
             if elapsed > self.wait:
                 raise TimeOutError(
                     msg=f"Timeout while waiting instance {instance['id']}"
-                    f" to disappear. Last status was {instance['status']}",
+                    f" to become ACTIVE. Last status was {instance['status']}",
                     timeout=elapsed
                 )
             instance = self.find_instance_by_id(instance['id'])

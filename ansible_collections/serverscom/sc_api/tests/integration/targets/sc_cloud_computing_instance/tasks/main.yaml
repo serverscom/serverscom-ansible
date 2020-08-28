@@ -205,26 +205,82 @@
         wait: 600
         update_interval: 5
 
-#
-# - name: Test7, state=present without wait, state=absent with conflict wait
-#   block:
-#     - name: Test7, create instance without wait
-#       sc_cloud_computing_instance:
-#         token: '{{ sc_token }}'
-#         endpoint: '{{ sc_endpoint }}'
-#         state: present
-#         region_id: 0
-#         flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
-#         image_id: '{{ img_info.cloud_images[0].id }}'
-#         name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
-#         backup_copies: 0
-#         gpn: false
-#         ipv6: false
-#         wait: 0
-#       register: test7
-#
-#     - name: Test6, get list of instances
-#       sc_cloud_computing_instances_info:
-#         token: '{{ sc_token }}'
-#         endpoint: '{{ sc_endpoint }}'
-#       register: test6_instances
+
+- name: Test7, state=present without wait, state=absent with conflict wait
+  block:
+    - name: Test7, create instance without wait
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: present
+        region_id: 0
+        flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
+        image_id: '{{ img_info.cloud_images[0].id }}'
+        name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
+        backup_copies: 0
+        gpn: false
+        ipv6: false
+        wait: 0
+      register: test7
+
+    - name: Test7, get list of instances
+      sc_cloud_computing_instances_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+      register: test7_instances
+
+    - name: Check Test7
+      assert:
+        that:
+          - test7 is changed
+          - test7.status != 'ACTIVE'
+          - test7.name == 'c4edd55c-8a79-4181-b880-917b8ee5cdf2'
+          - '''c4edd55c-8a79-4181-b880-917b8ee5cdf2'' in test7_instances|to_json'
+
+    - name: Test7, try to delete non-active instance without retry_on_conflicts
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: absent
+        name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
+        retry_on_conflicts: false
+      register: test7_conflict
+      failed_when: false
+
+    - debug: var=test7_conflict
+
+    - name: Check Test7, after conflict
+      assert:
+        that:
+          - test7_conflict.status != 'ACTIVE'
+
+    - name: Test7, try to delete non-active instance in check_mode
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: absent
+        name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
+      register: test7_delete_check_mode
+
+    - name: Test7, get list of instances after check_mode delete
+      sc_cloud_computing_instances_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+      register: test7_instances_check_mode_delete
+
+    - name: Test7, try to delete instance
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: absent
+        name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
+      register: test7_delete
+
+
+  always:
+    - name: Test7 Cleanup
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: absent
+        name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
