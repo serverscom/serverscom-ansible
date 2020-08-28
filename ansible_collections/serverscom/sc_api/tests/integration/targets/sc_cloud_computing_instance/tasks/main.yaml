@@ -247,12 +247,10 @@
       register: test7_conflict
       failed_when: false
 
-    - debug: var=test7_conflict
-
     - name: Check Test7, after conflict
       assert:
         that:
-          - test7_conflict.status != 'ACTIVE'
+          - test7_conflict.status_code == 409
 
     - name: Test7, try to delete non-active instance in check_mode
       sc_cloud_computing_instance:
@@ -260,6 +258,7 @@
         endpoint: '{{ sc_endpoint }}'
         state: absent
         name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
+      check_mode: true
       register: test7_delete_check_mode
 
     - name: Test7, get list of instances after check_mode delete
@@ -268,14 +267,35 @@
         endpoint: '{{ sc_endpoint }}'
       register: test7_instances_check_mode_delete
 
+    - debug: var=test7_instances_check_mode_delete
+
+    - name: Check Test7 after check_mode delete
+      assert:
+        that:
+          - test7_delete_check_mode is changed
+          - '''c4edd55c-8a79-4181-b880-917b8ee5cdf2'' in test7_instances_check_mode_delete|to_json'
+
     - name: Test7, try to delete instance
       sc_cloud_computing_instance:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         state: absent
         name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
+        wait: 600
+        update_interval: 5
       register: test7_delete
 
+    - name: Test7, get list of instances after delete
+      sc_cloud_computing_instances_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+      register: test7_instances_after_delete
+
+    - name: Check Test7, after delete
+      assert:
+        that:
+          - test7_delete is changed
+          - '''c4edd55c-8a79-4181-b880-917b8ee5cdf2'' not in test7_instances_after_delete'
 
   always:
     - name: Test7 Cleanup
@@ -284,3 +304,5 @@
         endpoint: '{{ sc_endpoint }}'
         state: absent
         name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
+        wait: 600
+        update_interval: 5

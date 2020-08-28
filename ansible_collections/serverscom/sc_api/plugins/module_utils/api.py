@@ -970,21 +970,9 @@ class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
                 )
             instance = self.find_instance()
 
-    def run(self):
-        # pylint: disable=bad-option-value, raise-missing-from
+    def retry_to_delete(self, instance):
         start_time = time.time()
-        original_instance = self.find_instance()
-        instance = original_instance
-        if not instance:
-            return {
-                'changed': False,
-                'instance_id': self.instance_id,
-                'name': self.name,
-                'region_id': self.region_id
-            }
         while instance:
-            if self.checkmode:
-                break
             try:
                 self.api.make_delete_request(
                     path=f'/cloud_computing/instances/{instance["id"]}',
@@ -1006,6 +994,20 @@ class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
                 else:
                     raise
             instance = self.find_instance()
-        self.wait_for_disappearance(instance)
+
+    def run(self):
+        # pylint: disable=bad-option-value, raise-missing-from
+        original_instance = self.find_instance()
+        instance = original_instance
+        if not instance:
+            return {
+                'changed': False,
+                'instance_id': self.instance_id,
+                'name': self.name,
+                'region_id': self.region_id
+            }
+        if not self.checkmode:
+            instance = self.retry_to_delete(instance)
+            self.wait_for_disappearance(instance)
         original_instance['changed'] = CHANGED
         return original_instance
