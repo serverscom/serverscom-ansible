@@ -90,7 +90,7 @@ options:
         - Required for I(state)=C(present).
         - Ignored for I(state)=C(absent).
 
-    gpn_enabled:
+    gpn:
         type: bool
         default: false
         description:
@@ -100,7 +100,7 @@ options:
           - Is used only for for I(state)=C(present).
           - Ignored for I(state)=C(absent).
 
-    ipv6_enabled:
+    ipv6:
         type: bool
         default: false
         description:
