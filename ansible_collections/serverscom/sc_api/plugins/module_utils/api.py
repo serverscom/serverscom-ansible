@@ -810,23 +810,22 @@ class ScCloudComputingInstance(object):
         return found[0]
 
     def find_instance_by_id(self, instance_id):
-        try:
-            return self.api.make_get_request(
-                path=f'/cloud_computing/instances/{instance_id}',
-                query_parameters=None
-            )
-        except APIError404:
-            return None
+        return self.api.make_get_request(
+            path=f'/cloud_computing/instances/{instance_id}',
+            query_parameters=None
+        )
 
     def find_instance(self):
-        if self.instance_id:
-            return self.find_instance_by_id(self.instance_id)
-        if self.name:
-            return self.find_instance_by_name(self.name)
-        raise ModuleError("No instance_id or name was specified")
-
-    def wait_for_status(self, status):
-        pass
+        """Search for instance. Return None if not found."""
+        try:
+            if self.instance_id:
+                return self.find_instance_by_id(self.instance_id)
+            elif self.name:
+                return self.find_instance_by_name(self.name)
+            else:
+                raise ModuleError("No instance_id or name was specified")
+        except APIError404:
+            return None
 
 
 class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
@@ -900,17 +899,35 @@ class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
         return instance
 
     def wait_for(self, instance):
+        start_time = time.time()
+        instance = self.find_instance_by_id(instance['id'])
+        while instance['status'] != 'ACTIVE':
+            time.sleep(self.update_interval)
+            elapsed = time.time() - start_time
+            if elapsed > self.wait:
+                raise TimeOutError(
+                    msg=f"Timeout while waiting instance {instance['id']}"
+                    f" to disappear. Last status was {instance['status']}",
+                    timeout=elapsed
+                )
+            instance = self.find_instance_by_id(instance['id'])
         return instance
 
     def run(self):
-        if self.find_instance():
-            return {'changed': CHANGED}
-        if not self.checkmode:
-            instance = self.create_instance()
-            instance = self.wait_for(instance)
+        instance = self.find_instance()
+        if instance:
+            instance['changed'] = NOT_CHANGED
         else:
-            instance = {}
-        instance['changed'] = True
+            if not self.checkmode:
+                instance = self.create_instance()
+                instance = self.wait_for(instance)
+            else:
+                instance = {
+                    'info': 'Instance shold be created, '
+                            'but check_mode is activated. '
+                            'no real instance was created.'
+                }
+            instance['changed'] = CHANGED
         return instance
 
 
@@ -938,55 +955,55 @@ class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
         self.retry_on_conflicts = retry_on_conflicts
 
     def wait_for_disappearance(self, instance):
-        try:
-            start_time = time.time()
-            instance = self.find_instance_by_id(instance['id'])
-            while (instance):
-                time.sleep(self.update_interval)
-                elapsed = time.time() - start_time
-                if elapsed > self.wait:
-                    raise TimeOutError(
-                        msg=f"Timeout while waiting instance {instance['id']}"
-                        f" to disappear. Last status was {instance['status']}",
-                        timeout=elapsed
-                    )
-        except APIError404:  # instance not found - it's what we've expected
-            pass
-        return instance
-
-    def delete_instance(self):
-        # pylint: disable=bad-option-value, raise-missing-from
         start_time = time.time()
         instance = self.find_instance()
+        while (instance):
+            time.sleep(self.update_interval)
+            elapsed = time.time() - start_time
+            if elapsed > self.wait:
+                raise TimeOutError(
+                    msg=f"Timeout while waiting instance {instance['id']}"
+                    f" to disappear. Last status was {instance['status']}",
+                    timeout=elapsed
+                )
+            instance = self.find_instance()
+
+    def run(self):
+        # pylint: disable=bad-option-value, raise-missing-from
+        start_time = time.time()
+        original_instance = self.find_instance()
+        instance = original_instance
         if not instance:
-            return NOT_CHANGED
-        instance_id = instance['id']
+            return {
+                'changed': False,
+                'instance_id': self.instance_id,
+                'name': self.name,
+                'region_id': self.region_id
+            }
         while instance:
             if self.checkmode:
-                return CHANGED
+                break
             try:
                 self.api.make_delete_request(
-                    path=f'/cloud_computing/instances/{instance_id}',
+                    path=f'/cloud_computing/instances/{instance["id"]}',
                     query_parameters=None,
                     body=None,
                     good_codes=[202]
                 )
+
             except APIError409:
-                if not self.retry_on_conflicts:
-                    raise
-                else:
+                if self.retry_on_conflicts:
                     elapsed = time.time() - start_time
                     if elapsed > self.wait:
                         raise TimeOutError(
-                            msg=f"Timeout retrying delete for"
-                                f" instance {instance_id}",
+                            msg='Timeout retrying delete for'
+                                f' instance {instance["id"]}',
                             timeout=elapsed
                         )
                     time.sleep(self.update_interval)
-            self.wait_for_disappearance(instance)
-        return CHANGED
-
-    def run(self):
-        return {
-            'changed': self.delete_instance()
-        }
+                else:
+                    raise
+            instance = self.find_instance()
+        self.wait_for_disappearance(instance)
+        original_instance['changed'] = CHANGED
+        return original_instance

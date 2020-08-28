@@ -65,21 +65,21 @@
     that:
       - test4 is not changed
 
-- name: Test5 prep, Get image id
+- name: Tests prep, Get image id
   sc_cloud_computing_images_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     region_id: 0
   register: img_info
 
-- name: Test5 prep, Get flavor id
+- name: Tests prep, Get flavor id
   sc_cloud_computing_flavors_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     region_id: 0
   register: flavor_info
 
-- name: Test5
+- name: Test5, create absent instance in check_mode
   block:
     - name: Test5, create instance in check mode
       sc_cloud_computing_instance:
@@ -93,16 +93,20 @@
         backup_copies: 0
         gpn: true
         ipv6: true
-      # check_mode: true
+      check_mode: true
       register: test5
 
-    # - name: Tes5, get listances
-    - debug: var=test5
+    - name: Test5, get list of instances
+      sc_cloud_computing_instances_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+      register: test5_instances
 
     - name: Check test5
       assert:
         that:
           - test5 is changed
+          - '''ec354674-e844-11ea-ac53-83e1244f3049'' not in test5_instances|to_json'
 
   always:
     - name: Test5 Cleanup
@@ -111,28 +115,116 @@
         endpoint: '{{ sc_endpoint }}'
         state: absent
         name: ec354674-e844-11ea-ac53-83e1244f3049
-        wait: 150
+        wait: 600
         update_interval: 5
-      register: cleanup_status
-      # until: cleanup_status is success
 
-# - debug: var=test3
+- name: Test6, normal state=present/state=absent testsuite with wait
+  block:
+    - name: Test6, create instance with wait
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: present
+        region_id: 0
+        flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
+        image_id: '{{ img_info.cloud_images[0].id }}'
+        name: 52310c60-7446-482d-a30e-2bedeb515878
+        backup_copies: 0
+        gpn: true
+        ipv6: true
+        wait: 600
+        update_interval: 5
+      register: test6
+
+    - debug: var=test6
+
+    - name: Test6, get list of instances
+      sc_cloud_computing_instances_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+      register: test6_instances
+
+    - name: Check test6
+      assert:
+        that:
+          - test6 is changed
+          - '''52310c60-7446-482d-a30e-2bedeb515878'' in test6_instances|to_json'
+          - test6.status == 'ACTIVE'
+          - test6.name == '52310c60-7446-482d-a30e-2bedeb515878'
+
+    - name: Test6, create the same instance second time
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: present
+        region_id: 0
+        flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
+        image_id: '{{ img_info.cloud_images[0].id }}'
+        name: 52310c60-7446-482d-a30e-2bedeb515878
+        backup_copies: 0
+        gpn: true
+        ipv6: true
+        wait: 600
+        update_interval: 5
+      register: test6_second
+
+    - name: Test6, create the same instance third time in check_mode
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: present
+        region_id: 0
+        flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
+        image_id: '{{ img_info.cloud_images[0].id }}'
+        name: 52310c60-7446-482d-a30e-2bedeb515878
+        backup_copies: 0
+        gpn: true
+        ipv6: true
+        wait: 600
+        update_interval: 5
+      check_mode: true
+      register: test6_third
+
+    - name: check Test6 second and third
+      assert:
+        that:
+          - test6_second is not changed
+          - test6_second.id == test6.id
+          - test6_second.name == '52310c60-7446-482d-a30e-2bedeb515878'
+          - test6_third is not changed
+          - test6_third.id == test6.id
+          - test6_third.name == '52310c60-7446-482d-a30e-2bedeb515878'
+
+  always:
+    - name: Test6 Cleanup
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: absent
+        name: 52310c60-7446-482d-a30e-2bedeb515878
+        wait: 600
+        update_interval: 5
+
 #
-# - name: Check Test3
-#   assert:
-#     that:
-#       - test3 is changed
+# - name: Test7, state=present without wait, state=absent with conflict wait
+#   block:
+#     - name: Test7, create instance without wait
+#       sc_cloud_computing_instance:
+#         token: '{{ sc_token }}'
+#         endpoint: '{{ sc_endpoint }}'
+#         state: present
+#         region_id: 0
+#         flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
+#         image_id: '{{ img_info.cloud_images[0].id }}'
+#         name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
+#         backup_copies: 0
+#         gpn: false
+#         ipv6: false
+#         wait: 0
+#       register: test7
 #
-# - fail:
-# - name: Test3, Reinstall existing instance no image
-#   sc_cloud_computing_instance_create:
-#     token: '{{ sc_token }}'
-#     endpoint: '{{ sc_endpoint }}'
-#     instance_id: 'pjqZRnM5'
-#   register: test3
-#
-# - name: Check Test3
-#   assert:
-#     that:
-#       - test3 is changed
-#       - test3.name == 'rebuildme'
+#     - name: Test6, get list of instances
+#       sc_cloud_computing_instances_info:
+#         token: '{{ sc_token }}'
+#         endpoint: '{{ sc_endpoint }}'
+#       register: test6_instances

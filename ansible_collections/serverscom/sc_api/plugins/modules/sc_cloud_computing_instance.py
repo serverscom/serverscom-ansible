@@ -177,6 +177,8 @@ options:
         - Retries are controlled by wait/update_interval values.
 """
 
+#  delete multiple?
+
 RETURN = """
 id:
   type: str
