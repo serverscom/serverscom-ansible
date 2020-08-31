@@ -142,7 +142,7 @@ class ScBaremetalLocationsInfo(object):
                  search_pattern, required_features):
         self.search_pattern = search_pattern
         self.required_features = required_features
-        self.api_helper = ApiHelper(token, endpoint)
+        self.api = ScApi(token, endpoint)
 
     @staticmethod
     def location_features(location):
@@ -155,10 +155,7 @@ class ScBaremetalLocationsInfo(object):
         return features
 
     def locations(self):
-        all_locations = list(self.api_helper.make_multipage_request(
-            path='/locations',
-            query_parameters={'search_pattern': self.search_pattern}
-        ))
+        all_locations = list(self.api.list_locations(self.search_pattern))
         locations = []
         if self.required_features:
             for loc in all_locations:

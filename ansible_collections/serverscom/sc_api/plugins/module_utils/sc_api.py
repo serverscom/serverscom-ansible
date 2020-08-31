@@ -186,6 +186,16 @@ class ScApi():
     def __init__(self, token, endpoint=DEFAULT_API_ENDPOINT):
         self.api_helper = ApiHelper(token, endpoint)
 
+    def list_locations(self, search_pattern=None):
+        if search_pattern:
+            query = {'search_pattern': search_pattern}
+        else:
+            query = None
+        return self.api_helper.make_multipage_request(
+            path='/locations',
+            query_parameters=query
+        )
+
     def get_dedicated_server(self, server_id):
         return self.api_helper.make_get_request(
             path=f'/hosts/dedicated_servers/{server_id}',
