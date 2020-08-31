@@ -243,7 +243,7 @@ EXAMPLES = """
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.serverscom.sc_api.plugins.module_utils.api import (
+from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     ModuleError,
     ScCloudComputingInstanceReinstall

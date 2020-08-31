@@ -3,7 +3,7 @@
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import (absolute_import, division, print_function)
-from ansible_collections.serverscom.sc_api.plugins.module_utils.api import ScSshKey  # noqa
+from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import ScSshKey  # noqa
 
 
 __metaclass__ = type

@@ -5,7 +5,7 @@
 from __future__ import (absolute_import, division, print_function)
 import pytest
 import mock
-from ansible_collections.serverscom.sc_api.plugins.module_utils.api import ScDedicatedServerInfo  # noqa
+from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import ScDedicatedServerInfo  # noqa
 
 
 __metaclass__ = type
