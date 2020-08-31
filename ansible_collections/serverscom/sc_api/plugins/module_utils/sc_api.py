@@ -134,7 +134,7 @@ class ApiHelper():
             )
         return decoded
 
-    def make_get_request(self, path, query_parameters):
+    def make_get_request(self, path, query_parameters=None):
         'Used for simple GET request without pagination.'
         self.start_request('GET', path, query_parameters)
         return self.decode(self.send_request(good_codes=[200]))
@@ -201,7 +201,7 @@ class ScApi():
             '/cloud_computing/regions'
         )
 
-    def get_dedicated_server(self, server_id):
+    def get_dedicated_servers(self, server_id):
         return self.api_helper.make_get_request(
             path=f'/hosts/dedicated_servers/{server_id}'
         )
@@ -223,4 +223,9 @@ class ScApi():
             body=None,
             query_parameters=None,
             good_codes=[204]
+        )
+
+    def get_instances(self, instance_id):
+        return self.api_helper.make_get_request(
+            path=f'/cloud_computing/instances/{instance_id}'
         )

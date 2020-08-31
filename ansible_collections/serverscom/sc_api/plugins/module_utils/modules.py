@@ -116,7 +116,7 @@ class ScDedicatedServerInfo(object):
 
     def run(self):
         try:
-            server_info = self.api.get_dedicated_server(self.server_id)
+            server_info = self.api.get_dedicated_servers(self.server_id)
         except APIError404 as e:
             if self.fail_on_absent:
                 raise e
@@ -284,8 +284,6 @@ class ScSshKey(object):
                 self.api.delete_ssh_keys(fingerprint=key['fingerprint'])
 
     def state_absent(self):
-        # import epdb
-        # epdb.serve()
         if not self.any_match:
             return NOT_CHANGED
         self.delete_keys(self.any_match)
@@ -532,10 +530,15 @@ class ScCloudComputingInstancesInfo(ApiMultipageGet):
             }
 
 
-class ScCloudComputingInstanceInfo(ApiSimpleGet):
+class ScCloudComputingInstanceInfo():
     def __init__(self, token, endpoint, instance_id):
-        self.api_helper = ApiHelper(token, endpoint)
-        self.path = f'/cloud_computing/instances/{instance_id}'
+        self.api = ScApi(token, endpoint)
+        self.instance_id = instance_id
+
+    def run(self):
+        result = self.api.get_instances(self.instance_id)
+        result['changed'] = False
+        return result
 
 
 class ScCloudComputingOpenstackCredentials(ApiSimpleGet):
