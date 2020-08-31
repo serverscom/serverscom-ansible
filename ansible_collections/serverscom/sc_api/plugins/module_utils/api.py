@@ -851,7 +851,6 @@ class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
             raise ModuleError("Name is mandatory for state=present.")
         self.name = name
         self.instance_id = None
-        # NAME ?
         self.flavor_id = self.get_flavor_id(flavor_id, flavor_name)
         self.image_id = self.get_image_id(image_id, image_regexp)
         self.gpn_enabled = gpn_enabled
@@ -885,7 +884,17 @@ class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
         if image_id:
             return image_id
         elif image_regexp:
-            raise NotImplementedError
+            images = self.api.make_multipage_request(
+                path=f'/cloud_computing/regions/{self.region_id}/images',
+                query_parameters=None
+            )
+            for image in images:
+                if re.match(image_regexp, image['name']):
+                    return image['id']
+            raise ModuleError(
+                f'Image with regexp {image_regexp} is not found in '
+                f'region {self.region_id}'
+            )
         else:
             raise ModuleError('Need either image_id or image_regexp.')
 
@@ -895,7 +904,17 @@ class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
         if flavor_id:
             return flavor_id
         elif flavor_name:
-            raise NotImplementedError()
+            flavors = self.api.make_multipage_request(
+                path=f'/cloud_computing/regions/{self.region_id}/flavors',
+                query_parameters=None
+            )
+            for flavor in flavors:
+                if flavor['name'] == flavor_name:
+                    return flavor['id']
+            raise ModuleError(
+                f'Flavor with name {flavor_name} is not found in '
+                f'region {self.region_id}'
+            )
         else:
             raise ModuleError('Need either flavor_id or flavor_name.')
 

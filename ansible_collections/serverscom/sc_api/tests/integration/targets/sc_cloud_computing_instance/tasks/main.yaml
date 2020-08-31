@@ -306,3 +306,81 @@
         name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
         wait: 600
         update_interval: 5
+
+- name: Test8 Invalid flavor/image
+  block:
+    - name: Test8, invalid flavor_name
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: present
+        name: 15a0688b-44f6-41e2-971c-4e860c402373
+        region_id: 0
+        flavor_name: 'dont.exist'
+        image_id: '{{ img_info.cloud_images[0].id }}'
+      register: test8_flavor
+      failed_when: false
+
+    - name: Test8, invalid image_regexp
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: present
+        name: 15a0688b-44f6-41e2-971c-4e860c402373
+        region_id: 0
+        flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
+        image_regexp: a.+dont.exist
+      register: test8_image
+      failed_when: false
+
+    - name: Check test 8
+      assert:
+        that:
+          - '''Flavor with name dont.exist is not found'' in test8_flavor.msg'
+          - '''Image with regexp a.+dont.exist is not found'' in test8_image.msg'
+
+  always:
+    - name: Test8, cleanup
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: absent
+        name: 15a0688b-44f6-41e2-971c-4e860c402373
+        wait: 600
+
+- name: Test9 image by regexp and flavor by name
+  block:
+    - name: Test9 create instnace with image by regexp and flavor by name
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: present
+        name: 8d2779e6-eb72-11ea-970f-733ca983e4ca
+        region_id: 0
+        flavor_name: 'SSD.30'
+        image_regexp: 'Ubuntu.+'
+      register: test9_create
+    - name: Test9, delete instance by id
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        instance_id: '{{ test9_create.id }}'
+        wait: 600
+        state: absent
+      register: test9_delete
+
+    - name: Check test9
+      assert:
+        that:
+          - test9_create is changed
+          - test9_delete is changed
+          - test9_create.name == '8d2779e6-eb72-11ea-970f-733ca983e4ca'
+          - test9_delete.name == '8d2779e6-eb72-11ea-970f-733ca983e4ca'
+
+  always:
+    - name: Test9, cleanup
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: absent
+        name: 8d2779e6-eb72-11ea-970f-733ca983e4ca
