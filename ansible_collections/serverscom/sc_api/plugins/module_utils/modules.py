@@ -179,7 +179,7 @@ class ScCloudComputingRegionsInfo(object):
     def __init__(self, endpoint, token,
                  search_pattern):
         self.search_pattern = search_pattern
-        self.api_helper = ApiHelper(token, endpoint)
+        self.api = ScApi(token, endpoint)
 
     @staticmethod
     def location_features(location):
@@ -192,9 +192,7 @@ class ScCloudComputingRegionsInfo(object):
         return features
 
     def regions(self):
-        return self.api_helper.make_multipage_request(
-            '/cloud_computing/regions'
-        )
+        return self.api.list_regions()
 
     def search(self, regions):
         for region in regions:
@@ -221,7 +219,7 @@ class ScSshKey(object):
         self.partial_match = []
         self.full_match = []
         self.any_match = []
-        self.api_helper = ApiHelper(token, endpoint)
+        self.api = ScApi(token, endpoint)
         self.checkmode = checkmode
         self.replace = replace
         self.state = state
@@ -260,9 +258,6 @@ class ScSshKey(object):
         fingerprint = ':'.join(wrap(digest, 2))
         return fingerprint
 
-    def get_ssh_keys(self):
-        return self.api_helper.make_multipage_request('/ssh_keys')
-
     @staticmethod
     def classify_matching_keys(key_list, name, fingerprint):
         full_match = []
@@ -279,24 +274,14 @@ class ScSshKey(object):
 
     def add_key(self):
         if not self.checkmode:
-            self.api_helper.make_post_request(
-                path='/ssh_keys',
-                body=None,
-                query_parameters={
-                    'name': self.key_name, 'public_key': self.public_key
-                },
-                good_codes=[201]
+            return self.api.post_ssh_keys(
+                name=self.key_name, public_key=self.public_key
             )
 
     def delete_keys(self, key_list):
         if not self.checkmode:
             for key in key_list:
-                self.api_helper.make_delete_request(
-                    path=f'/ssh_keys/{key["fingerprint"]}',
-                    body=None,
-                    query_parameters=None,
-                    good_codes=[204]
-                )
+                self.api.delete_ssh_keys(fingerprint=key['fingerprint'])
 
     def state_absent(self):
         # import epdb
@@ -326,7 +311,7 @@ class ScSshKey(object):
     def run(self):
         self.full_match, self.partial_match, self.any_match = \
             self.classify_matching_keys(
-                self.get_ssh_keys(), self.key_name, self.fingerprint
+                self.api.list_ssh_keys(), self.key_name, self.fingerprint
             )
         if self.state == 'absent':
             changed = self.state_absent()

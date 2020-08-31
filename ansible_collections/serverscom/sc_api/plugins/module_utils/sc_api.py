@@ -196,8 +196,31 @@ class ScApi():
             query_parameters=query
         )
 
+    def list_regions(self):
+        return self.api_helper.make_multipage_request(
+            '/cloud_computing/regions'
+        )
+
     def get_dedicated_server(self, server_id):
         return self.api_helper.make_get_request(
-            path=f'/hosts/dedicated_servers/{server_id}',
-            query_parameters=None
+            path=f'/hosts/dedicated_servers/{server_id}'
+        )
+
+    def list_ssh_keys(self):
+        return self.api_helper.make_multipage_request('/ssh_keys')
+
+    def post_ssh_keys(self, name, public_key):
+        return self.api_helper.make_post_request(
+            path='/ssh_keys',
+            body=None,
+            query_parameters={'name': name, 'public_key': public_key},
+            good_codes=[201]
+        )
+
+    def delete_ssh_keys(self, fingerprint):
+        return self.api_helper.make_delete_request(
+            path=f'/ssh_keys/{fingerprint}',
+            body=None,
+            query_parameters=None,
+            good_codes=[204]
         )
