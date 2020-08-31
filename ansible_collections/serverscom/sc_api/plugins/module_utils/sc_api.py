@@ -58,7 +58,7 @@ class APIError409(APIError):
     pass
 
 
-class Api():
+class ApiHelper():
     def __init__(self, token, endpoint=DEFAULT_API_ENDPOINT):
         # pylint: disable=bad-option-value, import-outside-toplevel
         # pylint: disable=bad-option-value, raise-missing-from
