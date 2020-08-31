@@ -10,7 +10,8 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
     APIError404,
     APIError409,
     DEFAULT_API_ENDPOINT,
-    ApiHelper
+    ApiHelper,
+    ScApi
 )
 
 __metaclass__ = type
@@ -98,7 +99,7 @@ class ApiMultipageGet(ApiSimpleGet):
 
 class ScDedicatedServerInfo(object):
     def __init__(self, endpoint, token, name, fail_on_absent):
-        self.api_helper = ApiHelper(token, endpoint)
+        self.api = ScApi(token, endpoint)
         self.server_id = name
         self.fail_on_absent = fail_on_absent
 
@@ -115,10 +116,7 @@ class ScDedicatedServerInfo(object):
 
     def run(self):
         try:
-            server_info = self.api_helper.make_get_request(
-                path=f'/hosts/dedicated_servers/{self.server_id}',
-                query_parameters=None
-            )
+            server_info = self.api.get_dedicated_server(self.server_id)
         except APIError404 as e:
             if self.fail_on_absent:
                 raise e
@@ -197,7 +195,9 @@ class ScCloudComputingRegionsInfo(object):
         return features
 
     def regions(self):
-        return self.api_helper.make_multipage_request('/cloud_computing/regions')
+        return self.api_helper.make_multipage_request(
+            '/cloud_computing/regions'
+        )
 
     def search(self, regions):
         for region in regions:

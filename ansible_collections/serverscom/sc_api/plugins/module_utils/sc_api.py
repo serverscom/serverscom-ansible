@@ -59,7 +59,7 @@ class APIError409(APIError):
 
 
 class ApiHelper():
-    def __init__(self, token, endpoint=DEFAULT_API_ENDPOINT):
+    def __init__(self, token, endpoint):
         # pylint: disable=bad-option-value, import-outside-toplevel
         # pylint: disable=bad-option-value, raise-missing-from
         try:
@@ -167,3 +167,27 @@ class ApiHelper():
             for api_object in list_from_api:
                 yield api_object
             self.prepare_next(response)
+
+
+# naiming convention:
+# Prefixes:
+# list_ -> returns interator over paginatated response.
+# get_ -> returns single object
+# post_ -> make post request for a single object (update/create/change)
+# delete_ -> make delete request for a single object
+# Suffixes:
+# Last element of the path (except for the path parameter)
+# if there is no collision, more path pieces if there are collisions.
+# Arguments:
+# 'as is' in the API if possible.
+
+class ScApi():
+    """Provide functions matching Servers.com Public API."""
+    def __init__(self, token, endpoint=DEFAULT_API_ENDPOINT):
+        self.api_helper = ApiHelper(token, endpoint)
+
+    def get_dedicated_server(self, server_id):
+        return self.api_helper.make_get_request(
+            path=f'/hosts/dedicated_servers/{server_id}',
+            query_parameters=None
+        )
