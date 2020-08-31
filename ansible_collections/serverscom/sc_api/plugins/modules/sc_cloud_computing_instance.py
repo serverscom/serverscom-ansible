@@ -355,7 +355,7 @@ EXAMPLES = """
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
-    ModuleError,
+    SCBaseError,
     ScCloudComputingInstanceCreate,
     ScCloudComputingInstanceDelete
 )
@@ -436,7 +436,7 @@ def main():
                 checkmode=module.check_mode
             )
         module.exit_json(**instance.run())
-    except ModuleError as e:
+    except SCBaseError as e:
         module.exit_json(**e.fail())
 
 

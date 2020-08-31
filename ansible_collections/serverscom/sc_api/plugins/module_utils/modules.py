@@ -5,15 +5,20 @@ import base64
 import time
 import re
 
+from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
+    SCBaseError,
+    APIError,
+    DEFAULT_API_ENDPOINT
+)
+
 __metaclass__ = type
 
 
-DEFAULT_API_ENDPOINT = 'https://api.servers.com/v1'
 CHANGED = True
 NOT_CHANGED = False
 
 
-class ModuleError(Exception):
+class ModuleError(SCBaseError):
     def __init__(self, msg):
         self.msg = msg
 
@@ -35,21 +40,6 @@ class TimeOutError(ModuleError):
             'timeout': self.timeout,
             'msg': self.msg
         }
-
-
-class APIError(ModuleError):
-    def __init__(self, msg, api_url=None, status_code=None):
-        self.api_url = api_url
-        self.status_code = status_code
-        self.msg = msg
-
-    def fail(self):
-        return_value = {'failed': True, 'msg': self.msg}
-        if self.api_url:
-            return_value['api_url'] = self.api_url
-        if self.status_code:
-            return_value['status_code'] = self.status_code
-        return return_value
 
 
 class DecodeError(APIError):

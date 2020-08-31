@@ -133,7 +133,7 @@ from ansible.module_utils.basic import AnsibleModule
 import json
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
-    ModuleError,
+    SCBaseError,
     ScCloudComputingOpenstackCredentials
 )
 
@@ -157,7 +157,7 @@ def main():
     )
     try:
         module.exit_json(**creds.run())
-    except ModuleError as e:
+    except SCBaseError as e:
         module.exit_json(**e.fail())
 
 
