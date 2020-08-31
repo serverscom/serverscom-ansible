@@ -24,7 +24,6 @@
   register: test2
   failed_when: test2.status_code!=404
 
-- debug: var=test2
 - name: Check Test2
   assert:
     that:
@@ -58,5 +57,3 @@
       os_user_domain_name: default
       os_project_domain_name: default
   register: os
-
-- debug: var=os.ansible_facts.service_catalog[0]

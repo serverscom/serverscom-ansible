@@ -229,3 +229,8 @@ class ScApi():
         return self.api_helper.make_get_request(
             path=f'/cloud_computing/instances/{instance_id}'
         )
+
+    def get_credentials(self, region_id):
+        return self.api_helper.make_get_request(
+            path=f'/cloud_computing/regions/{region_id}/credentials'
+        )

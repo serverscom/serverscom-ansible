@@ -544,11 +544,13 @@ class ScCloudComputingInstanceInfo():
 class ScCloudComputingOpenstackCredentials(ApiSimpleGet):
 
     def __init__(self, token, endpoint, region_id):
-        self.api_helper = ApiHelper(token, endpoint)
+        self.api = ScApi(token, endpoint)
         self.region_id = region_id
 
-    def build_path(self):
-        return f'/cloud_computing/regions/{self.region_id}/credentials'
+    def run(self):
+        result = self.api.get_credentials(self.region_id)
+        result['changed'] = False
+        return result
 
 
 class ScCloudComputingInstanceReinstall(object):
