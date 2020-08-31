@@ -54,3 +54,6 @@ List of modules
 * `sc_cloud_computing_openstack_credentials` - Credentials to Openstack API
 * `sc_cloud_computing_instances_info` - List of cloud computing instances
 * `sc_cloud_computing_instance_info` - Information about specific instance.
+* `sc_cloud_computing_images_info` - Information about images for cloud computing
+* `sc_cloud_computing_flavors_info` - Information about flavors for cloud computing
+* `sc_cloud_computing_instance` - Create/delete instance.
