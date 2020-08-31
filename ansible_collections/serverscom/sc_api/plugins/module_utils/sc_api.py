@@ -17,8 +17,13 @@ class SCBaseError(Exception):
     def fail(self):
         return {
             'failed': True,
-            'msg': 'Unexpected SCBaseError exception. Internal errror.'
+            'msg': self.msg
         }
+
+
+class APIRequirementsError(SCBaseError):
+    def __init__(self, msg):
+        self.msg = msg
 
 
 class APIError(SCBaseError):
@@ -31,5 +36,134 @@ class APIError(SCBaseError):
         return {
             'failed': True,
             'msg': self.msg,
-            'api_url': self.api_url
+            'api_url': self.api_url,
+            'status_code': self.status_code
         }
+
+
+class DecodeError(APIError):
+    pass
+
+
+# special classes for well-known (and, may be, expected) HTTP/API errors
+class APIError401(APIError):
+    pass
+
+
+class APIError404(APIError):
+    pass
+
+
+class APIError409(APIError):
+    pass
+
+
+class Api():
+    def __init__(self, token, endpoint=DEFAULT_API_ENDPOINT):
+        # pylint: disable=bad-option-value, import-outside-toplevel
+        # pylint: disable=bad-option-value, raise-missing-from
+        try:
+            import requests  # noqa
+            self.requests = requests
+        except ImportError:
+            raise APIRequirementsError(
+                msg='The requests library is required (python3-requests).'
+            )
+        self.session = requests.Session()
+        self.request = None
+        self.endpoint = endpoint
+        self.token = token
+
+    def make_url(self, path):
+        return self.endpoint + path
+
+    def start_request(
+        self,
+        method,
+        path,
+        query_parameters
+    ):
+        '''return half-backed request'''
+        self.request = self.requests.Request(
+            method, self.make_url(path), params=query_parameters
+        )
+
+    def send_request(self, good_codes):
+        '''send a single request/finishes request'''
+
+        self.request.headers['Authorization'] = f'Bearer {self.token}'
+        self.request.headers['User-Agent'] = 'ansible-module/sc_api/0.1'
+        prep_request = self.request.prepare()
+        response = self.session.send(prep_request)
+        if response.status_code == 401:
+            raise APIError(
+                status_code=response.status_code,
+                api_url=response.url,
+                msg='401 Unauthorized. Check if token is valid.',
+            )
+
+        if response.status_code == 404:
+            raise APIError404(
+                status_code=response.status_code,
+                api_url=response.url,
+                msg='404 Not Found.',
+            )
+        if response.status_code == 409:
+            raise APIError409(
+                status_code=response.status_code,
+                api_url=response.url,
+                msg='409 Conflict. ' + str(response.content),
+            )
+        if response.status_code not in good_codes:
+            raise APIError(
+                status_code=response.status_code,
+                api_url=response.url,
+                msg=f'API Error: {response.content }',
+            )
+        return response
+
+    def decode(self, response):
+        # pylint: disable=bad-option-value, raise-missing-from
+        try:
+            decoded = response.json()
+        except ValueError as e:
+            raise DecodeError(
+                api_url=response.url,
+                status_code=response.status_code,
+                msg=f'API decoding error: {str(e)}, data: {response.content}',
+            )
+        return decoded
+
+    def make_get_request(self, path, query_parameters):
+        'Used for simple GET request without pagination.'
+        self.start_request('GET', path, query_parameters)
+        return self.decode(self.send_request(good_codes=[200]))
+
+    def make_delete_request(self, path, body, query_parameters, good_codes):
+        self.start_request('DELETE', path, query_parameters)
+        self.request.body = body
+        return self.send_request(good_codes)
+
+    def make_post_request(self, path, body, query_parameters, good_codes):
+        self.start_request('POST', path, query_parameters)
+        self.request.json = body
+        return self.decode(self.send_request(good_codes))
+
+    def is_next(self):
+        if self.request:
+            return bool(self.request.url)
+        return False
+
+    def prepare_next(self, response):
+        self.request.url = response.links.get('next', {'url': None})['url']
+        self.request.query_params = []
+
+    def make_multipage_request(self, path, query_parameters=None):
+        '''Used for GET request with expected pagination. Returns iterator?'''
+        self.start_request('GET', path, query_parameters)
+        while(self.is_next()):
+            response = self.send_request(good_codes=[200])
+            list_from_api = self.decode(response)
+            for api_object in list_from_api:
+                yield api_object
+            self.prepare_next(response)
