@@ -86,7 +86,7 @@ class ScBaremetalServersInfo():
 
     def run(self):
         return {
-            'changed': True,
+            'changed': False,
             'baremetal_servers': list(self.api.list_hosts())
         }
 

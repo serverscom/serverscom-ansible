@@ -206,7 +206,7 @@ class ScApi():
             path=f'/hosts/dedicated_servers/{server_id}'
         )
 
-    def list_hosts(self, server_id):
+    def list_hosts(self):
         return self.api_helper.make_multipage_request(
             path='/hosts'
         )
