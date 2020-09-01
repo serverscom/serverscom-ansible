@@ -440,7 +440,7 @@ class ScDedicatedServerReinstall(object):
 
 
 class ScCloudComputingFlavorsInfo():
-    def __init__(self, token, endpoint, region_id):
+    def __init__(self, endpoint, token, region_id):
         self.api = ScApi(token, endpoint)
         self.region_id = region_id
 
@@ -452,7 +452,7 @@ class ScCloudComputingFlavorsInfo():
 
 
 class ScCloudComputingImagesInfo():
-    def __init__(self, token, endpoint, region_id):
+    def __init__(self, endpoint, token, region_id):
         self.api = ScApi(token, endpoint)
         self.region_id = region_id
 
@@ -464,7 +464,7 @@ class ScCloudComputingImagesInfo():
 
 
 class ScCloudComputingInstancesInfo():
-    def __init__(self, token, endpoint, region_id):
+    def __init__(self, endpoint, token, region_id):
         self.api = ScApi(token, endpoint)
         self.region_id = region_id
 
@@ -476,7 +476,7 @@ class ScCloudComputingInstancesInfo():
 
 
 class ScCloudComputingInstanceInfo():
-    def __init__(self, token, endpoint, instance_id):
+    def __init__(self, endpoint, token, instance_id):
         self.api = ScApi(token, endpoint)
         self.instance_id = instance_id
 
@@ -488,7 +488,7 @@ class ScCloudComputingInstanceInfo():
 
 class ScCloudComputingOpenstackCredentials():
 
-    def __init__(self, token, endpoint, region_id):
+    def __init__(self, endpoint, token, region_id):
         self.api = ScApi(token, endpoint)
         self.region_id = region_id
 
