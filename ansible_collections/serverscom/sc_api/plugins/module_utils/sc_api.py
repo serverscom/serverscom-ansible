@@ -206,6 +206,11 @@ class ScApi():
             path=f'/hosts/dedicated_servers/{server_id}'
         )
 
+    def list_hosts(self, server_id):
+        return self.api_helper.make_multipage_request(
+            path='/hosts'
+        )
+
     def post_dedicated_server_reinstall(
         self,
         server_id,
@@ -250,4 +255,62 @@ class ScApi():
     def get_credentials(self, region_id):
         return self.api_helper.make_get_request(
             path=f'/cloud_computing/regions/{region_id}/credentials'
+        )
+
+    def list_flavors(self, region_id):
+        return self.api_helper.make_multipage_request(
+            path=f'/cloud_computing/regions/{region_id}/flavors'
+        )
+
+    def list_images(self, region_id):
+        return self.api_helper.make_multipage_request(
+            path=f'/cloud_computing/regions/{region_id}/images'
+        )
+
+    def list_instances(self, region_id=None):
+        region_query = {}
+        if region_id is not None:
+            region_query['region_id'] = region_id
+        return self.api_helper.make_multipage_request(
+            path='/cloud_computing/instances',
+            query_parameters=region_query
+        )
+
+    def post_instances_reinstall(self, instance_id, image_id):
+        return self.api_helper.make_post_request(
+            path=f'/cloud_computing/instances/{instance_id}/reinstall',
+            body=None,
+            query_parameters={'image_id': image_id},
+            good_codes=[202]
+        )
+
+    def post_instance(
+        self, region_id, name, flavor_id, image_id,
+        gpn_enabled, ipv6_enabled, ssh_key_fingerprint, backup_copies
+    ):
+        body = {
+            'region_id': region_id,
+            'name': name,
+            'flavor_id': flavor_id,
+            'image_id': image_id,
+            'gpn_enabled': bool(gpn_enabled),
+            'ipv6_enabled': bool(ipv6_enabled),
+        }
+        if ssh_key_fingerprint:
+            body['ssh_key_fingerprint'] = ssh_key_fingerprint
+        if backup_copies is not None:
+            body['backup_copies'] = backup_copies
+        self.api_helper.make_post_request(
+            path='/cloud_computing/instances',
+            body=body,
+            query_parameters=None,
+            good_codes=[202]
+        )
+
+    def delete_instance(self, instance_id):
+        return self.api_helper.make_delete_request(
+            path=f'/cloud_computing/instances/{instance_id}',
+            query_parameters=None,
+            body=None,
+            good_codes=[202]
         )

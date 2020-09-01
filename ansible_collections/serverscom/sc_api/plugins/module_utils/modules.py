@@ -45,58 +45,6 @@ class TimeOutError(ModuleError):
         }
 
 
-class ApiSimpleGet(object):
-    ''' Generic class for modules with single GET and no additional options.'''
-
-    path = None
-
-    query_parameters = None
-
-    def build_path(self):
-        if not self.path:
-            raise AssertionError("Class should have path defined.")
-        return self.path
-
-    def build_query_parameters(self):
-        return self.query_parameters
-
-    def __init__(self, endpoint, token):
-        self.api_helper = ApiHelper(token, endpoint)
-
-    def process_response(self, response):
-        response['changed'] = False
-        return response
-
-    def run(self):
-        return self.process_response(
-            self.api_helper.make_get_request(
-                self.build_path(),
-                self.build_query_parameters()
-            )
-        )
-
-
-class ApiMultipageGet(ApiSimpleGet):
-    ''' Generic class for modules with multipage GET and no options.'''
-    response_key = None
-
-    def process_response(self, response):
-        if not self.response_key:
-            raise AssertionError("Class should have response_key defined.")
-        return {
-            'changed': False,
-            self.response_key: list(response)
-        }
-
-    def run(self):
-        return self.process_response(
-            self.api_helper.make_multipage_request(
-                self.build_path(),
-                self.build_query_parameters()
-            )
-        )
-
-
 class ScDedicatedServerInfo(object):
     def __init__(self, endpoint, token, name, fail_on_absent):
         self.api = ScApi(token, endpoint)
@@ -132,9 +80,15 @@ class ScDedicatedServerInfo(object):
         return module_output
 
 
-class ScBaremetalServersInfo(ApiMultipageGet):
-    path = '/hosts'
-    response_key = 'baremetal_servers'
+class ScBaremetalServersInfo():
+    def __init__(self, endpoint, token):
+        self.api = ScApi(token, endpoint)
+
+    def run(self):
+        return {
+            'changed': True,
+            'baremetal_servers': list(self.api.list_hosts())
+        }
 
 
 class ScBaremetalLocationsInfo(object):
@@ -485,41 +439,40 @@ class ScDedicatedServerReinstall(object):
         return result
 
 
-class ScCloudComputingFlavorsInfo(ApiMultipageGet):
-
-    response_key = 'cloud_flavors'
-
+class ScCloudComputingFlavorsInfo():
     def __init__(self, token, endpoint, region_id):
-        self.api_helper = ApiHelper(token, endpoint)
+        self.api = ScApi(token, endpoint)
         self.region_id = region_id
 
-    def build_path(self):
-        return f'/cloud_computing/regions/{self.region_id}/flavors'
+    def run(self):
+        return {
+            'changed': False,
+            'cloud_flavors': list(self.api.list_flavors(self.region_id))
+        }
 
 
-class ScCloudComputingImagesInfo(ApiMultipageGet):
-
-    response_key = 'cloud_images'
-
+class ScCloudComputingImagesInfo():
     def __init__(self, token, endpoint, region_id):
-        self.api_helper = ApiHelper(token, endpoint)
+        self.api = ScApi(token, endpoint)
         self.region_id = region_id
 
-    def build_path(self):
-        return f'/cloud_computing/regions/{self.region_id}/images'
+    def run(self):
+        return {
+            'changed': False,
+            'cloud_images': list(self.api.list_images(self.region_id))
+        }
 
 
-class ScCloudComputingInstancesInfo(ApiMultipageGet):
-
-    response_key = 'cloud_instances'
-    path = '/cloud_computing/instances'
-
+class ScCloudComputingInstancesInfo():
     def __init__(self, token, endpoint, region_id):
-        self.api_helper = ApiHelper(token, endpoint)
-        if region_id:
-            self.query_parameters = {
-                'region_id': region_id
-            }
+        self.api = ScApi(token, endpoint)
+        self.region_id = region_id
+
+    def run(self):
+        return {
+            'changed': False,
+            'cloud_instances': list(self.api.list_instances(self.region_id))
+        }
 
 
 class ScCloudComputingInstanceInfo():
@@ -533,7 +486,7 @@ class ScCloudComputingInstanceInfo():
         return result
 
 
-class ScCloudComputingOpenstackCredentials(ApiSimpleGet):
+class ScCloudComputingOpenstackCredentials():
 
     def __init__(self, token, endpoint, region_id):
         self.api = ScApi(token, endpoint)
@@ -562,7 +515,7 @@ class ScCloudComputingInstanceReinstall(object):
                 f'Unsupported mode: wait_for_rebuilding={wait_for_rebuilding} '
                 f'and wait_for_active={wait_for_active}.'
             )
-        self.api_helper = ApiHelper(token, endpoint)
+        self.api = ScApi(token, endpoint)
         self.instance_id = instance_id
         self.image_id = self.get_image_id(image_id)
         self.wait_for_active = wait_for_active
@@ -570,16 +523,10 @@ class ScCloudComputingInstanceReinstall(object):
         self.update_interval = update_interval
         self.checkmode = checkmode
 
-    def get_instance(self):
-        return self.api_helper.make_get_request(
-            path=f'/cloud_computing/instances/{self.instance_id}',
-            query_parameters=None
-        )
-
     def get_image_id(self, image_id):
         if image_id:
             return image_id
-        old_image_id = self.get_instance().get('image_id')
+        old_image_id = self.api.get_instances(self.instance_id).get('image_id')
         if not old_image_id:
             raise ModuleError(
                 "Can't find old image id of instance. "
@@ -595,7 +542,7 @@ class ScCloudComputingInstanceReinstall(object):
         while elapsed < timeout:
             time.sleep(timeout)
             elapsed = time.time() - start_time
-            instance = self.get_instance()
+            instance = self.api.get_instances(self.instance_id)
             status = instance.get('status')
             if not status:
                 ModuleError("Status is not defined in API answer.")
@@ -609,16 +556,12 @@ class ScCloudComputingInstanceReinstall(object):
 
     def run(self):
         if self.checkmode:
-            instance = self.get_instance()
+            instance = self.api.get_instances(self.instance_id)
             instance['changed'] = True
             return instance
-        instance = self.api_helper.make_post_request(
-            path=f'/cloud_computing/instances/{self.instance_id}/reinstall',
-            body=None,
-            query_parameters={
-                'image_id': self.image_id
-            },
-            good_codes=[202]
+        instance = self.api.post_instance_reinstall(
+            self.instance_id,
+            self.image_id
         )
         instance = self.wait_for('REBUILDING', self.wait_for_rebuilding)
         instance = self.wait_for('ACTIVE', self.wait_for_active)
@@ -630,18 +573,8 @@ class ScCloudComputingInstance(object):
     """Common methods for ScCloudComputingInstanceCreate and
        ScCloudComputingInstanceDelete.
     """
-
-    def region_query(self):
-        if self.region_id:
-            return {'region_id': self.region_id}
-        else:
-            return {}
-
     def find_instance_by_name(self, name):
-        instances = self.api_helper.make_multipage_request(
-            path='/cloud_computing/instances',
-            query_parameters=self.region_query()
-        )
+        instances = self.api.list_instances(self.region_id)
         found = []
         for instance in instances:
             if instance['name'] == name:
@@ -654,17 +587,11 @@ class ScCloudComputingInstance(object):
             return None
         return found[0]
 
-    def find_instance_by_id(self, instance_id):
-        return self.api_helper.make_get_request(
-            path=f'/cloud_computing/instances/{instance_id}',
-            query_parameters=None
-        )
-
     def find_instance(self):
         """Search for instance. Return None if not found."""
         try:
             if self.instance_id:
-                return self.find_instance_by_id(self.instance_id)
+                return self.api.get_instances(self.instance_id)
             elif self.name:
                 return self.find_instance_by_name(self.name)
             else:
@@ -687,7 +614,7 @@ class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
         checkmode
     ):
         self.checkmode = checkmode
-        self.api_helper = ApiHelper(token, endpoint)
+        self.api = ScApi(token, endpoint)
         if region_id is None:
             raise ModuleError("region_id is mandatory for state=present.")
         self.region_id = region_id
@@ -712,11 +639,7 @@ class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
         if ssh_key_fingerprint:
             return ssh_key_fingerprint
         if ssh_key_name:
-            ssh_keys = self.api_helper.make_multipage_request(
-                path='/ssh_keys',
-                query_parameters=None
-            )
-            for key in ssh_keys:
+            for key in self.api.list_ssh_keys():
                 if key['name'] == ssh_key_name:
                     return key['fingerprint']
             raise ModuleError(f"Unable to find ssh key {ssh_key_name}")
@@ -728,11 +651,7 @@ class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
         if image_id:
             return image_id
         elif image_regexp:
-            images = self.api_helper.make_multipage_request(
-                path=f'/cloud_computing/regions/{self.region_id}/images',
-                query_parameters=None
-            )
-            for image in images:
+            for image in self.api.list_images(self.region_id):
                 if re.match(image_regexp, image['name']):
                     return image['id']
             raise ModuleError(
@@ -748,11 +667,7 @@ class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
         if flavor_id:
             return flavor_id
         elif flavor_name:
-            flavors = self.api_helper.make_multipage_request(
-                path=f'/cloud_computing/regions/{self.region_id}/flavors',
-                query_parameters=None
-            )
-            for flavor in flavors:
+            for flavor in self.api.list_flavors(self.region_id):
                 if flavor['name'] == flavor_name:
                     return flavor['id']
             raise ModuleError(
@@ -763,29 +678,21 @@ class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
             raise ModuleError('Need either flavor_id or flavor_name.')
 
     def create_instance(self):
-        body = {
-            'region_id': self.region_id,
-            'name': self.name,
-            'flavor_id': self.flavor_id,
-            'image_id': self.image_id,
-            'gpn_enabled': bool(self.gpn_enabled),
-            'ipv6_enabled': bool(self.ipv6_enabled),
-        }
-        if self.ssh_key_fingerprint:
-            body['ssh_key_fingerprint'] = self.ssh_key_fingerprint
-        if self.backup_copies:
-            body['backup_copies'] = self.backup_copies
-        instance = self.api_helper.make_post_request(
-            path='/cloud_computing/instances',
-            body=body,
-            query_parameters=None,
-            good_codes=[202]
+        instance = self.api.post_instance(
+            region_id=self.region_id,
+            name=self.name,
+            flavor_id=self.flavor_id,
+            image_id=self.image_id,
+            gpn_enabled=self.image_id,
+            ipv6_enabled=self.ipv6_enabled,
+            ssh_key_fingerprint=self.ssh_key_fingerprint,
+            backup_copies=self.backup_copies
         )
         return instance
 
     def wait_for(self, instance):
         start_time = time.time()
-        instance = self.find_instance_by_id(instance['id'])
+        instance = self.api.get_instances(instance['id'])
         if not self.wait:
             return instance
         while instance['status'] != 'ACTIVE':
@@ -797,7 +704,7 @@ class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
                     f" to become ACTIVE. Last status was {instance['status']}",
                     timeout=elapsed
                 )
-            instance = self.find_instance_by_id(instance['id'])
+            instance = self.api.get_instances(instance['id'])
         return instance
 
     def run(self):
@@ -828,7 +735,7 @@ class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
         checkmode
     ):
         self.checkmode = checkmode
-        self.api_helper = ApiHelper(token, endpoint)
+        self.api = ScApi(token, endpoint)
         self.region_id = region_id
         self.name = name
         self.instance_id = instance_id
@@ -860,12 +767,7 @@ class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
         start_time = time.time()
         while instance:
             try:
-                self.api_helper.make_delete_request(
-                    path=f'/cloud_computing/instances/{instance["id"]}',
-                    query_parameters=None,
-                    body=None,
-                    good_codes=[202]
-                )
+                self.api.delete_instance(instance['id'])
 
             except APIError409:
                 if self.retry_on_conflicts:
