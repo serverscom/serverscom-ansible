@@ -318,9 +318,15 @@ class ScSshKey(object):
         return {'changed': changed}
 
 
-class ScSshKeysInfo(ApiMultipageGet):
-    path = '/ssh_keys'
-    response_key = 'ssh_keys'
+class ScSshKeysInfo():
+    def __init__(self, endpoint, token):
+        self.api = ScApi(token, endpoint)
+
+    def run(self):
+        return {
+            'changed': False,
+            'ssh_keys': list(self.api.list_ssh_keys())
+        }
 
 
 class ScDedicatedServerReinstall(object):
@@ -345,7 +351,7 @@ class ScDedicatedServerReinstall(object):
                     f"Update interval ({update_interval}) is longer "
                     f"than wait time ({wait}"
                 )
-        self.api_helper = ApiHelper(token, endpoint)
+        self.api = ScApi(token, endpoint)
         self.old_server_data = None
         self.server_id = server_id
         self.hostname = self.get_hostname(hostname)
@@ -360,16 +366,12 @@ class ScDedicatedServerReinstall(object):
         self.checkmode = checkmode
 
     def get_server_data(self):
-        if self.old_server_data:
-            return
-        self.old_server_data = self.api_helper.make_get_request(
-            path=f'/hosts/dedicated_servers/{self.server_id}',
-            query_parameters=None
-        )
+        if not self.old_server_data:
+            self.old_server_data = \
+                self.api.get_dedicated_servers(self.server_id)
 
     def get_ssh_key_by_name(self, ssh_key_name):
-        api_keys = self.api_helper.make_multipage_request('/ssh_keys')
-        for key in api_keys:
+        for key in self.api.list_ssh_keys():
             if key['name'] == ssh_key_name:
                 return key['fingerprint']
         raise ModuleError(
@@ -447,16 +449,6 @@ class ScDedicatedServerReinstall(object):
         else:
             return templates[template]
 
-    def make_request_body(self):
-        return {
-            'hostname': self.hostname,
-            'operating_system_id': self.operating_system_id,
-            'ssh_key_fingerprints': self.ssh_keys,
-            'drives': {
-                'layout': self.drives_layout,
-            }
-        }
-
     def wait_for_server(self):
         ready = False
         start_time = time.time()
@@ -469,10 +461,7 @@ class ScDedicatedServerReinstall(object):
                     msg="Server is not ready.",
                     timeout=elapsed
                 )
-            server_info = self.api_helper.make_get_request(
-                path=f'/hosts/dedicated_servers/{self.server_id}',
-                query_parameters=None
-            )
+            server_info = self.api.get_dedicated_servers(self.server_id)
             ready = ScDedicatedServerInfo._is_server_ready(server_info)
         server_info['ready'] = True
         server_info['elapsed'] = elapsed
@@ -481,11 +470,14 @@ class ScDedicatedServerReinstall(object):
     def run(self):
         if self.checkmode:
             return {'changed': True}
-        result = self.api_helper.make_post_request(
-            path=f'/hosts/dedicated_servers/{self.server_id}/reinstall',
-            body=self.make_request_body(),
-            query_parameters=None,
-            good_codes=[202]
+        result = self.api.post_dedicated_server_reinstall(
+            server_id=self.server_id,
+            hostname=self.hostname,
+            operating_system_id=self.operating_system_id,
+            ssh_key_fingerprints=self.ssh_keys,
+            drives={
+                'layout': self.drives_layout,
+            }
         )
         if self.wait:
             result = self.wait_for_server()

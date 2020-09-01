@@ -29,7 +29,7 @@
       - test1.id == existing_server_id
 
 # this is LONG
-- name: wait until installtion is done
+- name: Test1, wait until installtion is done
   sc_dedicated_server_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'

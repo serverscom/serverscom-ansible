@@ -206,6 +206,23 @@ class ScApi():
             path=f'/hosts/dedicated_servers/{server_id}'
         )
 
+    def post_dedicated_server_reinstall(
+        self,
+        server_id,
+        hostname, operating_system_id, ssh_key_fingerprints, drives
+    ):
+        return self.api_helper.make_post_request(
+            path=f'/hosts/dedicated_servers/{server_id}/reinstall',
+            body={
+                'hostname': hostname,
+                'operating_system_id': operating_system_id,
+                'ssh_key_fingerprints': ssh_key_fingerprints,
+                'drives': drives
+            },
+            query_parameters=None,
+            good_codes=[202]
+        )
+
     def list_ssh_keys(self):
         return self.api_helper.make_multipage_request('/ssh_keys')
 
