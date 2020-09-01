@@ -314,3 +314,31 @@ class ScApi():
             body=None,
             good_codes=[202]
         )
+
+    def list_instance_ptr_records(self, instance_id):
+        return self.api_helper.make_multipage_request(
+            path=f'/cloud_computing/instances/{instance_id}/ptr_records'
+        )
+
+    def delete_instance_ptr_records(self, instance_id, record_id):
+        return self.api_helper.make_delete_request(
+            path=f'/cloud_computing/instances/{instance_id}/ptr_records/{record_id}',  # noqa
+            good_codes=[204]
+        )
+
+    def post_instance_ptr_records(
+        self, instance_id, data, ip, ttl=None, priority=None
+    ):
+        query_parameters = {
+            'data': data,
+            'ip': ip,
+        }
+        if ttl is not None:
+            query_parameters['ttl'] = ttl
+        if priority is not None:
+            query_parameters['priority'] = priority
+        return self.api_helper.make_post_request(
+            path=f'/cloud_computing/instances/{instance_id}/ptr_records',
+            query_parameters=query_parameters,
+            good_codes=[201]
+        )

@@ -57,3 +57,4 @@ List of modules
 * `sc_cloud_computing_images_info` - Information about images for cloud computing
 * `sc_cloud_computing_flavors_info` - Information about flavors for cloud computing
 * `sc_cloud_computing_instance` - Create/delete instance.
+* `sc_cloud_computing_instance_ptr` - Manage PTR records for cloud computing instances.

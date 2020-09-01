@@ -799,3 +799,24 @@ class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
             self.wait_for_disappearance(instance)
         original_instance['changed'] = CHANGED
         return original_instance
+
+
+class ScCloudComputingInstancePtr():
+    def __init__(
+            self,
+            endpoint,
+            token,
+            state,
+            instance_id,
+            ip,
+            domain,
+            checkmode
+    ):
+        self.api = ScApi(token, endpoint)
+        self.instance_id = instance_id
+        self.ip = ip
+        self.domain = domain
+        self.checkmode = checkmode
+
+    def run(self):
+        raise NotImplementedError()
