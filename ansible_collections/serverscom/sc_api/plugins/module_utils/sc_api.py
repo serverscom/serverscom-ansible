@@ -250,7 +250,7 @@ class ScApiToolbox():
             )
         if not instance_id and not instance_name:
             raise ToolboxError(
-                'Neigher instance_id nor instance_name specified.'
+                'Neither instance_id nor instance_name specified.'
             )
         if instance_id:
             try:
@@ -421,6 +421,8 @@ class ScApi():
     def delete_instance_ptr_records(self, instance_id, record_id):
         return self.api_helper.make_delete_request(
             path=f'/cloud_computing/instances/{instance_id}/ptr_records/{record_id}',  # noqa
+            body=None,
+            query_parameters=None,
             good_codes=[204]
         )
 
@@ -438,5 +440,6 @@ class ScApi():
         return self.api_helper.make_post_request(
             path=f'/cloud_computing/instances/{instance_id}/ptr_records',
             query_parameters=query_parameters,
+            body=None,
             good_codes=[201]
         )

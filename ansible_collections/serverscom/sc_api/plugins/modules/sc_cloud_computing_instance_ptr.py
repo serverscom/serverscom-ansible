@@ -43,9 +43,11 @@ options:
     state:
       type: str
       required: true
-      choices: ['present', 'absent']
+      choices: ['present', 'absent', 'query']
       description:
         - State of the ptr record.
+        - C(query) does not change anything and returns current list of PTRs
+          for instance.
 
     name:
       type: str
@@ -152,35 +154,46 @@ __metaclass__ = type
 def main():
     module = AnsibleModule(
         argument_spec={
-            'token': {'type': 'str', 'no_log': True, 'required': True},
             'endpoint': {'default': DEFAULT_API_ENDPOINT},
+            'token': {'type': 'str', 'no_log': True, 'required': True},
             'state': {
                 'type': 'str',
-                'choices': ['present', 'absent'],
+                'choices': ['present', 'absent', 'query'],
                 'required': True
             },
             'instance_id': {},
             'name': {'aliases': ['instance_name']},
-            'ip': {'default': 'all'},
             'region_id': {'type': 'int'},
+            'ip': {'default': 'all'},
             'domain': {},
             'ttl': {'type': 'int'},
             'priority': {'type': 'int'}
         },
+        mutually_exclusive=[
+            ['name', 'instance_id']
+        ],
+        required_if=[
+            [
+                "state", "present",
+                ["domain"]
+            ]
+        ],
         supports_check_mode=True
     )
-
-    sc_ssh_key = ScCloudComputingInstancePtr(
-        endpoint=module.params['endpoint'],
-        token=module.params['token'],
-        name=module.params['name'],
-        state=module.params['state'],
-        public_key=module.params['public_key'],
-        fingerprint=module.params['fingerprint'],
-        replace=module.params['replace'],
-        checkmode=module.check_mode
-    )
     try:
+        sc_ssh_key = ScCloudComputingInstancePtr(
+            endpoint=module.params['endpoint'],
+            token=module.params['token'],
+            state=module.params['state'],
+            instance_id=module.params['instance_id'],
+            name=module.params['name'],
+            region_id=module.params['region_id'],
+            ip=module.params['ip'],
+            domain=module.params['domain'],
+            ttl=module.params['ttl'],
+            priority=module.params['priority'],
+            checkmode=module.check_mode
+        )
         module.exit_json(**sc_ssh_key.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())

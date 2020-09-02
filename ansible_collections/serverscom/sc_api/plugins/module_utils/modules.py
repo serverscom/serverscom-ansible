@@ -8,7 +8,6 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
     APIError404,
     APIError409,
     DEFAULT_API_ENDPOINT,
-    ApiHelper,
     ScApi
 )
 
@@ -723,12 +722,12 @@ class ScCloudComputingInstanceDelete():
                     f" to disappear. Last status was {instance['status']}",
                     timeout=elapsed
                 )
-        instance = self.api.toolbox.find_instance(
-            self.instance_id,
-            self.name,
-            self.region_id,
-            must=False
-        )
+            instance = self.api.toolbox.find_instance(
+                self.instance_id,
+                self.name,
+                self.region_id,
+                must=False
+            )
 
     def retry_to_delete(self, instance):
         # pylint: disable=bad-option-value, raise-missing-from
@@ -799,5 +798,75 @@ class ScCloudComputingInstancePtr():
         self.priority = priority
         self.checkmode = checkmode
 
+    def find_ptr(self, ptr_records, domain, ip):
+        for record in ptr_records:
+            found = False
+            if domain and domain == record['domain']:
+                found = True
+            if ip and ip == record['ip']:
+                found = True
+            if found:
+                yield record
+
     def run(self):
-        raise NotImplementedError()
+        instance = self.api.toolbox.find_instance(
+            instance_id=self.instance_id,
+            instance_name=self.name,
+            region_id=self.region_id,
+            must=True
+        )
+        ptr_records = list(self.api.list_instance_ptr_records(instance['id']))
+        if self.state == 'query':
+            return {
+                'changed': False,
+                'ptr_records': list(ptr_records)
+            }
+        elif self.state == 'present':
+            if list(self.find_ptr(ptr_records, self.domain, self.ip)):
+                return {
+                    'changed': False,
+                    'ptr_records': list(ptr_records)
+                }
+            if self.checkmode:
+                return {
+                    'changed': True,
+                    'ptr_records': list(ptr_records)
+                }
+            self.api.post_instance_ptr_records(
+                instance_id=instance['id'],
+                data=self.domain,
+                ip=self.ip,
+                ttl=self.ttl,
+                priority=self.priority
+            )
+            return {
+                'changed': True,
+                'ptr_records': list(
+                    self.api.list_instance_ptr_records(instance['id'])
+                )
+            }
+        elif self.state == 'absent':
+            if not list(self.find_ptr(ptr_records, self.domain, self.ip)):
+                return {
+                    'changed': False,
+                    'ptr_records': list(ptr_records)
+                }
+            if self.checkmode:
+                return {
+                    'changed': True,
+                    'ptr_records': list(ptr_records)
+                }
+            for record in self.find_ptr(ptr_records, self.domain, self.ip):
+                self.api.delete_instance_ptr_records(
+                    instance_id=instance['id'],
+                    record_id=record['id']
+
+                )
+            return {
+                'changed': True,
+                'ptr_records': list(
+                    self.api.list_instance_ptr_records(instance['id'])
+                )
+            }
+        else:
+            raise ModuleError(f"Unknown state={self.state}")
