@@ -90,7 +90,7 @@
         flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: ec354674-e844-11ea-ac53-83e1244f3049
-        backup_copies: 1
+        backup_copies: 0
         gpn: true
         ipv6: true
       check_mode: true
@@ -129,7 +129,7 @@
         flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: 52310c60-7446-482d-a30e-2bedeb515878
-        backup_copies: 1
+        backup_copies: 0
         gpn: true
         ipv6: true
         wait: 600
@@ -161,7 +161,7 @@
         flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: 52310c60-7446-482d-a30e-2bedeb515878
-        backup_copies: 1
+        backup_copies: 0
         gpn: true
         ipv6: true
         wait: 600
@@ -177,7 +177,7 @@
         flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: 52310c60-7446-482d-a30e-2bedeb515878
-        backup_copies: 1
+        backup_copies: 0
         gpn: true
         ipv6: true
         wait: 600
@@ -217,7 +217,7 @@
         flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
-        backup_copies: 1
+        backup_copies: 0
         gpn: false
         ipv6: false
         wait: 0
