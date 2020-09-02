@@ -300,7 +300,7 @@ class ScApi():
             body['ssh_key_fingerprint'] = ssh_key_fingerprint
         if backup_copies is not None:
             body['backup_copies'] = backup_copies
-        self.api_helper.make_post_request(
+        return self.api_helper.make_post_request(
             path='/cloud_computing/instances',
             body=body,
             query_parameters=None,
