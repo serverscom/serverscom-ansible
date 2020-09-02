@@ -1,5 +1,5 @@
 from __future__ import (absolute_import, division, print_function)
-
+import re
 
 __metaclass__ = type
 
@@ -19,6 +19,11 @@ class SCBaseError(Exception):
             'failed': True,
             'msg': self.msg
         }
+
+
+class ToolboxError(SCBaseError):
+    def __init__(self, msg):
+        self.msg = msg
 
 
 class APIRequirementsError(SCBaseError):
@@ -174,12 +179,91 @@ class ScApiToolbox():
     def __init__(self, api):
         self.api = api
 
-    def get_ssh_fingerprints_by_key_name(self, ssh_key_name):
+    def get_ssh_fingerprints_by_key_name(self, ssh_key_name, must=False):
         """Search for registered ssh key by name and return it's
            fingerprints or return None if nothing found."""
         for key in self.api.list_ssh_keys():
             if key['name'] == ssh_key_name:
                 return key['fingerprint']
+        if must:
+            raise ToolboxError(
+                f"Unable to find registered ssh key {ssh_key_name}"
+            )
+
+    def find_cloud_image_id_by_name_regexp(
+        self, regexp, region_id=None, must=False
+    ):
+        for image in self.api.list_images(region_id):
+            if re.match(regexp, image['name']):
+                return image['id']
+        if must:
+            raise ToolboxError(
+                f"Unable to find image by regexp {regexp}"
+            )
+
+    def find_cloud_flavor_id_by_name(
+        self, flavor_name, region_id=None, must=False
+    ):
+        """Search flavor by exact name match.
+
+           Returns flavor_id if found, or None if not found."""
+        for flavor in self.api.list_flavors(region_id):
+            if flavor['name'] == flavor_name:
+                return flavor['id']
+        if must:
+            raise ToolboxError(
+                f"Unable to find flavor by name {flavor_name}"
+            )
+
+    def find_cloud_instance_id_by_name(
+        self, name, region_id=None, must=False
+    ):
+        instances = self.api.list_instances(region_id)
+        found = []
+        for instance in instances:
+            if instance['name'] == name:
+                found.append(instance)
+        if len(found) > 1:
+            raise ToolboxError(
+                f'Multiple instances found with name {name}'
+            )
+        if len(found) == 1:
+            return found[0]
+        if must:
+            raise ToolboxError(
+                f"Unable to find instance by name {name}"
+            )
+
+    def find_instance(
+        self, instance_id, instance_name, region_id=None, must=False
+    ):
+        """Search instance either by id, or by name (and region).
+
+            Returns instance object, raises an exception if nothing
+            found (and must=True), or return None (if must=False).
+            Raises an exception if multiple instances found with the
+            same name.
+        """
+        if instance_id and instance_name:
+            raise ToolboxError(
+                'Both instance_id and instance_name are specified.'
+            )
+        if not instance_id and not instance_name:
+            raise ToolboxError(
+                'Neigher instance_id nor instance_name specified.'
+            )
+        if instance_id:
+            try:
+                return self.api.get_instances(instance_id)
+            except APIError404:
+                if must:
+                    raise
+                return None
+        if instance_name:
+            return self.find_cloud_instance_id_by_name(
+                instance_name, must=must
+            )
+
 
 # naiming convention:
 # Prefixes:

@@ -90,7 +90,7 @@
         flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: ec354674-e844-11ea-ac53-83e1244f3049
-        backup_copies: 0
+        backup_copies: 1
         gpn: true
         ipv6: true
       check_mode: true
@@ -129,7 +129,7 @@
         flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: 52310c60-7446-482d-a30e-2bedeb515878
-        backup_copies: 0
+        backup_copies: 1
         gpn: true
         ipv6: true
         wait: 600
@@ -161,7 +161,7 @@
         flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: 52310c60-7446-482d-a30e-2bedeb515878
-        backup_copies: 0
+        backup_copies: 1
         gpn: true
         ipv6: true
         wait: 600
@@ -177,7 +177,7 @@
         flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: 52310c60-7446-482d-a30e-2bedeb515878
-        backup_copies: 0
+        backup_copies: 1
         gpn: true
         ipv6: true
         wait: 600
@@ -217,7 +217,7 @@
         flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
-        backup_copies: 0
+        backup_copies: 1
         gpn: false
         ipv6: false
         wait: 0
@@ -333,11 +333,12 @@
       register: test8_image
       failed_when: false
 
+    - debug: var=[test8_flavor,test8_image]
     - name: Check test 8
       assert:
         that:
-          - '''Flavor with name dont.exist is not found'' in test8_flavor.msg'
-          - '''Image with regexp a.+dont.exist is not found'' in test8_image.msg'
+          - '''Unable to find flavor by name dont.exist'' in test8_flavor.msg'
+          - '''Unable to find image by regexp a.+dont.exist'' in test8_image.msg'
 
   always:
     - name: Test8, cleanup

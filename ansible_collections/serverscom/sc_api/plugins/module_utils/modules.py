@@ -3,8 +3,6 @@ import hashlib
 from textwrap import wrap
 import base64
 import time
-import re
-
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
     SCBaseError,
     APIError404,
@@ -324,7 +322,6 @@ class ScDedicatedServerReinstall(object):
             self.old_server_data = \
                 self.api.get_dedicated_servers(self.server_id)
 
-
     def get_hostname(self, hostname):
         if hostname:
             return hostname
@@ -353,12 +350,8 @@ class ScDedicatedServerReinstall(object):
             return ssh_keys
         if not ssh_key_name:
             return []
-        fp = self.api.toolbox.get_ssh_fingerprints_by_key_name(ssh_key_name)
-        if fp:
-            return [fp]
-        raise ModuleError(
-                f'Unable to find registered ssh key with name "{ssh_key_name}"'
-        )
+        return [self.api.toolbox.get_ssh_fingerprints_by_key_name(
+            ssh_key_name, must=True)]
 
     @staticmethod
     def get_drives_layout(layout, template):
@@ -495,7 +488,7 @@ class ScCloudComputingOpenstackCredentials():
         return result
 
 
-class ScCloudComputingInstanceReinstall(object):
+class ScCloudComputingInstanceReinstall():
     def __init__(
         self,
         endpoint,
@@ -566,38 +559,7 @@ class ScCloudComputingInstanceReinstall(object):
         return instance
 
 
-class ScCloudComputingInstance(object):
-    """Common methods for ScCloudComputingInstanceCreate and
-       ScCloudComputingInstanceDelete.
-    """
-    def find_instance_by_name(self, name):
-        instances = self.api.list_instances(self.region_id)
-        found = []
-        for instance in instances:
-            if instance['name'] == name:
-                found.append(instance)
-        if len(found) > 1:
-            raise ModuleError(
-                f'Multiple instances found with name {name}'
-            )
-        if len(found) == 0:
-            return None
-        return found[0]
-
-    def find_instance(self):
-        """Search for instance. Return None if not found."""
-        try:
-            if self.instance_id:
-                return self.api.get_instances(self.instance_id)
-            elif self.name:
-                return self.find_instance_by_name(self.name)
-            else:
-                raise ModuleError("No instance_id or name was specified")
-        except APIError404:
-            return None
-
-
-class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
+class ScCloudComputingInstanceCreate():
     def __init__(
         self,
         endpoint, token,
@@ -645,34 +607,28 @@ class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
     def get_image_id(self, image_id, image_regexp):
         if image_id and image_regexp:
             raise ModuleError("Both image_id and image_regexp are present.")
-        if image_id:
-            return image_id
-        elif image_regexp:
-            for image in self.api.list_images(self.region_id):
-                if re.match(image_regexp, image['name']):
-                    return image['id']
-            raise ModuleError(
-                f'Image with regexp {image_regexp} is not found in '
-                f'region {self.region_id}'
-            )
-        else:
+        if not image_id and not image_regexp:
             raise ModuleError('Need either image_id or image_regexp.')
+        if image_regexp:
+            image_id = self.api.toolbox.find_cloud_image_id_by_name_regexp(
+                regexp=image_regexp,
+                region_id=self.region_id,
+                must=True
+            )
+        return image_id
 
     def get_flavor_id(self, flavor_id, flavor_name):
         if flavor_id and flavor_name:
             raise ModuleError("Both flavor_id and flavor_name are present.")
-        if flavor_id:
-            return flavor_id
-        elif flavor_name:
-            for flavor in self.api.list_flavors(self.region_id):
-                if flavor['name'] == flavor_name:
-                    return flavor['id']
-            raise ModuleError(
-                f'Flavor with name {flavor_name} is not found in '
-                f'region {self.region_id}'
-            )
-        else:
+        if not flavor_id and not flavor_name:
             raise ModuleError('Need either flavor_id or flavor_name.')
+        if flavor_name:
+            flavor_id = self.api.toolbox.find_cloud_flavor_id_by_name(
+                flavor_name=flavor_name,
+                region_id=self.region_id,
+                must=True
+            )
+        return flavor_id
 
     def create_instance(self):
         instance = self.api.post_instance(
@@ -705,7 +661,12 @@ class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
         return instance
 
     def run(self):
-        instance = self.find_instance()
+        instance = self.api.toolbox.find_instance(
+            self.instance_id,
+            self.name,
+            self.region_id,
+            must=False
+        )
         if instance:
             instance['changed'] = NOT_CHANGED
         else:
@@ -722,7 +683,7 @@ class ScCloudComputingInstanceCreate(ScCloudComputingInstance):
         return instance
 
 
-class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
+class ScCloudComputingInstanceDelete():
     def __init__(
         self,
         endpoint, token,
@@ -745,9 +706,14 @@ class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
         self.update_interval = update_interval
         self.retry_on_conflicts = retry_on_conflicts
 
-    def wait_for_disappearance(self, instance):
+    def wait_for_disappearance(self):
         start_time = time.time()
-        instance = self.find_instance()
+        instance = self.api.toolbox.find_instance(
+            self.instance_id,
+            self.name,
+            self.region_id,
+            must=False
+        )
         while (instance):
             time.sleep(self.update_interval)
             elapsed = time.time() - start_time
@@ -757,7 +723,12 @@ class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
                     f" to disappear. Last status was {instance['status']}",
                     timeout=elapsed
                 )
-            instance = self.find_instance()
+        instance = self.api.toolbox.find_instance(
+            self.instance_id,
+            self.name,
+            self.region_id,
+            must=False
+        )
 
     def retry_to_delete(self, instance):
         # pylint: disable=bad-option-value, raise-missing-from
@@ -778,11 +749,21 @@ class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
                     time.sleep(self.update_interval)
                 else:
                     raise
-            instance = self.find_instance()
+            instance = instance = self.api.toolbox.find_instance(
+                self.instance_id,
+                self.name,
+                self.region_id,
+                must=False
+            )
 
     def run(self):
         # pylint: disable=bad-option-value, raise-missing-from
-        original_instance = self.find_instance()
+        original_instance = self.api.toolbox.find_instance(
+            self.instance_id,
+            self.name,
+            self.region_id,
+            must=False
+        )
         instance = original_instance
         if not instance:
             return {
@@ -793,19 +774,19 @@ class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
             }
         if not self.checkmode:
             instance = self.retry_to_delete(instance)
-            self.wait_for_disappearance(instance)
+            self.wait_for_disappearance()
         original_instance['changed'] = CHANGED
         return original_instance
 
 
-class ScCloudComputingInstancePtr(ScCloudComputingInstance):
+class ScCloudComputingInstancePtr():
     def __init__(
-            self,
-            endpoint, token,
-            state,
-            instance_id, name, region_id,
-            ip, domain, ttl, priority,
-            checkmode
+        self,
+        endpoint, token,
+        state,
+        instance_id, name, region_id,
+        ip, domain, ttl, priority,
+        checkmode
     ):
         self.api = ScApi(token, endpoint)
         self.state = state
