@@ -169,6 +169,18 @@ class ApiHelper():
             self.prepare_next(response)
 
 
+class ScApiToolbox():
+    """Additional functions to work with API."""
+    def __init__(self, api):
+        self.api = api
+
+    def get_ssh_fingerprints_by_key_name(self, ssh_key_name):
+        """Search for registered ssh key by name and return it's
+           fingerprints or return None if nothing found."""
+        for key in self.api.list_ssh_keys():
+            if key['name'] == ssh_key_name:
+                return key['fingerprint']
+
 # naiming convention:
 # Prefixes:
 # list_ -> returns interator over paginatated response.
@@ -181,10 +193,12 @@ class ApiHelper():
 # Arguments:
 # 'as is' in the API if possible.
 
+
 class ScApi():
     """Provide functions matching Servers.com Public API."""
     def __init__(self, token, endpoint=DEFAULT_API_ENDPOINT):
         self.api_helper = ApiHelper(token, endpoint)
+        self.toolbox = ScApiToolbox(self)
 
     def list_locations(self, search_pattern=None):
         if search_pattern:

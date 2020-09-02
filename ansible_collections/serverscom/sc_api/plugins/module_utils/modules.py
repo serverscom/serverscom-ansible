@@ -324,13 +324,6 @@ class ScDedicatedServerReinstall(object):
             self.old_server_data = \
                 self.api.get_dedicated_servers(self.server_id)
 
-    def get_ssh_key_by_name(self, ssh_key_name):
-        for key in self.api.list_ssh_keys():
-            if key['name'] == ssh_key_name:
-                return key['fingerprint']
-        raise ModuleError(
-            f'Unable to find registered ssh key with name "{ssh_key_name}"'
-        )
 
     def get_hostname(self, hostname):
         if hostname:
@@ -360,8 +353,12 @@ class ScDedicatedServerReinstall(object):
             return ssh_keys
         if not ssh_key_name:
             return []
-        key = self.get_ssh_key_by_name(ssh_key_name)
-        return [key]
+        fp = self.api.toolbox.get_ssh_fingerprints_by_key_name(ssh_key_name)
+        if fp:
+            return [fp]
+        raise ModuleError(
+                f'Unable to find registered ssh key with name "{ssh_key_name}"'
+        )
 
     @staticmethod
     def get_drives_layout(layout, template):
@@ -801,21 +798,24 @@ class ScCloudComputingInstanceDelete(ScCloudComputingInstance):
         return original_instance
 
 
-class ScCloudComputingInstancePtr():
+class ScCloudComputingInstancePtr(ScCloudComputingInstance):
     def __init__(
             self,
-            endpoint,
-            token,
+            endpoint, token,
             state,
-            instance_id,
-            ip,
-            domain,
+            instance_id, name, region_id,
+            ip, domain, ttl, priority,
             checkmode
     ):
         self.api = ScApi(token, endpoint)
+        self.state = state
         self.instance_id = instance_id
+        self.name = name
+        self.region_id = region_id
         self.ip = ip
         self.domain = domain
+        self.ttl = ttl
+        self.priority = priority
         self.checkmode = checkmode
 
     def run(self):
