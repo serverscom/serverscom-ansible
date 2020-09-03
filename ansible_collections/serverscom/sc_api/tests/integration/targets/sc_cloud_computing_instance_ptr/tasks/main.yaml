@@ -29,7 +29,7 @@
         flavor_name: SSD.30
         image_regexp: 'Ubuntu.+'
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
-        backup_copies: 1
+        backup_copies: 0
         gpn: true
         ipv6: true
         wait: 600
@@ -156,6 +156,37 @@
           - test4_result_after_check.ptr_records[0].domain == 'ptr1.example.com'
           - test4_result_after_check.ptr_records[0].ip == instance.public_ipv4_address
           - test4_result.ptr_records|length == 0
+
+
+    - name: Test5, create ptr record for ipv4
+      sc_cloud_computing_instance_ptr:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        domain: ptr1.example.com
+        ip: '{{ instance.public_ipv4_address }}'
+        name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
+        state: present
+      register: test5_one
+
+    - name: Test5, create ptr record for ipv4 private
+      sc_cloud_computing_instance_ptr:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        domain: ptr2.example.com
+        ip: '{{ instance.public_ipv4_address }}'
+        name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
+        state: present
+      register: test5_two
+
+    - name: Test5, get ptrs after creation
+      sc_cloud_computing_instance_ptr:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        instance_name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
+        state: query
+      register: test5_result
+
+    - debug: var=[test5_ipv4,test5_ipv6,test5_result]
 
   always:
     - name: Testsuite2 cleanup

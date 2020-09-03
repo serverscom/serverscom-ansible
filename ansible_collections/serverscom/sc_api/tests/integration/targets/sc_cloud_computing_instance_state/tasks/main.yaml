@@ -1,0 +1,68 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+  when: not sc_endpoint or not sc_token
+
+- name: Test1 invalid token
+  sc_cloud_computing_instance_state:
+    token: invalid
+    endpoint: '{{ sc_endpoint }}'
+    instance_id: noID
+    state: rebooted
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 401
+
+- name: Testsuite, create and delete ptr records
+  block:
+    - name: Testsuite prepare, create instance
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: present
+        region_id: 0
+        flavor_name: SSD.30
+        image_regexp: 'Ubuntu.+'
+        name: 4839550e-edf5-11ea-8df4-4f25b3878e42
+        backup_copies: 0
+        gpn: true
+        ipv6: true
+        wait: 600
+        update_interval: 5
+      register: instance
+
+    - name: Test2, shutdown in check mode
+      sc_cloud_computing_instance_state:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        state: shutdown
+      check_mode: True
+      register: test2_check_mode
+
+    - name: Test2, get instance
+      sc_cloud_computing_instance_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+      register: test2_result
+
+    - name: Check Test2
+      assert:
+        that:
+          - test2_check_mode is changed
+          - test2_result.status == 'ACTIVE'
+
+  always:
+    - name: Testsuite cleanup
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: absent
+        region_id: 0
+        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        wait: 600

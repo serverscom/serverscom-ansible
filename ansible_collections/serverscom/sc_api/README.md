@@ -58,3 +58,4 @@ List of modules
 * `sc_cloud_computing_flavors_info` - Information about flavors for cloud computing
 * `sc_cloud_computing_instance` - Create/delete instance.
 * `sc_cloud_computing_instance_ptr` - Manage PTR records for cloud computing instances.
+* `sc_cloud_computing_instance_state` - Manage shutdown/rescue/rebooted state for instance.

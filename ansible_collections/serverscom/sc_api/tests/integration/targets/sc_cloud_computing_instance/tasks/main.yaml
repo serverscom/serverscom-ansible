@@ -351,7 +351,7 @@
 
 - name: Test9 image by regexp and flavor by name
   block:
-    - name: Test9 create instnace with image by regexp and flavor by name
+    - name: Test9 create instanace with image by regexp and flavor by name
       sc_cloud_computing_instance:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'

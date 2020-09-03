@@ -107,12 +107,14 @@ RETURN = """
 EXAMPLES = """
 - name: Add ptr record to all IP to instance by name
   sc_cloud_computing_instance_ptr:
+    token: '{{ sc_token }}'
     name: myinstance
     domain: ptr.example.com
     state: present
 
 - name: Add ptr record to IP 203.0.113.1 to instance by ID
   sc_cloud_computing_instance_ptr:
+    token: '{{ sc_token }}'
     instance_id: M7e5Ba2v
     domain: ptr.example.org
     ip: 203.0.113.1
@@ -122,18 +124,21 @@ EXAMPLES = """
 
 - name: Remove all PTRs for instance by name
   sc_cloud_computing_instance_ptr:
+    token: '{{ sc_token }}'
     name: myinstance
     region_id: 2
     state: absent
 
 - name: Remove PTRs for specific IP for instance
   sc_cloud_computing_instance_ptr:
+    token: '{{ sc_token }}'
     instance_id: M7e5Ba2v
     ip: 198.51.100.42
     state: absent
 
 - name: Remove PTRs for specific domain for instance
   sc_cloud_computing_instance_ptr:
+    token: '{{ sc_token }}'
     instance_id: M7e5Ba2v
     domain: badptr.example.com
     state: absent
@@ -181,7 +186,7 @@ def main():
         supports_check_mode=True
     )
     try:
-        sc_ssh_key = ScCloudComputingInstancePtr(
+        ptr = ScCloudComputingInstancePtr(
             endpoint=module.params['endpoint'],
             token=module.params['token'],
             state=module.params['state'],
@@ -194,7 +199,7 @@ def main():
             priority=module.params['priority'],
             checkmode=module.check_mode
         )
-        module.exit_json(**sc_ssh_key.run())
+        module.exit_json(**ptr.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())
 

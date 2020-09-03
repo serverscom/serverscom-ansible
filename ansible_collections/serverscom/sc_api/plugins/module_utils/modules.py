@@ -870,3 +870,118 @@ class ScCloudComputingInstancePtr():
             }
         else:
             raise ModuleError(f"Unknown state={self.state}")
+
+
+class ScCloudComputingInstanceState:
+    def __init__(
+        self,
+        endpoint, token,
+        state,
+        instance_id, name, region_id,
+        wait, update_interval,
+        checkmode
+    ):
+        self.api = ScApi(token, endpoint)
+        self.state = state
+        self.instance_id = self.api.toolbox.find_instance(
+            instance_id=instance_id,
+            instance_name=name,
+            region_id=region_id,
+            must=True
+        )['id']
+        self.wait = wait
+        self.update_interval = update_interval
+        self.checkmode = checkmode
+
+    def wait_for_statuses(self, status_done, statuses_continue):
+        start_time = time.time()
+        while self.instance['status'] not in statuses_continue + [status_done]:
+            if not self.wait:
+                break
+            if time.time() > start_time + self.wait:
+                raise TimeoutError(
+                    msg=f"Timeout waiting instance {self.instance['id']} "
+                        f"status {status_done} or {statuses_continue}. "
+                        f"Last state was {self.instance['status']}",
+                        timeout=time.time() - start_time
+                )
+            time.sleep(self.update_interval)
+            self.instance = self.api.get_instances(self.instance_id)
+        if self.instance['status'] == status_done:
+            return True
+        else:
+            return False
+
+    def shutdown(self):
+        if self.wait_for_statuses(
+            status_done='SWITCHED_OFF', statuses_continue=['ACTIVE']
+        ):
+            self.instance['changed'] = False
+            return self.instance
+        if self.checkmode:
+            self.instance['changed'] = True
+            return self.instance
+        self.api.post_instance_switch_off(self.instance_id)
+        self.wait_for_statuses(
+            status_done='SWITCHED_OFF',
+            status_continue=[]
+        )
+        self.instance = self.api.get_instances(self.instance_id)
+        self.instance['changed'] = True
+        return self.instance
+
+    def normalize(self):
+        if self.wait_for_statuses(
+            status_done='ACTIVE',
+            statuses_continue=['SWITCHED_OFF', 'RESCUE']
+        ):
+            self.instance['changed'] = False
+            return self.instance
+        if self.checkmode:
+            self.instance['changed'] = True
+            return self.instance
+        if self.instance['status'] == 'SWITCHED_OFF':
+            self.api.post_instance_switch_on(self.instance_id)
+        elif self.instance['status'] == 'RESCUE':
+            self.api.post_instance_unrescue(self.instance_id)
+        self.wait_for_statuses(
+            status_done='ACTIVE',
+            status_continue=[]
+        )
+        self.instance = self.api.get_instances(self.instance_id)
+        self.instance['changed'] = True
+        return self.instance
+
+    def rescue(self):
+        if self.wait_for_statuses(
+            status_done='RESCUE', statuses_continue=['ACTIVE']
+        ):
+            self.instance['changed'] = False
+            return self.instance
+        if self.checkmode:
+            self.instance['changed'] = True
+            return self.instance
+        self.api.post_instance_rescue(self.instance_id)
+        self.wait_for_statuses(
+            status_done='RESCUE',
+            status_continue=[]
+        )
+        self.instance = self.api.get_instances(self.instance_id)
+        self.instance['changed'] = True
+        return self.instance
+
+    def reboot(self):
+        raise NotImplementedError
+
+    def run(self):
+        self.instance = self.api.get_instances(self.instance_id)
+        if self.state == 'shutdown':
+            return self.shutdown()
+        elif self.state == 'rescue':
+            return self.rescue()
+        elif self.state == 'rebooted':
+            return self.reboot()
+        elif self.state == 'normal':
+            return self.normalize()
+        else:
+            raise ModuleError(f"Unknown state={self.state}")
