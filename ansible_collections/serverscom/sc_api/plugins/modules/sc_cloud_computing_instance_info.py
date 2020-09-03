@@ -42,9 +42,26 @@ options:
 
     instance_id:
       type: str
-      required: True
       description:
         - Id of the instance.
+        - Mutually exclusive with I(name)
+        - Either I(instance_id) or I(name) is required.
+
+    name:
+      type: str
+      aliases: [instance_name]
+      description:
+        - Id of the instance.
+        - Mutually exclusive with I(instance_id)
+        - Either I(instance_id) or I(name) is required.
+        - Module will fail if more than one instance found.
+
+    region_id:
+      type: int
+      description:
+        - Region ID to search instance by name.
+        - Used only for I(name).
+
 """
 
 RETURN = """
@@ -210,15 +227,20 @@ def main():
         argument_spec={
             'token': {'type': 'str', 'no_log': True, 'required': True},
             'endpoint': {'default': DEFAULT_API_ENDPOINT},
-            'instance_id': {'type': 'str', 'required': True}
+            'instance_id': {},
+            'name': {'aliases': ['instance_name']},
+            'region_id': {'type': 'int'}
         },
+        required_one_of=[['name', 'instance_id']],
         supports_check_mode=True
     )
 
     instance = ScCloudComputingInstanceInfo(
         endpoint=module.params['endpoint'],
         token=module.params['token'],
-        instance_id=module.params['instance_id']
+        instance_id=module.params['instance_id'],
+        name=module.params['name'],
+        region_id=module.params['region_id']
     )
     try:
         module.exit_json(**instance.run())

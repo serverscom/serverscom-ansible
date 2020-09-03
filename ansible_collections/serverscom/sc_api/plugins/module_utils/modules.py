@@ -465,9 +465,14 @@ class ScCloudComputingInstancesInfo():
 
 
 class ScCloudComputingInstanceInfo():
-    def __init__(self, endpoint, token, instance_id):
+    def __init__(self, endpoint, token, instance_id, name, region_id):
         self.api = ScApi(token, endpoint)
-        self.instance_id = instance_id
+        self.instance_id = self.api.toolbox.find_instance(
+            instance_id=instance_id,
+            instance_name=name,
+            region_id=region_id,
+            must=True
+        )['id']
 
     def run(self):
         result = self.api.get_instances(self.instance_id)
