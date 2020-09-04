@@ -29,7 +29,7 @@ class ModuleError(SCBaseError):
         }
 
 
-class TimeOutError(ModuleError):
+class WaitError(ModuleError):
     def __init__(self, msg, timeout):
         self.msg = msg
         self.timeout = timeout
@@ -400,7 +400,7 @@ class ScDedicatedServerReinstall(object):
             time.sleep(self.update_interval)
             elapsed = time.time() - start_time
             if elapsed > self.wait:
-                raise TimeOutError(
+                raise WaitError(
                     msg="Server is not ready.",
                     timeout=elapsed
                 )
@@ -542,7 +542,7 @@ class ScCloudComputingInstanceReinstall():
                 ModuleError("Status is not defined in API answer.")
             if status == desired_status:
                 return instance
-        raise TimeOutError(
+        raise WaitError(
             f'Timeout waiting for {desired_status}, '
             f'last status was {status}',
             timeout=timeout
@@ -656,7 +656,7 @@ class ScCloudComputingInstanceCreate():
             time.sleep(self.update_interval)
             elapsed = time.time() - start_time
             if elapsed > self.wait:
-                raise TimeOutError(
+                raise WaitError(
                     msg=f"Timeout while waiting instance {instance['id']}"
                     f" to become ACTIVE. Last status was {instance['status']}",
                     timeout=elapsed
@@ -722,7 +722,7 @@ class ScCloudComputingInstanceDelete():
             time.sleep(self.update_interval)
             elapsed = time.time() - start_time
             if elapsed > self.wait:
-                raise TimeOutError(
+                raise WaitError(
                     msg=f"Timeout while waiting instance {instance['id']}"
                     f" to disappear. Last status was {instance['status']}",
                     timeout=elapsed
@@ -745,7 +745,7 @@ class ScCloudComputingInstanceDelete():
                 if self.retry_on_conflicts:
                     elapsed = time.time() - start_time
                     if elapsed > self.wait:
-                        raise TimeOutError(
+                        raise WaitError(
                             msg='Timeout retrying delete for'
                                 f' instance {instance["id"]}',
                             timeout=elapsed
@@ -904,11 +904,11 @@ class ScCloudComputingInstanceState:
             if not self.wait:
                 break
             if time.time() > start_time + self.wait:
-                raise TimeoutError(
+                raise WaitError(
                     msg=f"Timeout waiting instance {self.instance['id']} "
                         f"status {status_done} or {statuses_continue}. "
                         f"Last state was {self.instance['status']}",
-                        timeout=time.time() - start_time
+                    timeout=time.time() - start_time
                 )
             time.sleep(self.update_interval)
             self.instance = self.api.get_instances(self.instance_id)
