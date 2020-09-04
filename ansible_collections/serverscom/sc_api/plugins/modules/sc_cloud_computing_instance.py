@@ -22,7 +22,7 @@ version_added: "1.0.0"
 author: "George Shuklin (@amarao)"
 short_description: Create or delete a cloud computing instance
 description: >
-    Allow to declare cloud computing instances as presend or absent.
+    Allow to create/delete/reinstall/upgrade cloud instance.
 
 options:
     endpoint:
@@ -42,22 +42,31 @@ options:
 
     state:
       type: str
-      choices: [absent, present]
+      choices: [absent, present, reinstalled, upgraded]
       required: true
       description:
         - State of instance.
+        - C(present) creates instance if it not present, but does not
+          change parameters for existing instances.
+        - C(absent) delete instance if it present.
+        - C(reinstalled) performs reinstallation. I(image_id) or
+          I(Image_regexp) are used, if not specified, old image
+          is used.
+        - C(reinstalled) is not idempotent, use 'when' for idempotency.
+        - C(upgraded) performs upgrade (change of the flavor),
+          if flavor of the current instance
+          is different from existing flavor. It does not create a new instance.
         - C(present) requires additional information for creation.
         - C(absent) requires either C(id) or C(name).
-        - If I(state)=C(absent) with C(name) and there are multiple instances
-          with the same name, module fails.
-        - Mutually exclusive with I(instance_id).
+        - If I(state)=C(absent), C(reinstalled) or C(upgraded)
+          with C(name) and there are multiple instances with the same name,
+          module fails.
 
     instance_id:
       type: str
       description:
         - ID of the instance for I(state)=C(absent).
         - Mutually exclusive with I(name)
-        - Ignored for I(state)=C(present).
 
     region_id:
       type: int
@@ -66,7 +75,8 @@ options:
         - Use M(sc_cloud_computing_regions_info) to get list of available
           regions.
         - Required for I(state)=C(present).
-        - May be used for I(state)=C(absent) to narrow search to one region.
+        - May be used for other I(state) to narrow search to one region with
+          I(name).
 
     name:
       type: str
@@ -74,7 +84,7 @@ options:
         - Name of the instance.
         - Will be used as hostname for the new instance.
         - Required for I(state)=C(present).
-        - May be used for I(state)=C(absent) instead of I(id).
+        - May be used for I(state)=C(absent) instead of I(instance_id).
 
     image_id:
       type: str
@@ -82,7 +92,8 @@ options:
         - Id of the image or snapshot to build instance from.
         - Mutually exclusive with I(image_regexp).
         - Required for I(state)=C(present).
-        - Ignored for I(state)=C(absent).
+        - Used for I(state)=C(reinstalled) if present.
+        - Ignored for I(state)=C(absent) and C(upgraded).
 
     image_regexp:
       type: str
@@ -94,7 +105,8 @@ options:
         - Use I(image_id) for exact image selection.
         - Mutually exclusive with I(image_id).
         - Required for I(state)=C(present).
-        - Ignored for I(state)=C(absent).
+        - Used for I(state)=C(reinstalled) if present.
+        - Ignored for I(state)=C(absent) and C(upgraded).
 
     flavor_id:
       type: str
@@ -103,8 +115,9 @@ options:
         - Some flavors may be needed for certain images.
         - Different flavors have different mothly price.
         - Mutually exclusive with I(flavor_name).
-        - Required for I(state)=C(present).
-        - Ignored for I(state)=C(absent).
+        - I(flavor_id) or I(flavor_name) is required for
+          for I(state)=C(present) and C(upgraded).
+        - Ignored for I(state)=C(absent) and C(reinstalled).
 
     flavor_name:
       type: str
@@ -114,9 +127,9 @@ options:
         - Some flavors may be needed for certain images.
         - Different flavors have different mothly price.
         - Mutually exclusive with I(flavor_id).
-        - Required for I(state)=C(present).
-        - Ignored for I(state)=C(absent).
-
+        - I(flavor_id) or I(flavor_name) is required for
+          for I(state)=C(present) and C(upgraded).
+        - Ignored for I(state)=C(absent) and C(reinstalled).
 
     gpn:
         type: bool
@@ -126,7 +139,6 @@ options:
           - Local Private network is always allocated for instances regardless
             of Global Private network status.
           - Is used only for for I(state)=C(present).
-          - Ignored for I(state)=C(absent).
 
     ipv6:
         type: bool
@@ -135,7 +147,6 @@ options:
           - Enable IPv6.
           - Currently enable IPv6 only on public (internet) interface.
           - Is used only for for I(state)=C(present).
-          - Ignored for I(state)=C(absent).
 
     ssh_key_fingerprint:
         type: str
@@ -147,7 +158,6 @@ options:
           - Instance is created with password if no I(ssh_key_fingerprint)
             or I(ssh_key_name) is used.
           - Is used only for for I(state)=C(present).
-          - Ignored for I(state)=C(absent).
 
     ssh_key_name:
         type: str
@@ -158,7 +168,6 @@ options:
           - Instance is created with password if no I(ssh_key_fingerprint)
             or I(ssh_key_name) is used.
           - Is used only for for I(state)=C(present).
-          - Ignored for I(state)=C(absent).
 
     backup_copies:
         type: int
@@ -187,6 +196,8 @@ options:
         - If instance is in conflicting state, first module will retry up to
           I(wait) seconds to delete it, and then wait for I(wait) seconds for
           it do disappear.
+        - I(state)=C(upgraded) may take a very long time, depending on the
+          flavor, so large values (C(3600), C(14400)) are advised.
 
     update_interval:
       type: int
@@ -203,6 +214,16 @@ options:
         - Retry delete requiest for I(state)=C(absent) if instance
           is in conflicting state (code 409).
         - Retries are controlled by wait/update_interval values.
+
+    confirm_upgrade:
+      type: bool
+      default: true
+      description:
+       - Confirm upgrades.
+       - Upgrades are autoconfirmed in 72 hours.
+       - Used only for I(state)=C(upgraded), ignored of other I(state).
+       - If instance is in the state AWAITING_UPGRADE_CONFIRM,
+         calling M(cloud_computing_instance) with I(state)=C(upgraded)
 """
 
 #  delete multiple?

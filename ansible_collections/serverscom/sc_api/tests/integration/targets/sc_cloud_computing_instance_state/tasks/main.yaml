@@ -288,16 +288,8 @@
         state: shutdown
         wait: 0
       register: test13
-      check_mode: true
 
-    - name: Test13, get instance
-      sc_cloud_computing_instance_info:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
-        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
-      register: test13_result
-
-    - debug: var=[test13,test13_result]
+    - debug: var=[test13]
     - name: Check Test13
       assert:
         that:
@@ -311,7 +303,7 @@
         endpoint: '{{ sc_endpoint }}'
         instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
       register: test13_info
-      until: test13.status == 'SWTICHED_OFF'
+      until: test13.status == 'SWITCHED_OFF'
       delay: 10
       retries: 60
 
