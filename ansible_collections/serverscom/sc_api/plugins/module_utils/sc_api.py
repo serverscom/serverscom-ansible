@@ -45,6 +45,12 @@ class APIError(SCBaseError):
             'status_code': self.status_code
         }
 
+    def __repr__(self):
+        return f"APIError(msg='{self.msg}', api_url={self.api_url}, status_code={self.status_code})"  # noqa
+
+    def __str__(self):
+        return(self.__repr__())
+
 
 class DecodeError(APIError):
     pass
