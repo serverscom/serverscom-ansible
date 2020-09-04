@@ -168,6 +168,8 @@
         instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
       register: test7_result
 
+    - debug: var=test7_result
+
     - name: Check Test7
       assert:
         that:
@@ -256,6 +258,75 @@
         - rescue
         - normal
 
+    - name: Test12, fire-n-forget in checkmode
+      sc_cloud_computing_instance_state:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        state: '{{ item }}'
+        wait: 0
+      register: test12
+      check_mode: true
+      loop:
+        - shutdown
+        - rescue
+        - normal
+
+    - name: Check test12
+      assert:
+        that:
+          - test12.results[0] is changed
+          - test12.results[1] is changed
+          - test12.results[2] is not changed
+          - test12.results[2].status == 'ACTIVE'
+
+    - name: Test13, fire-n-forget shutdown
+      sc_cloud_computing_instance_state:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        state: shutdown
+        wait: 0
+      register: test13
+      check_mode: true
+
+    - name: Test13, get instance
+      sc_cloud_computing_instance_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+      register: test13_result
+
+    - debug: var=[test13,test13_result]
+    - name: Check Test13
+      assert:
+        that:
+          - test13 is changed
+          - test13.name == '4839550e-edf5-11ea-8df4-4f25b3878e42'
+          - test13.status != 'SWITCHED_OFF'
+
+    - name: Test13 wait for instance to shutdown
+      sc_cloud_computing_instance_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+      register: test13_info
+      until: test13.status == 'SWTICHED_OFF'
+      delay: 10
+      retries: 60
+
+    - name: Test14, rescue in short timeout
+      sc_cloud_computing_instance_state:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        state: rescue
+        wait: 1
+        update_interval: 1
+      register: test14
+      failed_when: False
+
+    - debug: var=test14
 
   always:
     - name: Testsuite cleanup

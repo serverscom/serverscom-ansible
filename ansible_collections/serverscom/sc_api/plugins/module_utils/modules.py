@@ -586,7 +586,12 @@ class ScCloudComputingInstanceCreate():
         self.name = name
         self.instance_id = None
         self.flavor_id = self.get_flavor_id(flavor_id, flavor_name)
-        self.image_id = self.get_image_id(image_id, image_regexp)
+        self.image_id = self.api.toolbox.find_image_id(
+            image_id=image_id,
+            image_regexp=image_regexp,
+            region_id=region_id,
+            must=True
+        )
         self.gpn_enabled = gpn_enabled
         self.ipv6_enabled = ipv6_enabled
         self.ssh_key_fingerprint = self.get_ssh_key_fingerprint(
@@ -607,19 +612,6 @@ class ScCloudComputingInstanceCreate():
                     return key['fingerprint']
             raise ModuleError(f"Unable to find ssh key {ssh_key_name}")
         return None
-
-    def get_image_id(self, image_id, image_regexp):
-        if image_id and image_regexp:
-            raise ModuleError("Both image_id and image_regexp are present.")
-        if not image_id and not image_regexp:
-            raise ModuleError('Need either image_id or image_regexp.')
-        if image_regexp:
-            image_id = self.api.toolbox.find_cloud_image_id_by_name_regexp(
-                regexp=image_regexp,
-                region_id=self.region_id,
-                must=True
-            )
-        return image_id
 
     def get_flavor_id(self, flavor_id, flavor_name):
         if flavor_id and flavor_name:
@@ -917,7 +909,15 @@ class ScCloudComputingInstanceState:
         if self.instance['status'] == status_done:
             return True
         else:
-            return False
+            if self.instance['status'] in statuses_continue:
+                return False
+            else:
+                raise WaitError(
+                    msg=f"Timeout waiting instance {self.instance['id']} "
+                        f"status {status_done}. "
+                        f"Last state was {self.instance['status']}",
+                    timeout=time.time() - start_time
+                )
 
     def shutdown(self):
         if self.instance['status'] == 'RESCUE':
