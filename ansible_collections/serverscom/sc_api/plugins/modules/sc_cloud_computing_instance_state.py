@@ -50,8 +50,8 @@ options:
         - Make sure instance in I(state) mode.
         - Module will fail if operation is impossible (f.e. migrating)
           or absent.
-        - c(shutdown) switch instance to shutdown
-        - c(rescue) reboot instance in rescue mode.
+        - C(shutdown) shutdown instance.
+        - C(rescue) reboot instance in rescue mode.
         - C(normal) turn instanse on or exit in rescue mode.
         - C(rebooted) reboot instance. This state cause non non-idempotent
           action.

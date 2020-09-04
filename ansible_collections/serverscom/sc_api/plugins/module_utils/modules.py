@@ -919,7 +919,8 @@ class ScCloudComputingInstanceState:
 
     def shutdown(self):
         if self.wait_for_statuses(
-            status_done='SWITCHED_OFF', statuses_continue=['ACTIVE']
+            status_done='SWITCHED_OFF',
+            statuses_continue=['ACTIVE', 'RESCUE']
         ):
             self.instance['changed'] = False
             return self.instance
@@ -959,7 +960,8 @@ class ScCloudComputingInstanceState:
 
     def rescue(self):
         if self.wait_for_statuses(
-            status_done='RESCUE', statuses_continue=['ACTIVE']
+            status_done='RESCUE',
+            statuses_continue=['ACTIVE', 'SWITCHED_OFF']
         ):
             self.instance['changed'] = False
             return self.instance

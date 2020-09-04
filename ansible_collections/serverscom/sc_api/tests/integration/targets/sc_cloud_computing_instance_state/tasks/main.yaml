@@ -17,7 +17,7 @@
     - sc_endpoint not in test1.api_url
     - test1.status_code != 401
 
-- name: Testsuite, create and delete ptr records
+- name: Testsuite
   block:
     - name: Testsuite prepare, create instance
       sc_cloud_computing_instance:
@@ -34,6 +34,10 @@
         wait: 600
         update_interval: 5
       register: instance
+
+    - name: Workaround
+      pause:
+        seconds: 20
 
     - name: Test2, shutdown in check mode
       sc_cloud_computing_instance_state:
@@ -56,6 +60,189 @@
         that:
           - test2_check_mode is changed
           - test2_result.status == 'ACTIVE'
+
+    - name: Test3, shutdown
+      sc_cloud_computing_instance_state:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        state: shutdown
+      register: test3
+
+    - name: Test3, get instance
+      sc_cloud_computing_instance_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+      register: test3_result
+
+    - name: Check Test3
+      assert:
+        that:
+          - test3 is changed
+          - test3.name == '4839550e-edf5-11ea-8df4-4f25b3878e42'
+          - test3.status == 'SWITCHED_OFF'
+          - test3_result.status == 'SWITCHED_OFF'
+
+    - name: Test4, start in check mode
+      sc_cloud_computing_instance_state:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        state: normal
+      check_mode: true
+      register: test4
+
+    - name: Test4, get instance
+      sc_cloud_computing_instance_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+      register: test4_result
+
+    - name: Check Test4
+      assert:
+        that:
+          - test4 is changed
+          - test4.name == '4839550e-edf5-11ea-8df4-4f25b3878e42'
+          - test4.status == 'SWITCHED_OFF'
+          - test4_result.status == 'SWITCHED_OFF'
+
+    - name: Test5, start
+      sc_cloud_computing_instance_state:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        state: normal
+      register: test5
+
+    - name: Test5, get instance
+      sc_cloud_computing_instance_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+      register: test5_result
+
+    - name: Check Test5
+      assert:
+        that:
+          - test5 is changed
+          - test5.name == '4839550e-edf5-11ea-8df4-4f25b3878e42'
+          - test5.status == 'ACTIVE'
+          - test5_result.status == 'ACTIVE'
+
+    - name: Test6, rescue in check_mode
+      sc_cloud_computing_instance_state:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        state: rescue
+      check_mode: True
+      register: test6_check_mode
+
+    - name: Test6, get instance
+      sc_cloud_computing_instance_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+      register: test6_result
+
+    - name: Check Test6
+      assert:
+        that:
+          - test6_check_mode is changed
+          - test6_result.status == 'ACTIVE'
+
+    - name: Test7, rescue
+      sc_cloud_computing_instance_state:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        state: rescue
+      register: test7
+
+    - name: Test7, get instance
+      sc_cloud_computing_instance_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+      register: test7_result
+
+    - name: Check Test7
+      assert:
+        that:
+          - test7 is changed
+          - test7.name == '4839550e-edf5-11ea-8df4-4f25b3878e42'
+          - test7.status == 'RESCUE'
+          - test7_result.status == 'RESCUE'
+
+    - name: Test8, unrescue in check_mode
+      sc_cloud_computing_instance_state:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        state: normal
+      check_mode: true
+      register: test8
+
+    - name: Test8, get instance
+      sc_cloud_computing_instance_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+      register: test8_result
+
+    - name: Check Test8
+      assert:
+        that:
+          - test8 is changed
+          - test8.name == '4839550e-edf5-11ea-8df4-4f25b3878e42'
+          - test8.status == 'RESCUE'
+          - test8_result.status == 'RESCUE'
+
+    - name: Test9, unrescue
+      sc_cloud_computing_instance_state:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        state: normal
+      register: test9
+
+    - name: Test9, get instance
+      sc_cloud_computing_instance_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+      register: test9_result
+
+    - name: Check Test9
+      assert:
+        that:
+          - test9 is changed
+          - test9.name == '4839550e-edf5-11ea-8df4-4f25b3878e42'
+          - test9.status == 'ACTIVE'
+          - test9_result.status == 'ACTIVE'
+
+
+    - name: Test10, cycle states
+      sc_cloud_computing_instance_state:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        state: '{{ item }}'
+      register: test10
+      loop:
+        - shutdown
+        - rescue
+        - normal
+
+    - name: Check test10
+      assert:
+        that:
+          - test10.changed
+          - test10.results[0].status == 'SWITCHED_OFF'
+          - test10.results[1].status == 'RESCUE'
+          - test10.results[2].status == 'NORMAL'
 
   always:
     - name: Testsuite cleanup
