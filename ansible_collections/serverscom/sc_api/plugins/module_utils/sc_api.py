@@ -446,7 +446,7 @@ class ScApi():
 
     def post_instance_switch_on(self, instance_id):
         return self.api_helper.make_post_request(
-            path=f'cloud_computing/instances/{instance_id}/switch_on',
+            path=f'/cloud_computing/instances/{instance_id}/switch_on',
             body=None,
             query_parameters=None,
             good_codes=[202]
@@ -454,7 +454,7 @@ class ScApi():
 
     def post_instance_switch_off(self, instance_id):
         return self.api_helper.make_post_request(
-            path=f'cloud_computing/instances/{instance_id}/switch_off',
+            path=f'/cloud_computing/instances/{instance_id}/switch_off',
             body=None,
             query_parameters=None,
             good_codes=[202]
@@ -462,7 +462,7 @@ class ScApi():
 
     def post_instance_rescue(self, instance_id):
         return self.api_helper.make_post_request(
-            path=f'cloud_computing/instances/{instance_id}/rescue',
+            path=f'/cloud_computing/instances/{instance_id}/rescue',
             body=None,
             query_parameters=None,
             good_codes=[202]
@@ -470,7 +470,7 @@ class ScApi():
 
     def post_instance_unrescue(self, instance_id):
         return self.api_helper.make_post_request(
-            path=f'cloud_computing/instances/{instance_id}/unrescue',
+            path=f'/cloud_computing/instances/{instance_id}/unrescue',
             body=None,
             query_parameters=None,
             good_codes=[202]
@@ -478,7 +478,7 @@ class ScApi():
 
     def post_instance_reboot(self, instance_id):
         return self.api_helper.make_post_request(
-            path=f'cloud_computing/instances/{instance_id}/reboot',
+            path=f'/cloud_computing/instances/{instance_id}/reboot',
             body=None,
             query_parameters=None,
             good_codes=[202]

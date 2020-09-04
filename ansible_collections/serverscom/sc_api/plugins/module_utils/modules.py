@@ -929,7 +929,7 @@ class ScCloudComputingInstanceState:
         self.api.post_instance_switch_off(self.instance_id)
         self.wait_for_statuses(
             status_done='SWITCHED_OFF',
-            status_continue=[]
+            statuses_continue=[]
         )
         self.instance = self.api.get_instances(self.instance_id)
         self.instance['changed'] = True
@@ -951,7 +951,7 @@ class ScCloudComputingInstanceState:
             self.api.post_instance_unrescue(self.instance_id)
         self.wait_for_statuses(
             status_done='ACTIVE',
-            status_continue=[]
+            statuses_continue=[]
         )
         self.instance = self.api.get_instances(self.instance_id)
         self.instance['changed'] = True
@@ -969,7 +969,7 @@ class ScCloudComputingInstanceState:
         self.api.post_instance_rescue(self.instance_id)
         self.wait_for_statuses(
             status_done='RESCUE',
-            status_continue=[]
+            statuses_continue=[]
         )
         self.instance = self.api.get_instances(self.instance_id)
         self.instance['changed'] = True
