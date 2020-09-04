@@ -242,7 +242,20 @@
           - test10.changed
           - test10.results[0].status == 'SWITCHED_OFF'
           - test10.results[1].status == 'RESCUE'
-          - test10.results[2].status == 'NORMAL'
+          - test10.results[2].status == 'ACTIVE'
+
+    - name: Test11, rescue with image_regexp
+      sc_cloud_computing_instance_state:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        image_regexp: '.*Cent.+'
+        state: '{{ item }}'
+      register: test11
+      loop:
+        - rescue
+        - normal
+
 
   always:
     - name: Testsuite cleanup

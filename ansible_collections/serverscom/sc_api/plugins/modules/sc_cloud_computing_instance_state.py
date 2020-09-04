@@ -78,6 +78,24 @@ options:
         - All regions are searched if not specified.
         - Used only if I(name) present.
 
+    image_id:
+      type: str
+      description:
+        - Image id to use for I(state)=C(rescue)
+        - Mutually exclusive with I(image_regexp)
+        - Original instance image will be used if I(image_id) and
+          I(image_regexp) are not specified.
+
+    image_regexp:
+      type: str
+      description:
+        - Regular expression to search image by name to use
+          for I(state)=C(rescue).
+        - Original instance image will be used if I(image_id) and
+          I(image_regexp) are not specified.
+        - Mutually exclusive with I(image_id).
+        - First matching image is used.
+
     wait:
       type: int
       required: false
@@ -282,12 +300,15 @@ def main():
             },
             'instance_id': {},
             'name': {'aliases': ['instance_name']},
+            'image_id': {},
+            'image_regexp': {},
             'region_id': {'type': 'int'},
             'wait': {'type': 'int', 'default': 600},
             'update_interval': {'type': 'int', 'default': 5}
         },
         mutually_exclusive=[
-            ['name', 'instance_id']
+            ['name', 'instance_id'],
+            ['image_id', 'image_regexp']
         ],
         required_one_of=[
             ["name", "instance_id"]
@@ -302,6 +323,8 @@ def main():
             instance_id=module.params['instance_id'],
             name=module.params['name'],
             region_id=module.params['region_id'],
+            image_id=module.params['image_id'],
+            image_regexp=module.params['image_regexp'],
             wait=module.params['wait'],
             update_interval=module.params['update_interval'],
             checkmode=module.check_mode

@@ -207,6 +207,19 @@ class ScApiToolbox():
                 f"Unable to find image by regexp {regexp}"
             )
 
+    def find_image_id(
+        self, image_id, image_regexp, region_id=None, must=False
+    ):
+        if image_id and image_regexp:
+            raise ToolboxError("Both image_id and image_regexp specified.")
+        if image_id:
+            return image_id
+        if image_regexp:
+            return self.find_cloud_image_id_by_name_regexp(
+                image_regexp, region_id, must=must
+            )
+        raise ToolboxError("No image_id and no image_regexp specified.")
+
     def find_cloud_flavor_id_by_name(
         self, flavor_name, region_id=None, must=False
     ):
@@ -466,10 +479,16 @@ class ScApi():
             good_codes=[202]
         )
 
-    def post_instance_rescue(self, instance_id):
+    def post_instance_rescue(self, instance_id, image_id=None):
+        if image_id:
+            body = {
+                'image_id': image_id
+            }
+        else:
+            body = None
         return self.api_helper.make_post_request(
             path=f'/cloud_computing/instances/{instance_id}/rescue',
-            body=None,
+            body=body,
             query_parameters=None,
             good_codes=[202]
         )

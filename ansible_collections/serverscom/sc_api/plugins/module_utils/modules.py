@@ -882,7 +882,7 @@ class ScCloudComputingInstanceState:
         self,
         endpoint, token,
         state,
-        instance_id, name, region_id,
+        instance_id, name, region_id, image_id, image_regexp,
         wait, update_interval,
         checkmode
     ):
@@ -894,6 +894,8 @@ class ScCloudComputingInstanceState:
             region_id=region_id,
             must=True
         )['id']
+        self.image_id = image_id
+        self.image_regexp = image_regexp
         self.wait = wait
         self.update_interval = update_interval
         self.checkmode = checkmode
@@ -918,9 +920,13 @@ class ScCloudComputingInstanceState:
             return False
 
     def shutdown(self):
+        if self.instance['status'] == 'RESCUE':
+            raise ModuleError(
+                'Shutdown is not supported in rescue mode.'
+            )
         if self.wait_for_statuses(
             status_done='SWITCHED_OFF',
-            statuses_continue=['ACTIVE', 'RESCUE']
+            statuses_continue=['ACTIVE']
         ):
             self.instance['changed'] = False
             return self.instance
@@ -959,6 +965,15 @@ class ScCloudComputingInstanceState:
         return self.instance
 
     def rescue(self):
+        if self.image_id or self.image_regexp:
+            image_id = self.api.toolbox.find_image_id(
+                image_id=self.image_id,
+                image_regexp=self.image_regexp,
+                region_id=self.instance['region_id'],
+                must=True
+            )
+        else:
+            image_id = None
         if self.wait_for_statuses(
             status_done='RESCUE',
             statuses_continue=['ACTIVE', 'SWITCHED_OFF']
@@ -968,7 +983,7 @@ class ScCloudComputingInstanceState:
         if self.checkmode:
             self.instance['changed'] = True
             return self.instance
-        self.api.post_instance_rescue(self.instance_id)
+        self.api.post_instance_rescue(self.instance_id, image_id)
         self.wait_for_statuses(
             status_done='RESCUE',
             statuses_continue=[]
