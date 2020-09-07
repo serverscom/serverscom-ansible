@@ -37,13 +37,13 @@
 
     - name: Workaround
       pause:
-        seconds: 20
+        seconds: 30
 
     - name: Test2, shutdown in check mode
       sc_cloud_computing_instance_state:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: shutdown
       check_mode: True
       register: test2_check_mode
@@ -52,7 +52,7 @@
       sc_cloud_computing_instance_info:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        instance_name: 4839550e-edf5-11ea-8df4-4f25b3878e42
       register: test2_result
 
     - name: Check Test2
@@ -65,7 +65,7 @@
       sc_cloud_computing_instance_state:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: shutdown
       register: test3
 
@@ -73,7 +73,7 @@
       sc_cloud_computing_instance_info:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        instance_name: 4839550e-edf5-11ea-8df4-4f25b3878e42
       register: test3_result
 
     - name: Check Test3
@@ -88,7 +88,7 @@
       sc_cloud_computing_instance_state:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: normal
       check_mode: true
       register: test4
@@ -97,7 +97,7 @@
       sc_cloud_computing_instance_info:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        instance_name: 4839550e-edf5-11ea-8df4-4f25b3878e42
       register: test4_result
 
     - name: Check Test4
@@ -112,7 +112,7 @@
       sc_cloud_computing_instance_state:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: normal
       register: test5
 
@@ -120,7 +120,7 @@
       sc_cloud_computing_instance_info:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        instance_name: 4839550e-edf5-11ea-8df4-4f25b3878e42
       register: test5_result
 
     - name: Check Test5
@@ -135,16 +135,16 @@
       sc_cloud_computing_instance_state:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: rescue
-      check_mode: True
+      check_mode: true
       register: test6_check_mode
 
     - name: Test6, get instance
       sc_cloud_computing_instance_info:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        instance_name: 4839550e-edf5-11ea-8df4-4f25b3878e42
       register: test6_result
 
     - name: Check Test6
@@ -157,7 +157,7 @@
       sc_cloud_computing_instance_state:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: rescue
       register: test7
 
@@ -165,10 +165,10 @@
       sc_cloud_computing_instance_info:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        instance_name: 4839550e-edf5-11ea-8df4-4f25b3878e42
       register: test7_result
 
-    - debug: var=test7_result
+    - debug: var=[test7,test7_result]
 
     - name: Check Test7
       assert:
@@ -182,7 +182,7 @@
       sc_cloud_computing_instance_state:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: normal
       check_mode: true
       register: test8
@@ -191,7 +191,7 @@
       sc_cloud_computing_instance_info:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        instance_name: 4839550e-edf5-11ea-8df4-4f25b3878e42
       register: test8_result
 
     - name: Check Test8
@@ -206,7 +206,7 @@
       sc_cloud_computing_instance_state:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: normal
       register: test9
 
@@ -214,7 +214,7 @@
       sc_cloud_computing_instance_info:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        instance_name: 4839550e-edf5-11ea-8df4-4f25b3878e42
       register: test9_result
 
     - name: Check Test9
@@ -230,7 +230,7 @@
       sc_cloud_computing_instance_state:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: '{{ item }}'
       register: test10
       loop:
@@ -250,7 +250,7 @@
       sc_cloud_computing_instance_state:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         image_regexp: '.*Cent.+'
         state: '{{ item }}'
       register: test11
@@ -262,7 +262,7 @@
       sc_cloud_computing_instance_state:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: '{{ item }}'
         wait: 0
       register: test12
@@ -284,7 +284,7 @@
       sc_cloud_computing_instance_state:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: shutdown
         wait: 0
       register: test13
@@ -301,7 +301,7 @@
       sc_cloud_computing_instance_info:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        instance_name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        instance_name: 4839550e-edf5-11ea-8df4-4f25b3878e42
       register: test13_info
       until: test13.status == 'SWITCHED_OFF'
       delay: 10
@@ -311,12 +311,12 @@
       sc_cloud_computing_instance_state:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: rescue
         wait: 1
         update_interval: 1
       register: test14
-      failed_when: False
+      failed_when: false
 
     - debug: var=test14
 
@@ -327,5 +327,5 @@
         endpoint: '{{ sc_endpoint }}'
         state: absent
         region_id: 0
-        name:  4839550e-edf5-11ea-8df4-4f25b3878e42
+        name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         wait: 600

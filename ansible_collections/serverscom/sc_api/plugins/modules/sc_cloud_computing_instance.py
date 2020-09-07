@@ -391,7 +391,7 @@ def main():
             'endpoint': {'default': DEFAULT_API_ENDPOINT},
             'state': {
                 'type': 'str',
-                'choices': ['present', 'absent'],
+                'choices': ['present', 'absent', 'reinstalled', 'upgraded'],
                 'required': True
             },
             'instance_id': {},
@@ -408,7 +408,8 @@ def main():
             'backup_copies': {'type': 'int', 'default': 5},
             'wait': {'type': 'int', 'default': 600},
             'update_interval': {'type': 'int', 'default': 5},
-            'retry_on_conflicts': {'type': 'bool', 'default': True}
+            'retry_on_conflicts': {'type': 'bool', 'default': True},
+            'confirm_upgrade': {'type': 'bool', default: True}
         },
         mutually_exclusive=[
             ['ssh_key_name', 'ssh_key_fingerprint'],
