@@ -45,7 +45,7 @@
         endpoint: '{{ sc_endpoint }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: shutdown
-      check_mode: True
+      check_mode: true
       register: test2_check_mode
 
     - name: Test2, get instance

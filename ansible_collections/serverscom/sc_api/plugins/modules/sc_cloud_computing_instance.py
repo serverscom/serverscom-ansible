@@ -51,7 +51,7 @@ options:
         - C(absent) delete instance if it present.
         - C(reinstalled) performs reinstallation. I(image_id) or
           I(Image_regexp) are used, if not specified, old image
-          is used.
+          is used. It's impossible to change ssh key by reinstalling.
         - C(reinstalled) is not idempotent, use 'when' for idempotency.
         - C(upgraded) performs upgrade (change of the flavor),
           if flavor of the current instance
@@ -224,6 +224,9 @@ options:
        - Used only for I(state)=C(upgraded), ignored of other I(state).
        - If instance is in the state AWAITING_UPGRADE_CONFIRM,
          calling M(cloud_computing_instance) with I(state)=C(upgraded)
+         confirm upgrade.
+       - If I(wait)=C(0) instance upgrage is not confirmed even if
+         I(confirm_upgrade)=C(true).
 """
 
 #  delete multiple?
@@ -378,7 +381,8 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,
     ScCloudComputingInstanceCreate,
-    ScCloudComputingInstanceDelete
+    ScCloudComputingInstanceDelete,
+    ScCloudComputingInstanceReinstall
 )
 
 __metaclass__ = type
@@ -414,6 +418,7 @@ def main():
         mutually_exclusive=[
             ['ssh_key_name', 'ssh_key_fingerprint'],
             ['name', 'instance_id'],
+            ['instance_id', 'region_id'],
             ['flavor_name', 'flavor_id'],
             ['image_regexp', 'image_id']
         ],
@@ -457,6 +462,21 @@ def main():
                 retry_on_conflicts=module.params['retry_on_conflicts'],
                 checkmode=module.check_mode
             )
+        elif module.params['state'] == 'reinstalled':
+            instance = ScCloudComputingInstanceReinstall(
+                endpoint=module.params['endpoint'],
+                token=module.params['token'],
+                instance_id=module.params['instance_id'],
+                region_id=module.params['region_id'],
+                name=module.params['name'],
+                image_id=module.params['image_id'],
+                image_regexp=module.params['image_regexp'],
+                wait=module.params['wait'],
+                update_interval=module.params['update_interval'],
+                checkmode=module.check_mode
+            )
+        else:
+            raise NotImplementedError(f'Unsupported state={module.params["state"]}.')
         module.exit_json(**instance.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())

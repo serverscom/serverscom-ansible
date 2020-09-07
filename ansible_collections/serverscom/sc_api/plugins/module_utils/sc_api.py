@@ -283,6 +283,24 @@ class ScApiToolbox():
                 instance_name, must=must
             )
 
+    def find_flavor_id(self, flavor_id, flavor_name, region_id=None):
+        """ Search for flavor by id or by name.
+
+            Returns flavor id, by id or by name.
+            Raises an exception if nothing found.
+        """
+        if flavor_id and flavor_name:
+            raise ToolboxError("Both flavor_id and flavor_name specified.")
+
+        if not flavor_id and not flavor_name:
+            raise ToolboxError("Neither flavor_id nor flavor_name specified.")
+        if flavor_id:
+            return flavor_id
+        return self.find_cloud_flavor_id_by_name(
+            flavor_name=flavor_name,
+            region_id=region_id,
+            must=True
+        )
 
 # naiming convention:
 # Prefixes:
@@ -507,4 +525,20 @@ class ScApi():
             body=None,
             query_parameters=None,
             good_codes=[202]
+        )
+
+    def post_instances_approve_upgrade(self, instance_id):
+        return self.api_helper.make_post_request(
+            path=f'/cloud_computing/instances/{instance_id}/approve_upgrade',
+            body=None,
+            query_parameters=None,
+            good_codes=[201]
+        )
+
+    def post_instances_revert_upgrade(self, instance_id):
+        return self.api_helper.make_post_request(
+            path=f'/cloud_computing/instances/{instance_id}/revert_upgrade',
+            body=None,
+            query_parameters=None,
+            good_codes=[201]
         )

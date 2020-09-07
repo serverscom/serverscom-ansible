@@ -211,8 +211,6 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
 )
 
 
-requests = None
-
 __metaclass__ = type
 
 

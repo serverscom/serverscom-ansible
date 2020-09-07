@@ -492,77 +492,6 @@ class ScCloudComputingOpenstackCredentials():
         return result
 
 
-class ScCloudComputingInstanceReinstall():
-    def __init__(
-        self,
-        endpoint,
-        token,
-        instance_id,
-        image_id,
-        wait_for_active,
-        wait_for_rebuilding,
-        update_interval,
-        checkmode
-    ):
-        if not wait_for_rebuilding and wait_for_active:
-            raise ModuleError(
-                f'Unsupported mode: wait_for_rebuilding={wait_for_rebuilding} '
-                f'and wait_for_active={wait_for_active}.'
-            )
-        self.api = ScApi(token, endpoint)
-        self.instance_id = instance_id
-        self.image_id = self.get_image_id(image_id)
-        self.wait_for_active = wait_for_active
-        self.wait_for_rebuilding = wait_for_rebuilding
-        self.update_interval = update_interval
-        self.checkmode = checkmode
-
-    def get_image_id(self, image_id):
-        if image_id:
-            return image_id
-        old_image_id = self.api.get_instances(self.instance_id).get('image_id')
-        if not old_image_id:
-            raise ModuleError(
-                "Can't find old image id of instance. "
-                "Use image_id option."
-            )
-        return old_image_id
-
-    def wait_for(self, desired_status, timeout):
-        if not timeout:
-            return {}
-        start_time = time.time()
-        elapsed = 0
-        while elapsed < timeout:
-            time.sleep(timeout)
-            elapsed = time.time() - start_time
-            instance = self.api.get_instances(self.instance_id)
-            status = instance.get('status')
-            if not status:
-                ModuleError("Status is not defined in API answer.")
-            if status == desired_status:
-                return instance
-        raise WaitError(
-            f'Timeout waiting for {desired_status}, '
-            f'last status was {status}',
-            timeout=timeout
-        )
-
-    def run(self):
-        if self.checkmode:
-            instance = self.api.get_instances(self.instance_id)
-            instance['changed'] = True
-            return instance
-        instance = self.api.post_instance_reinstall(
-            self.instance_id,
-            self.image_id
-        )
-        instance = self.wait_for('REBUILDING', self.wait_for_rebuilding)
-        instance = self.wait_for('ACTIVE', self.wait_for_active)
-        instance['changed'] = True
-        return instance
-
-
 class ScCloudComputingInstanceCreate():
     def __init__(
         self,
@@ -1008,3 +937,117 @@ class ScCloudComputingInstanceState:
             return self.normalize()
         else:
             raise ModuleError(f"Unknown state={self.state}")
+
+
+class ScCloudComputingInstanceReinstall:
+    def __init__(
+        self,
+        endpoint, token,
+        instance_id, name, region_id, image_id, image_regexp,
+        wait, update_interval,
+        checkmode
+    ):
+        self.api = ScApi(token, endpoint)
+        self.instance = self.api.toolbox.find_instance(
+            instance_id=instance_id,
+            instance_name=name,
+            region_id=region_id,
+            must=True
+        )
+        if not image_id and not image_regexp:
+            self.image_id = self.instance['image_id']
+        else:
+            self.image_id = self.api.toolbox.find_image_id(
+                image_id=image_id,
+                image_regexp=image_regexp,
+                region_id=region_id
+            )
+        self.wait = wait
+        self.update_interval = update_interval
+        self.checkmode = checkmode
+
+    #  copypaste, refactor, TODO
+    def wait_for_statuses(self, status_done, statuses_continue):
+        start_time = time.time()
+        if self.wait:
+            time.sleep(self.update_interval)   # workaround around bug in APIs
+        while self.instance['status'] not in statuses_continue + [status_done]:
+            if not self.wait:
+                break
+            if time.time() > start_time + self.wait:
+                raise WaitError(
+                    msg=f"Timeout waiting instance {self.instance['id']} "
+                        f"status {status_done} or {statuses_continue}. "
+                        f"Last state was {self.instance['status']}",
+                    timeout=time.time() - start_time
+                )
+            time.sleep(self.update_interval)
+            self.instance = self.api.get_instances(self.instance['id'])
+        if self.instance['status'] == status_done:
+            return True
+        else:
+            if self.instance['status'] in statuses_continue:
+                return False
+            else:
+                if self.wait:
+                    raise WaitError(
+                        msg=f"Timeout waiting instance {self.instance['id']} "
+                            f"status {status_done}. "
+                            f"Last state was {self.instance['status']}",
+                        timeout=time.time() - start_time
+                    )
+
+    def run(self):
+        if self.checkmode:
+            self.instance['changed'] = True
+            return self.instance
+        self.api.post_instances_reinstall(
+            instance_id=self.instance['id'],
+            image_id=self.image_id
+        )
+        self.wait_for_statuses(
+            status_done='ACTIVE',
+            statuses_continue=[]
+        )
+        self.instance['changed'] = True
+        return self.instance
+
+
+class ScCloudComputingInstanceUpgrade:
+    def __init__(
+        self,
+        endpoint, token,
+        instance_id, name, region_id,
+        flavor_id, flavor_name,
+        wait, update_interval,
+        checkmode
+    ):
+        self.api = ScApi(token, endpoint)
+        self.instance = self.api.toolbox.find_instance(
+            instance_id=instance_id,
+            instance_name=name,
+            region_id=region_id,
+            must=True
+        )
+        self.flavor_id = self.api.toolbox.find_cloud_flavor_id_by_name(
+            flavor_id=flavor_id,
+            flavor_name=flavor_name,
+            region_id=region_id
+        )
+        self.wait = wait
+        self.update_interval = update_interval
+        self.checkmode = checkmode
+
+    def run(self):
+        if self.flavor_id == self.instance['flavor_id']:
+            self.instance['changed'] = False
+            return self.instance
+        if self.checkmode:
+            self.instance['changed'] = True
+            return self.instance
+        raise NotImplementedError()
+        # self.api.post_instances_approve_upgrade(self.instance['id'])
+        #     self.wait_for_statuses(
+        #         status_done = 'ACTIVE',
+        #         statuses_continue = []
+        #     )

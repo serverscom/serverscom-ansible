@@ -1,0 +1,87 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+  when: not sc_endpoint or not sc_token
+
+- name: Testsuite
+  block:
+   - name: Prepare, create instance
+     sc_cloud_computing_instance:
+       token: '{{ sc_token }}'
+       endpoint: '{{ sc_endpoint }}'
+       state: present
+       region_id: 0
+       flavor_name: SSD.30
+       image_regexp: 'Ubuntu.+'
+       name: '{{ instance_name }}'
+       backup_copies: 0
+       gpn: true
+       ipv6: true
+       wait: 600
+       update_interval: 5
+     register: instance
+
+   - debug: var=instance
+
+   - name: API bug workaround
+     pause:
+       seconds: 30
+
+   - name: Test1, simple reinstall
+     sc_cloud_computing_instance:
+       token: '{{ sc_token }}'
+       endpoint: '{{ sc_endpoint }}'
+       state: reinstalled
+       instance_id: '{{ instance.id }}'
+       wait: 600
+       update_interval: 5
+     register: test1
+
+   - name: Get instance status for test1
+     sc_cloud_computing_instance_info:
+       token: '{{ sc_token }}'
+       endpoint: '{{ sc_endpoint }}'
+       instance_id: '{{ instance.id }}'
+     register: test1_info
+
+   - debug: var=[test1,test1_info]
+  
+   - name: Check test1
+     assert:
+       that:
+         - test1 is changed
+         - test1.status == 'ACTIVE'
+         - test1_info.status == 'ACTIVE'
+
+   - name: Test2, reinstall with image in checkmode
+     sc_cloud_computing_instance:
+       token: '{{ sc_token }}'
+       endpoint: '{{ sc_endpoint }}'
+       state: reinstalled
+       instance_id: '{{ instance.id }}'
+       image_regexp: 'Debian.+'
+       wait: 600
+       update_interval: 5
+     check_mode: true
+     register: test2
+
+   - name: Get instance status for test2
+     sc_cloud_computing_instance_info:
+       token: '{{ sc_token }}'
+       endpoint: '{{ sc_endpoint }}'
+       instance_id: '{{ instance.id }}'
+     register: test2_info
+  
+   - debug: var=[test2,test2_info]
+
+  always:
+   - name: Cleanup instance
+     sc_cloud_computing_instance:
+       token: '{{ sc_token }}'
+       endpoint: '{{ sc_endpoint }}'
+       state: absent
+       region_id: 0
+       name: '{{ instance_name }}'
+       wait: 600

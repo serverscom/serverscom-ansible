@@ -47,7 +47,6 @@ List of modules
 * `sc_cloud_computing_regions_info`- List of cloud computing regions.
 * `sc_baremetal_servers_info` - List of baremetal servers.
 * `sc_dedicated_server_info` - Information about one dedicated server.
-* `sc_dedicated_server_reinstall` - Reinstallation of a dedicated server
 * `sc_ssh_key` - SSH key management.
 * `sc_ssh_keys_info` - List of registered SSH keys.
 * `sc_cloud_computing_flavors_info` - List of flavors in a given region
@@ -56,6 +55,6 @@ List of modules
 * `sc_cloud_computing_instance_info` - Information about specific instance.
 * `sc_cloud_computing_images_info` - Information about images for cloud computing
 * `sc_cloud_computing_flavors_info` - Information about flavors for cloud computing
-* `sc_cloud_computing_instance` - Create/delete instance.
+* `sc_cloud_computing_instance` - Create/delete/reinstall/upgrade instance.
 * `sc_cloud_computing_instance_ptr` - Manage PTR records for cloud computing instances.
 * `sc_cloud_computing_instance_state` - Manage shutdown/rescue/rebooted state for instance.
