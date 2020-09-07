@@ -912,12 +912,13 @@ class ScCloudComputingInstanceState:
             if self.instance['status'] in statuses_continue:
                 return False
             else:
-                raise WaitError(
-                    msg=f"Timeout waiting instance {self.instance['id']} "
-                        f"status {status_done}. "
-                        f"Last state was {self.instance['status']}",
-                    timeout=time.time() - start_time
-                )
+                if self.wait:
+                    raise WaitError(
+                        msg=f"Timeout waiting instance {self.instance['id']} "
+                            f"status {status_done}. "
+                            f"Last state was {self.instance['status']}",
+                        timeout=time.time() - start_time
+                    )
 
     def shutdown(self):
         if self.instance['status'] == 'RESCUE':
