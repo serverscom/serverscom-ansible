@@ -409,7 +409,7 @@ def main():
             'wait': {'type': 'int', 'default': 600},
             'update_interval': {'type': 'int', 'default': 5},
             'retry_on_conflicts': {'type': 'bool', 'default': True},
-            'confirm_upgrade': {'type': 'bool', default: True}
+            'confirm_upgrade': {'type': 'bool', 'default': True}
         },
         mutually_exclusive=[
             ['ssh_key_name', 'ssh_key_fingerprint'],
