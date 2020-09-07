@@ -140,13 +140,13 @@ def main():
         },
         supports_check_mode=True
     )
-    sc_info = ScBaremetalLocationsInfo(
-        endpoint=module.params['endpoint'],
-        token=module.params['token'],
-        search_pattern=module.params['search_pattern'],
-        required_features=module.params['required_features'],
-    )
     try:
+        sc_info = ScBaremetalLocationsInfo(
+            endpoint=module.params['endpoint'],
+            token=module.params['token'],
+            search_pattern=module.params['search_pattern'],
+            required_features=module.params['required_features'],
+        )
         module.exit_json(**sc_info.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())

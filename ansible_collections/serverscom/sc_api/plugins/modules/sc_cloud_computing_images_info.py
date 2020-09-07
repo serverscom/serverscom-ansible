@@ -124,13 +124,12 @@ def main():
         },
         supports_check_mode=True
     )
-
-    images = ScCloudComputingImagesInfo(
-        endpoint=module.params['endpoint'],
-        token=module.params['token'],
-        region_id=module.params['region_id']
-    )
     try:
+        images = ScCloudComputingImagesInfo(
+            endpoint=module.params['endpoint'],
+            token=module.params['token'],
+            region_id=module.params['region_id']
+        )
         module.exit_json(**images.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())

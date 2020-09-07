@@ -118,13 +118,12 @@ def main():
         },
         supports_check_mode=True
     )
-
-    flavors = ScCloudComputingFlavorsInfo(
-        endpoint=module.params['endpoint'],
-        token=module.params['token'],
-        region_id=module.params['region_id']
-    )
     try:
+        flavors = ScCloudComputingFlavorsInfo(
+            endpoint=module.params['endpoint'],
+            token=module.params['token'],
+            region_id=module.params['region_id']
+        )
         module.exit_json(**flavors.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())

@@ -195,13 +195,12 @@ def main():
         },
         supports_check_mode=True
     )
-
-    instances = ScCloudComputingInstancesInfo(
-        endpoint=module.params['endpoint'],
-        token=module.params['token'],
-        region_id=module.params['region_id']
-    )
     try:
+        instances = ScCloudComputingInstancesInfo(
+            endpoint=module.params['endpoint'],
+            token=module.params['token'],
+            region_id=module.params['region_id']
+        )
         module.exit_json(**instances.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())

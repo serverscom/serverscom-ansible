@@ -111,12 +111,12 @@ def main():
         },
         supports_check_mode=True
     )
-    sc_info = ScCloudComputingRegionsInfo(
-        endpoint=module.params['endpoint'],
-        token=module.params['token'],
-        search_pattern=module.params['search_pattern'],
-    )
     try:
+        sc_info = ScCloudComputingRegionsInfo(
+            endpoint=module.params['endpoint'],
+            token=module.params['token'],
+            search_pattern=module.params['search_pattern'],
+        )
         module.exit_json(**sc_info.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())

@@ -142,18 +142,17 @@ def main():
         },
         supports_check_mode=True
     )
-
-    sc_ssh_key = ScSshKey(
-        endpoint=module.params['endpoint'],
-        token=module.params['token'],
-        name=module.params['name'],
-        state=module.params['state'],
-        public_key=module.params['public_key'],
-        fingerprint=module.params['fingerprint'],
-        replace=module.params['replace'],
-        checkmode=module.check_mode
-    )
     try:
+        sc_ssh_key = ScSshKey(
+            endpoint=module.params['endpoint'],
+            token=module.params['token'],
+            name=module.params['name'],
+            state=module.params['state'],
+            public_key=module.params['public_key'],
+            fingerprint=module.params['fingerprint'],
+            replace=module.params['replace'],
+            checkmode=module.check_mode
+        )
         module.exit_json(**sc_ssh_key.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())

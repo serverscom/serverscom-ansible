@@ -105,12 +105,11 @@ def main():
         },
         supports_check_mode=True
     )
-
-    sc_ssh_key = ScSshKeysInfo(
-        endpoint=module.params['endpoint'],
-        token=module.params['token'],
-    )
     try:
+        sc_ssh_key = ScSshKeysInfo(
+            endpoint=module.params['endpoint'],
+            token=module.params['token'],
+        )
         module.exit_json(**sc_ssh_key.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())

@@ -234,15 +234,14 @@ def main():
         required_one_of=[['name', 'instance_id']],
         supports_check_mode=True
     )
-
-    instance = ScCloudComputingInstanceInfo(
-        endpoint=module.params['endpoint'],
-        token=module.params['token'],
-        instance_id=module.params['instance_id'],
-        name=module.params['name'],
-        region_id=module.params['region_id']
-    )
     try:
+        instance = ScCloudComputingInstanceInfo(
+            endpoint=module.params['endpoint'],
+            token=module.params['token'],
+            instance_id=module.params['instance_id'],
+            name=module.params['name'],
+            region_id=module.params['region_id']
+        )
         module.exit_json(**instance.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())

@@ -149,13 +149,12 @@ def main():
         },
         supports_check_mode=True
     )
-
-    creds = ScCloudComputingOpenstackCredentials(
-        endpoint=module.params['endpoint'],
-        token=module.params['token'],
-        region_id=module.params['region_id']
-    )
     try:
+        creds = ScCloudComputingOpenstackCredentials(
+            endpoint=module.params['endpoint'],
+            token=module.params['token'],
+            region_id=module.params['region_id']
+        )
         module.exit_json(**creds.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())

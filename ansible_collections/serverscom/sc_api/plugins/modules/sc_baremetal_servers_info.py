@@ -104,12 +104,11 @@ def main():
         },
         supports_check_mode=True
     )
-
-    sc_baremetal_servers_info = ScBaremetalServersInfo(
-        endpoint=module.params['endpoint'],
-        token=module.params['token'],
-    )
     try:
+        sc_baremetal_servers_info = ScBaremetalServersInfo(
+            endpoint=module.params['endpoint'],
+            token=module.params['token'],
+        )
         module.exit_json(**sc_baremetal_servers_info.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())

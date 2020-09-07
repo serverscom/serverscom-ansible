@@ -288,14 +288,13 @@ def main():
         },
         supports_check_mode=True
     )
-
-    sc_dedicated_server_info = ScDedicatedServerInfo(
-        endpoint=module.params['endpoint'],
-        token=module.params['token'],
-        name=module.params['name'],
-        fail_on_absent=module.params['fail_on_absent']
-    )
     try:
+        sc_dedicated_server_info = ScDedicatedServerInfo(
+            endpoint=module.params['endpoint'],
+            token=module.params['token'],
+            name=module.params['name'],
+            fail_on_absent=module.params['fail_on_absent']
+        )
         module.exit_json(**sc_dedicated_server_info.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())
