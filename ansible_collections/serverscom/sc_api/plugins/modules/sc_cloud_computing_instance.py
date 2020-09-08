@@ -382,7 +382,8 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     SCBaseError,
     ScCloudComputingInstanceCreate,
     ScCloudComputingInstanceDelete,
-    ScCloudComputingInstanceReinstall
+    ScCloudComputingInstanceReinstall,
+    ScCloudComputingInstanceUpgrade
 )
 
 __metaclass__ = type
@@ -475,8 +476,24 @@ def main():
                 update_interval=module.params['update_interval'],
                 checkmode=module.check_mode
             )
+        elif module.params['state'] == 'upgraded':
+            instance = ScCloudComputingInstanceUpgrade(
+                endpoint=module.params['endpoint'],
+                token=module.params['token'],
+                instance_id=module.params['instance_id'],
+                region_id=module.params['region_id'],
+                name=module.params['name'],
+                flavor_id=module.params['flavor_id'],
+                flavor_name=module.params['flavor_name'],
+                confirm_upgrade=module.params['confirm_upgrade'],
+                wait=module.params['wait'],
+                update_interval=module.params['update_interval'],
+                checkmode=module.check_mode
+            )
         else:
-            raise NotImplementedError(f'Unsupported state={module.params["state"]}.')
+            raise NotImplementedError(
+                f'Unsupported state={module.params["state"]}.'
+            )
         module.exit_json(**instance.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())

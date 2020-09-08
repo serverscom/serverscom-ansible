@@ -1019,6 +1019,7 @@ class ScCloudComputingInstanceUpgrade:
         endpoint, token,
         instance_id, name, region_id,
         flavor_id, flavor_name,
+        confirm_upgrade,
         wait, update_interval,
         checkmode
     ):
@@ -1034,6 +1035,7 @@ class ScCloudComputingInstanceUpgrade:
             flavor_name=flavor_name,
             region_id=region_id
         )
+        self.confirm_upgrade = confirm_upgrade
         self.wait = wait
         self.update_interval = update_interval
         self.checkmode = checkmode
