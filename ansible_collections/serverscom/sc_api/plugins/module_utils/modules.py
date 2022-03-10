@@ -357,7 +357,7 @@ class ScDedicatedServerReinstall(object):
         partitions_template = [
             {
                 "target": "/boot",
-                "size": 500,
+                "size": 1024,
                 "fill": False, "fs": "ext4"
             },
             {
