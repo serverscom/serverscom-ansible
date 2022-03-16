@@ -197,7 +197,7 @@ options:
       type: str
       description:
         - User data content that will be processed by the cloud-init
-          while server's initialization. 
+          while server's initialization.
 """
 
 RETURN = """
