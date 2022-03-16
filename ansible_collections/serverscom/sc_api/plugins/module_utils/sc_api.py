@@ -349,16 +349,23 @@ class ScApi():
     def post_dedicated_server_reinstall(
         self,
         server_id,
-        hostname, operating_system_id, ssh_key_fingerprints, drives
+        hostname,
+        operating_system_id,
+        ssh_key_fingerprints,
+        drives,
+        user_data
     ):
+        body = {
+            'hostname': hostname,
+            'operating_system_id': operating_system_id,
+            'ssh_key_fingerprints': ssh_key_fingerprints,
+            'drives': drives
+        }
+        if user_data:
+            body['user_data'] = user_data
         return self.api_helper.make_post_request(
             path=f'/hosts/dedicated_servers/{server_id}/reinstall',
-            body={
-                'hostname': hostname,
-                'operating_system_id': operating_system_id,
-                'ssh_key_fingerprints': ssh_key_fingerprints,
-                'drives': drives
-            },
+            body=body,
             query_parameters=None,
             good_codes=[202]
         )
