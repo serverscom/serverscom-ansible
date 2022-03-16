@@ -192,6 +192,12 @@ options:
               requests in accordance with ratelimit.
             - Minimal value is 10.
             - Ignored if I(wait)=C(0).
+
+    user_data:
+      type: str
+      description:
+        - User data content that will be processed by the cloud-init
+          while server's initialization. 
 """
 
 RETURN = """
@@ -238,6 +244,7 @@ def main():
             'ssh_key_name': {'type': 'str'},
             'wait': {'type': 'int', 'default': 86400},
             'update_interval': {'type': 'int', 'default': 60},
+            'user_data': {'type': 'str'}
         },
         supports_check_mode=True,
         mutually_exclusive=[
@@ -259,6 +266,7 @@ def main():
             ssh_key_name=module.params['ssh_key_name'],
             wait=module.params['wait'],
             update_interval=module.params['update_interval'],
+            user_data=module.params['user_data'],
             checkmode=module.check_mode
         )
         module.exit_json(**sc_dedicated_server_reinstall.run())

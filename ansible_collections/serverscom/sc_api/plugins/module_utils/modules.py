@@ -294,6 +294,7 @@ class ScDedicatedServerReinstall(object):
         ssh_key_name,
         wait,
         update_interval,
+        user_data,
         checkmode
     ):
         if wait:
@@ -314,6 +315,7 @@ class ScDedicatedServerReinstall(object):
         self.ssh_keys = self.get_ssh_keys(ssh_keys, ssh_key_name)
         self.wait = wait
         self.update_interval = update_interval
+        self.user_data = user_data
         self.checkmode = checkmode
 
     def get_server_data(self):
@@ -418,6 +420,7 @@ class ScDedicatedServerReinstall(object):
             hostname=self.hostname,
             operating_system_id=self.operating_system_id,
             ssh_key_fingerprints=self.ssh_keys,
+            user_data=self.user_data,
             drives={
                 'layout': self.drives_layout,
             }
