@@ -160,6 +160,11 @@ class ApiHelper():
         self.request.json = body
         return self.decode(self.send_request(good_codes))
 
+    def make_put_request(self, path, body, query_parameters, good_codes):
+        self.start_request("PUT", path, query_parameters)
+        self.request.json = body
+        return self.decode(self.send_request(good_codes))
+
     def is_next(self):
         if self.request:
             return bool(self.request.url)
@@ -548,4 +553,51 @@ class ScApi():
             body=None,
             query_parameters=None,
             good_codes=[201]
+        )
+
+    def list_l2_segments(self):
+        return self.api_helper.make_multipage_request(path="/l2_segments")
+
+    def list_l2_location_groups(self):
+        return self.api_helper.make_multipage_request(
+            path="l2_segments/location_groups"
+        )
+
+    def list_l2_segment_members(self, l2_segment_id):
+        return self.api_helper.make_multipage_request(
+            path=f"/l2_segments/{l2_segment_id}/members"
+        )
+
+    def list_l2_segment_networks(self, l2_segment_id):
+        return self.api_helper.make_multipage_request(
+            path=f"/l2_segments/{l2_segment_id}/networks"
+        )
+
+    def get_l2_segment(self, l2_segment_id):
+        return self.api_helper.make_get_request(path=f"/l2_segments/{l2_segment_id}")
+
+    def delete_l2_segment(self, l2_segment_id):
+        return self.api_helper.make_delete_request(
+            path=f"/l2_segments/{l2_segment_id}",
+            query_parameters=None,
+            body=None,
+            good_codes=[204],
+        )
+
+    def put_l2_segment_update(self, l2_segment_id, name, members):
+        body = {"name": name, "members": members}
+        return self.api_helper.make_put_request(
+            path=f"/l2_segments/{l2_segment_id}",
+            body=body,
+            query_parameters=None,
+            good_codes=[200, 202],
+        )
+
+    def put_l2_segment_update(self, l2_segment_id, create, delete):
+        body = {"create": create, "delete": delete}
+        return self.api_helper.make_put_request(
+            path=f"/l2_segments/{l2_segment_id}/networks",
+            body=body,
+            query_parameters=None,
+            good_codes=[200, 202],
         )
