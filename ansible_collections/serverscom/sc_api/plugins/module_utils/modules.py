@@ -1067,3 +1067,15 @@ class ScL2SegmentsInfo():
             'changed': False,
             'l2_segments': list(self.api.list_l2_segments())
         }
+
+
+class ScL2SegmentInfo():
+    def __init__(self, endpoint, token, id):
+        self.api = ScApi(token, endpoint)
+        self.id = id
+
+    def run(self):
+        return {
+            'changed': False,
+            'l2_segment': self.api.get_l2_segment(self.id)
+        }
