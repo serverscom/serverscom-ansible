@@ -1056,3 +1056,14 @@ class ScCloudComputingInstanceUpgrade:
         #         status_done = 'ACTIVE',
         #         statuses_continue = []
         #     )
+
+
+class ScL2SegmentsInfo():
+    def __init__(self, endpoint, token):
+        self.api = ScApi(token, endpoint)
+
+    def run(self):
+        return {
+            'changed': False,
+            'l2_segments': list(self.api.list_l2_segments())
+        }

@@ -542,7 +542,7 @@ class ScApi:
 
     def delete_l2_segment(self, l2_segment_id):
         return self.api_helper.make_delete_request(
-            path=f"/l2_segments/{instance_id}",
+            path=f"/l2_segments/{l2_segment_id}",
             query_parameters=None,
             body=None,
             good_codes=[204],
@@ -551,7 +551,7 @@ class ScApi:
     def put_l2_segment_update(self, l2_segment_id, name, members):
         body = {"name": name, "members": members}
         return self.api_helper.make_put_request(
-            path=f"/l2_segments/{instance_id}",
+            path=f"/l2_segments/{l2_segment_id}",
             body=body,
             query_parameters=None,
             good_codes=[200, 202],
@@ -560,7 +560,7 @@ class ScApi:
     def put_l2_segment_update(self, l2_segment_id, create, delete):
         body = {"create": create, "delete": delete}
         return self.api_helper.make_put_request(
-            path=f"/l2_segments/{instance_id}/networks",
+            path=f"/l2_segments/{l2_segment_id}/networks",
             body=body,
             query_parameters=None,
             good_codes=[200, 202],

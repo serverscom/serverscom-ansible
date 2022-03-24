@@ -1,0 +1,28 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+  when: not sc_endpoint or not sc_token
+
+- name: Test invalid token
+  sc_dedicated_server_info:
+    token: invalid
+    endpoint: '{{ sc_endpoint }}'
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 401
+
+- name: Test2, Get L2 segments list
+  sc_l2_segments_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+  register: test2
+
+- name: Check Test2
+  assert:
+    that:
+      - test2 is not changed
+      - ("l2_segments" in test2)
