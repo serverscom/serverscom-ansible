@@ -408,7 +408,7 @@ def main():
             'flavor_name': {},
             'gpn': {'type': 'bool', 'default': False},
             'ipv6': {'type': 'bool', 'default': False},
-            'ssh_key_fingerprint': {},
+            'ssh_key_fingerprint': {"no_log": False},
             'ssh_key_name': {},
             'backup_copies': {'type': 'int', 'default': 5},
             'wait': {'type': 'int', 'default': 600},
