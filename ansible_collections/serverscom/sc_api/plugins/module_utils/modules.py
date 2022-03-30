@@ -1121,7 +1121,7 @@ class ScL2Segment():
                 if self._match_segment(segment, self.name, self.type):
                     if existing_segment_id:  # duplicate found
                         raise ModuleError(msg=f"Duplicate segment with name {self.name} found.")
-                    existing_segment_id = segment['name']
+                    existing_segment_id = segment['id']
         return existing_segment_id
 
     def wait_for_active_segment(self, segment_id):
@@ -1152,7 +1152,7 @@ class ScL2Segment():
                     timeout=elapsed
                 )
             segment = self.api.get_l2_segment_or_none(segment_id)
-            ready = (not segment)
+            ready = (not segment['id'])
 
     def guess_member_location_groups(self):
         locations = set()
@@ -1161,7 +1161,7 @@ class ScL2Segment():
             srv = self.api.get_dedicated_servers(member['id'])
             locations.add(srv['location_id'])
         for location_group in self.api.list_l2_location_groups():
-            if locations.issubset(set(location_group['location_ids'])):
+            if locations.issubset(set(location_group['location_ids'])) and location_group['group_type'] == self.type:
                 suitable_location_groups.add(location_group['id'])
         if not suitable_location_groups:
             ModuleError(f"Unable to find location group for all members in locations: {', '.join(locations)}")
