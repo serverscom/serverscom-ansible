@@ -150,15 +150,6 @@ class ApiHelper():
         self.start_request('GET', path, query_parameters)
         return self.decode(self.send_request(good_codes=[200]))
 
-    def make_get_request_or_none(self, path, query_parameters=None):
-        'Used for simple GET request without pagination.'
-        self.start_request('GET', path, query_parameters)
-        res = self.send_request(good_codes=[200, 404])
-        if res.status_code == 200:
-            return self.decode
-        else:
-            return None
-
     def make_delete_request(self, path, body, query_parameters, good_codes):
         self.start_request('DELETE', path, query_parameters)
         self.request.body = body
@@ -586,7 +577,11 @@ class ScApi():
         return self.api_helper.make_get_request(path=f"/l2_segments/{l2_segment_id}")
 
     def get_l2_segment_or_none(self, l2_segment_id):
-        return self.api_helper.make_get_request_or_none(path=f"/l2_segments/{l2_segment_id}")
+        try:
+            seg = self.api_helper.make_get_request(path=f"/l2_segments/{l2_segment_id}")
+        except APIError404:
+            seg = None
+        return {'id': None}
 
     def delete_l2_segment(self, l2_segment_id):
         return self.api_helper.make_delete_request(

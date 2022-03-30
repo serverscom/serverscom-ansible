@@ -84,9 +84,9 @@ options:
     members:
       type: list
       elements: dict
-      required: true
       description:
         - List of servers and mode of connection (native or trunk)
+        - Required if I(state)=C(present)
         - L2 segment should contains at least two members
         - Server can be member of only one L2 segment in I(mode)=C(native)
         - Server can participate in multiple L2 segments in I(mode)=C(trunk)
@@ -279,7 +279,6 @@ def main():
             "type": {"choices": ["public", "private"]},
             "members": {
                 "type": "list",
-                "required": True,
                 "elements": "dict",
                 "options": {
                     "id": {"required": True},
@@ -295,8 +294,11 @@ def main():
         ],
         supports_check_mode=True,
     )
-    if len(module.params["members"]) < 2:
-        module.fail_json("members argument must contain at least two servers")
+    if module.params["state"] == "present":
+        if not module.params["members"]:
+            module.fail_json("state=present required members")
+        if len(module.params["members"]) < 2:
+            module.fail_json("members argument must contain at least two servers")
     try:
         sc_info = ScL2Segment(
             endpoint=module.params["endpoint"],
@@ -309,7 +311,7 @@ def main():
             location_group_id=module.params["location_group_id"],
             wait=module.params["wait"],
             update_interval=module.params["update_interval"],
-            checkmode=module.checkmode
+            checkmode=module.check_mode
         )
         module.exit_json(**sc_info.run())
     except SCBaseError as e:

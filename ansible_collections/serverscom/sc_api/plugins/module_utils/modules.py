@@ -1102,7 +1102,7 @@ class ScL2Segment():
         self.wait = wait
         self.update_interval = update_interval
         self.checkmode = checkmode
-        if update_interval < wait:
+        if update_interval > wait:
             raise ModuleError("update_interval is longer than wait")
 
     @staticmethod
@@ -1115,7 +1115,7 @@ class ScL2Segment():
     def get_segment_id(self):
         existing_segment_id = None
         if self.segment_id:
-            existing_segment_id = self.api.get_l2_segment_or_none(self.segment_id)
+            existing_segment_id = self.api.get_l2_segment_or_none(self.segment_id)['id']
         else:
             for segment in self.api.list_l2_segments():
                 if self._match_segment(segment, self.name, self.type):
@@ -1223,7 +1223,7 @@ class ScL2Segment():
     def absent(self):
         found_segment_id = self.get_segment_id()
         if found_segment_id:
-            if not self.check_mode:
+            if not self.checkmode:
                 self.api.delete_l2_segment(found_segment_id)
                 self.wait_for_segment_disappear(found_segment_id)
             return {'changed': True, "segment_id": found_segment_id}

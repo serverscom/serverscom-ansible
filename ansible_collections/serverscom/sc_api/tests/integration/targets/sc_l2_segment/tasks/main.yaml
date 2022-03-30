@@ -6,23 +6,39 @@
   when: not sc_endpoint or not sc_token
 
 - name: Test invalid token
-  sc_l2_segments_info:
+  sc_l2_segment:
     token: invalid
     endpoint: '{{ sc_endpoint }}'
+    name: foo
+    state: absent
   register: test1
   failed_when:
     - test1 is success
     - sc_endpoint not in test1.api_url
     - test1.status_code != 401
 
-- name: Test2, Get L2 segments list
-  sc_l2_segments_info:
+- name: Test2, Delete non-existing segment by id
+  sc_l2_segment:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
+    segment_id: dQKnqxAR
+    state: absent
   register: test2
 
 - name: Check Test2
   assert:
     that:
       - test2 is not changed
-      - ("l2_segments" in test2)
+
+- name: Test2, Delete non-existing segment by name
+  sc_l2_segment:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    name: nonexisting
+    state: absent
+  register: test3
+
+- name: Check Test3
+  assert:
+    that:
+      - test2 is not changed
