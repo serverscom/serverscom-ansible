@@ -1204,22 +1204,28 @@ class ScL2Segment():
     def _set_to_listdict(s):
         return [dict(tup) for tup in s]
 
+    @staticmethod
+    def _simplify_members(iterable):
+        for m in iterable:
+            yield {'id': m['id'], 'mode': m['mode']}
+
     def update(self, segment_id):
+        changed = False
         members_lg = self.get_member_location_group_id()
         segment = self.api.get_l2_segment(segment_id)
         if members_lg != segment['location_group_id']:
             raise ModuleError(f"members location group { members_lg } does not match location group for existing segment: { segment['location_group_id'] }")
-        existing_members = self._listdict_to_set(self.api.list_l2_segment_members(segment_id))
+        existing_members = self._listdict_to_set(self._simplify_members(self.api.list_l2_segment_members(segment_id)))
         new_members = self._listdict_to_set(self.members)
         del_set = existing_members - new_members
         add_set = new_members - existing_members
-        if not del_set and not add_set:
-            return {"changed": False}
-        if not self.checkmode:
-            self.api.put_l2_segment_update(segment_id, self._set_to_listdict(add_set), self._set_to_listdict(del_set))
-            self.wait_for_active_segment(segment_id)
+        if del_set or add_set:
+            changed = True
+            if not self.checkmode:
+                self.api.put_l2_segment_update(segment_id, self._set_to_listdict(add_set), self._set_to_listdict(del_set))
+                self.wait_for_active_segment(segment_id)
         res = self.api.get_l2_segment(segment_id)
-        res['changed'] = True
+        res['changed'] = changed
         return res
 
     def absent(self):
