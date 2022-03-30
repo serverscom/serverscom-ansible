@@ -1075,7 +1075,170 @@ class ScL2SegmentInfo():
         self.id = id
 
     def run(self):
+        networks = list(self.api.list_l2_segment_networks(self.id))
+        members = list(self.api.list_l2_segment_members(self.id))
+        l2_segment = self.api.get_l2_segment(self.id)
+        l2_segment['networks'] = networks
+        l2_segment['members'] = members
         return {
             'changed': False,
-            'l2_segment': self.api.get_l2_segment(self.id)
+            'l2_segment': l2_segment
         }
+
+
+class ScL2Segment():
+    def __init__(
+            self, endpoint, token, name, segment_id,
+            state, type, members, location_group_id,
+            wait, update_interval, checkmode
+    ):
+        self.api = ScApi(token, endpoint)
+        self.name = name
+        self.segment_id = segment_id
+        self.state = state
+        self.type = type
+        self.members = members
+        self.location_group_id = location_group_id
+        self.wait = wait
+        self.update_interval = update_interval
+        self.checkmode = checkmode
+        if update_interval < wait:
+            raise ModuleError("update_interval is longer than wait")
+
+    @staticmethod
+    def _match_segment(api_object, segment_name, type):
+        if type:
+            return api_object['name'] == segment_name and api_object['type'] == type
+        else:
+            return api_object['name'] == segment_name
+
+    def get_segment_id(self):
+        existing_segment_id = None
+        if self.segment_id:
+            existing_segment_id = self.api.get_l2_segment_or_none(self.segment_id)
+        else:
+            for segment in self.api.list_l2_segments():
+                if self._match_segment(segment, self.name, self.type):
+                    if existing_segment_id:  # duplicate found
+                        raise ModuleError(msg=f"Duplicate segment with name {self.name} found.")
+                    existing_segment_id = segment['name']
+        return existing_segment_id
+
+    def wait_for_active_segment(self, segment_id):
+        ready = False
+        start_time = time.time()
+        elapsed = 0
+        while not ready:
+            time.sleep(self.update_interval)
+            elapsed = time.time() - start_time
+            if elapsed > self.wait:
+                raise WaitError(
+                    msg="Segment is not ready.",
+                    timeout=elapsed
+                )
+            segment = self.api.get_l2_segment(segment_id)
+            ready = (segment['status'] == 'active')
+
+    def wait_for_segment_disappear(self, segment_id):
+        ready = False
+        start_time = time.time()
+        elapsed = 0
+        while not ready:
+            time.sleep(self.update_interval)
+            elapsed = time.time() - start_time
+            if elapsed > self.wait:
+                raise WaitError(
+                    msg="Segment is not deleted.",
+                    timeout=elapsed
+                )
+            segment = self.api.get_l2_segment_or_none(segment_id)
+            ready = (not segment)
+
+    def guess_member_location_groups(self):
+        locations = set()
+        suitable_location_groups = set()
+        for server in self.members:
+            locations.add(self.api.get_dedicated_servers(self.server_id)['location_id'])
+        for location_group in self.api.list_l2_location_groups():
+            if locations.issubset(set(location_group['locations_id'])):
+                suitable_location_groups.append(location_group['id'])
+        if not suitable_location_groups:
+            ModuleError(f"Unable to find location group for all members in locations: {', '.join(locations)}")
+        return suitable_location_groups()
+
+    def get_member_location_group_id(self):
+        member_guessed_lgs = self.guess_location_groups()
+        if self.location_group_id:
+            if self.location_group_id in member_guessed_lgs:
+                return self.location_group_id
+            raise ModuleError(f"location_group_id {self.location_group_id} is not compatible with members locations.")
+        if len(member_guessed_lgs) > 1:
+            raise ModuleError(f"More than one location group is suitable for members: {', '.join(member_guessed_lgs)}, use location_group_id parameter.")
+        return member_guessed_lgs.pop()  # only one is in the set
+
+    def create(self):
+        lg = self.get_member_location_group_id()
+        if not self.name:
+            raise ModuleError("Creation of L2 segment required name")
+        if not self.type:
+            raise ModuleError("Creation of L2 segment required type")
+        if self.checkmode:
+            return {'changed': True, "location_group_id": lg}
+        res = self.api.post_l2_segment(self.name, self.type, lg, self.members)
+        res['changed'] = True
+        self.wait_for_active_segment(res['id'])
+        return res
+
+    @staticmethod
+    def _listdict_to_set(iterable):
+        return set(
+            [
+                tuple(d.items())
+                for d in iterable
+            ]
+        )
+
+    @staticmethod
+    def _set_to_listdict(s):
+        return [dict(tup) for tup in s]
+
+    def update(self, segment_id):
+        members_lg = self.get_member_location_group_id()
+        segment = self.api.get_l2_segment(segment_id)
+        if members_lg != segment['location_group_id']:
+            raise ModuleError(f"members location group { members_lg } does not match location group for existing segment: { segment['location_group_id'] }")
+        existing_members = self._listdict_to_set(self.api.list_l2_segment_members(segment_id))
+        new_members = self._listdict_to_set(self.members)
+        del_set = existing_members - new_members
+        add_set = new_members - existing_members
+        if not del_set and not add_set:
+            return {"changed": False}
+        if not self.checkmode:
+            self.api.put_l2_segment_update(segment_id, self._set_to_listdict(add_set), self._set_to_listdict(del_set))
+            self.wait_for_active_segment(segment_id)
+        res = self.api.get_l2_segment(segment_id)
+        res['changed'] = True
+        return res
+
+    def absent(self):
+        found_segment_id = self.get_segment_id()
+        if found_segment_id:
+            if not self.check_mode:
+                self.api.delete_l2_segment(found_segment_id)
+                self.wait_for_segment_disappear(found_segment_id)
+            return {'changed': True, "segment_id": found_segment_id}
+        else:
+            return {'changed': False}
+
+    def present(self):
+        found_segment_id = self.get_segment_id()
+        if found_segment_id:
+            return self.update(found_segment_id)
+        else:
+            return self.create()
+
+    def run(self):
+        if self.state == 'absent':
+            return self.absent()
+        else:  # present
+            return self.present()
