@@ -134,13 +134,21 @@
     that:
       - test6 is changed
 
-- name: Test7, Delete public segment for real
+- name: Test7, Switch server type from native to trunk in check mode
   sc_l2_segment:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     name: integration-test
-    state: absent
+    state: present
     type: private
+    members:
+      - id: GdbY8LmA
+        mode: native
+      - id: LmK5671k
+        mode: native
+      - id: 3dw6qlmE
+        mode: trunk
+  check_mode: true
   register: test7
 
 - debug: var=test7
@@ -148,3 +156,19 @@
   assert:
     that:
       - test7 is changed
+
+- name: Test10, Delete public segment for real
+  sc_l2_segment:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    name: integration-test
+    state: absent
+    type: private
+  register: test10
+
+- name: Check Test10
+  assert:
+    that:
+      - test10 is changed
+      - test10.id == test6.id
+      - test10.id == test5.id

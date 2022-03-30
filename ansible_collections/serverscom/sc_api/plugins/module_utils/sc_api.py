@@ -580,8 +580,8 @@ class ScApi():
         try:
             seg = self.api_helper.make_get_request(path=f"/l2_segments/{l2_segment_id}")
         except APIError404:
-            seg = None
-        return {'id': None}
+            seg = {'id': None}
+        return seg
 
     def delete_l2_segment(self, l2_segment_id):
         return self.api_helper.make_delete_request(
