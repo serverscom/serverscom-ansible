@@ -1188,6 +1188,8 @@ class ScL2Segment():
         res = self.api.post_l2_segment(self.name, self.type, lg, self.members)
         self.wait_for_active_segment(res['id'])
         res = self.api.get_l2_segment(res['id'])
+        res['members_added'] = self.members
+        res['members_removed'] = []
         res['changed'] = True
         return res
 
@@ -1225,6 +1227,8 @@ class ScL2Segment():
                 self.api.put_l2_segment_update(segment_id, self._set_to_listdict(add_set), self._set_to_listdict(del_set))
                 self.wait_for_active_segment(segment_id)
         res = self.api.get_l2_segment(segment_id)
+        res['members_added'] = list(add_set)
+        res['members_removed'] = list(del_set)
         res['changed'] = changed
         return res
 

@@ -170,5 +170,4 @@
   assert:
     that:
       - test10 is changed
-      - test10.id == test6.id
       - test10.id == test5.id
