@@ -560,7 +560,7 @@ class ScApi():
 
     def list_l2_location_groups(self):
         return self.api_helper.make_multipage_request(
-            path="l2_segments/location_groups"
+            path="/l2_segments/location_groups"
         )
 
     def list_l2_segment_members(self, l2_segment_id):

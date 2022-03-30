@@ -5,40 +5,61 @@
     msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
   when: not sc_endpoint or not sc_token
 
-- name: Test invalid token
-  sc_l2_segment:
-    token: invalid
-    endpoint: '{{ sc_endpoint }}'
-    name: foo
-    state: absent
-  register: test1
-  failed_when:
-    - test1 is success
-    - sc_endpoint not in test1.api_url
-    - test1.status_code != 401
+# - name: Test invalid token
+#   sc_l2_segment:
+#     token: invalid
+#     endpoint: '{{ sc_endpoint }}'
+#     name: foo
+#     state: absent
+#   register: test1
+#   failed_when:
+#     - test1 is success
+#     - sc_endpoint not in test1.api_url
+#     - test1.status_code != 401
 
-- name: Test2, Delete non-existing segment by id
+# - name: Test2, Delete non-existing segment by id
+#   sc_l2_segment:
+#     token: '{{ sc_token }}'
+#     endpoint: '{{ sc_endpoint }}'
+#     segment_id: dQKnqxAR
+#     state: absent
+#   register: test2
+
+# - name: Check Test2
+#   assert:
+#     that:
+#       - test2 is not changed
+
+# - name: Test3, Delete non-existing segment by name
+#   sc_l2_segment:
+#     token: '{{ sc_token }}'
+#     endpoint: '{{ sc_endpoint }}'
+#     name: nonexisting
+#     state: absent
+#   register: test3
+
+# - name: Check Test3
+#   assert:
+#     that:
+#       - test2 is not changed
+
+- name: Test4, Create segment in check mode
   sc_l2_segment:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    segment_id: dQKnqxAR
-    state: absent
-  register: test2
+    name: integration-test
+    state: present
+    type: private
+    members:
+      - id: GdbY8LmA
+        mode: native
+      - id: LmK5671k
+        mode: native
+  check_mode: true
+  register: test4
 
-- name: Check Test2
+- name: Check Test4
   assert:
     that:
-      - test2 is not changed
-
-- name: Test2, Delete non-existing segment by name
-  sc_l2_segment:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
-    name: nonexisting
-    state: absent
-  register: test3
-
-- name: Check Test3
-  assert:
-    that:
-      - test2 is not changed
+      - test4 is changed
+- debug: var=test4

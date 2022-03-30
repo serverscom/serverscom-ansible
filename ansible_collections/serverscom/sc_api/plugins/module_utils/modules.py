@@ -1157,23 +1157,24 @@ class ScL2Segment():
     def guess_member_location_groups(self):
         locations = set()
         suitable_location_groups = set()
-        for server in self.members:
-            locations.add(self.api.get_dedicated_servers(self.server_id)['location_id'])
+        for member in self.members:
+            srv = self.api.get_dedicated_servers(member['id'])
+            locations.add(srv['location_id'])
         for location_group in self.api.list_l2_location_groups():
-            if locations.issubset(set(location_group['locations_id'])):
-                suitable_location_groups.append(location_group['id'])
+            if locations.issubset(set(location_group['location_ids'])):
+                suitable_location_groups.add(location_group['id'])
         if not suitable_location_groups:
             ModuleError(f"Unable to find location group for all members in locations: {', '.join(locations)}")
-        return suitable_location_groups()
+        return suitable_location_groups
 
     def get_member_location_group_id(self):
-        member_guessed_lgs = self.guess_location_groups()
+        member_guessed_lgs = self.guess_member_location_groups()
         if self.location_group_id:
             if self.location_group_id in member_guessed_lgs:
                 return self.location_group_id
             raise ModuleError(f"location_group_id {self.location_group_id} is not compatible with members locations.")
         if len(member_guessed_lgs) > 1:
-            raise ModuleError(f"More than one location group is suitable for members: {', '.join(member_guessed_lgs)}, use location_group_id parameter.")
+            raise ModuleError(f"More than one location group is suitable for members: {member_guessed_lgs}, use location_group_id parameter.")
         return member_guessed_lgs.pop()  # only one is in the set
 
     def create(self):
