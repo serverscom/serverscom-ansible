@@ -309,6 +309,7 @@ def main():
             location_group_id=module.params["location_group_id"],
             wait=module.params["wait"],
             update_interval=module.params["update_interval"],
+            checkmode=module.checkmode
         )
         module.exit_json(**sc_info.run())
     except SCBaseError as e:
