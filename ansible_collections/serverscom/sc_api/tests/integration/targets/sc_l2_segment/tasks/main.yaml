@@ -43,7 +43,32 @@
 #     that:
 #       - test2 is not changed
 
-- name: Test4, Create segment in check mode
+# - name: Test4, Create segment in check mode
+#   sc_l2_segment:
+#     token: '{{ sc_token }}'
+#     endpoint: '{{ sc_endpoint }}'
+#     name: integration-test
+#     state: present
+#     type: private
+#     members:
+#       - id: GdbY8LmA
+#         mode: native
+#       - id: LmK5671k
+#         mode: native
+#   check_mode: true
+#   register: test4
+#   loop:
+#     - 1
+#     - 2
+
+# - name: Check Test4
+#   assert:
+#     that:
+#       - test4 is changed
+#       - test4.results[0].location_group_id == test4.results[1].location_group_id
+#       - test4.results[0].location_group_id > 0
+
+- name: Test5, Create public segment for real
   sc_l2_segment:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
@@ -55,11 +80,71 @@
         mode: native
       - id: LmK5671k
         mode: native
-  check_mode: true
-  register: test4
+      - id: 3dw6qlmE
+        mode: native
+  register: test5
 
-- name: Check Test4
+- debug: var=test5
+- name: Check Test5
   assert:
     that:
-      - test4 is changed
-- debug: var=test4
+      - test5 is changed
+      - test5.name == 'integration-test'
+      - test5.id
+      - test5.type == 'private'
+      - test5.status == 'active'
+
+- name: Test5, Create public segment for real second time (idempotence)
+  sc_l2_segment:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    name: integration-test
+    state: present
+    type: private
+    members:
+      - id: GdbY8LmA
+        mode: native
+      - id: LmK5671k
+        mode: native
+      - id: 3dw6qlmE
+        mode: native
+  register: test5a
+
+- name: Check Test5a
+  assert:
+    that:
+      - test5a is not changed
+      - test5a.name == 'integration-test'
+      - test5a.id == test5.id
+      - test5a.type == 'private'
+      - test5a.status == 'active'
+
+- name: Test6, Delete public segment in check mode
+  sc_l2_segment:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    name: integration-test
+    state: absent
+    type: private
+  check_mode: true
+  register: test6
+
+- name: Check Test6
+  assert:
+    that:
+      - test6 is changed
+
+- name: Test7, Delete public segment for real
+  sc_l2_segment:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    name: integration-test
+    state: absent
+    type: private
+  register: test7
+
+- debug: var=test7
+- name: Check Test7
+  assert:
+    that:
+      - test7 is changed
