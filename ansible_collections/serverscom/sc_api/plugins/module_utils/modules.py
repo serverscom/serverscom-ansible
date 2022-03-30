@@ -1186,8 +1186,9 @@ class ScL2Segment():
         if self.checkmode:
             return {'changed': True, "location_group_id": lg}
         res = self.api.post_l2_segment(self.name, self.type, lg, self.members)
-        res['changed'] = True
         self.wait_for_active_segment(res['id'])
+        res = self.api.get_l2_segment(res['id'])
+        res['changed'] = True
         return res
 
     @staticmethod

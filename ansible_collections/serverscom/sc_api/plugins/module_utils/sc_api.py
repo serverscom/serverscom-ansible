@@ -109,26 +109,26 @@ class ApiHelper():
         if response.status_code == 401:
             raise APIError(
                 status_code=response.status_code,
-                api_url=response.url,
+                api_url=prep_request.url,
                 msg='401 Unauthorized. Check if token is valid.',
             )
 
         if response.status_code == 404:
             raise APIError404(
                 status_code=response.status_code,
-                api_url=response.url,
+                api_url=prep_request.url,
                 msg='404 Not Found.',
             )
         if response.status_code == 409:
             raise APIError409(
                 status_code=response.status_code,
-                api_url=response.url,
+                api_url=prep_request.url,
                 msg='409 Conflict. ' + str(response.content),
             )
         if response.status_code not in good_codes:
             raise APIError(
                 status_code=response.status_code,
-                api_url=response.url,
+                api_url=prep_request.url,
                 msg=f'API Error: {response.content }',
             )
         return response
@@ -603,7 +603,7 @@ class ScApi():
     def put_l2_segment_update(self, l2_segment_id, create, delete):
         body = {"create": create, "delete": delete}
         return self.api_helper.make_put_request(
-            path=f"/l2_segments/{l2_segment_id}/networks",
+            path=f"/l2_segments/{l2_segment_id}",
             body=body,
             query_parameters=None,
             good_codes=[200, 202],
