@@ -112,7 +112,7 @@ options:
             - Server can be present in multiple L2 segments
               in C(trunk) mode
             - If I(type) is changed for a given server
-              it will be reconfigured twice: removed from L2
+              it will be reconfigured twice, removed from L2
               segment and added back with a new mode.
 
     location_group_id:
