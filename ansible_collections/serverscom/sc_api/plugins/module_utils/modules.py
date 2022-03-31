@@ -1085,6 +1085,7 @@ class ScL2SegmentInfo():
                     id = segment['id']
             if not id:  # Either ID is from args, or we found it, or it can't be found
                 raise ModuleError(f"Unable to find segment with name {self.name}")
+        assert id, "No id for segment was found"
         networks = list(self.api.list_l2_segment_networks(id))
         members = list(self.api.list_l2_segment_members(id))
         l2_segment = self.api.get_l2_segment(id)

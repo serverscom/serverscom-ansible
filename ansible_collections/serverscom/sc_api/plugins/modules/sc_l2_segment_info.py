@@ -148,7 +148,7 @@ def main():
             endpoint=module.params['endpoint'],
             token=module.params['token'],
             id=module.params['id'],
-            name=module.params['id']
+            name=module.params['name']
         )
         module.exit_json(**sc_info.run())
     except SCBaseError as e:
