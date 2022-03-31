@@ -600,11 +600,14 @@ class ScApi():
             good_codes=[200, 202],
         )
 
-    def put_l2_segment_update(self, l2_segment_id, create, delete):
-        body = {"create": create, "delete": delete}
-        return self.api_helper.make_put_request(
-            path=f"/l2_segments/{l2_segment_id}",
-            body=body,
-            query_parameters=None,
-            good_codes=[200, 202],
-        )
+    def put_l2_segment_update(self, l2_segment_id, members):
+        body = {"members":members}
+        try:
+            return self.api_helper.make_put_request(
+                path=f"/l2_segments/{l2_segment_id}",
+                body=body,
+                query_parameters=None,
+                good_codes=[200, 202],
+            )
+        except Exception as e:
+            raise Exception(f"{body=}, {e=}")

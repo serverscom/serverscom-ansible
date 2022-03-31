@@ -1219,16 +1219,16 @@ class ScL2Segment():
             raise ModuleError(f"members location group { members_lg } does not match location group for existing segment: { segment['location_group_id'] }")
         existing_members = self._listdict_to_set(self._simplify_members(self.api.list_l2_segment_members(segment_id)))
         new_members = self._listdict_to_set(self.members)
-        del_set = existing_members - new_members
-        add_set = new_members - existing_members
-        if del_set or add_set:
+        del_list = self._set_to_listdict(existing_members - new_members)
+        add_list = self._set_to_listdict(new_members - existing_members)
+        if del_list or add_list:
             changed = True
             if not self.checkmode:
-                self.api.put_l2_segment_update(segment_id, self._set_to_listdict(add_set), self._set_to_listdict(del_set))
+                self.api.put_l2_segment_update(segment_id, self.members)
                 self.wait_for_active_segment(segment_id)
         res = self.api.get_l2_segment(segment_id)
-        res['members_added'] = list(add_set)
-        res['members_removed'] = list(del_set)
+        res['members_added'] = list(add_list)
+        res['members_removed'] = list(del_list)
         res['changed'] = changed
         return res
 
@@ -1238,7 +1238,7 @@ class ScL2Segment():
             if not self.checkmode:
                 self.api.delete_l2_segment(found_segment_id)
                 self.wait_for_segment_disappear(found_segment_id)
-            return {'changed': True, "segment_id": found_segment_id}
+            return {'changed': True, "id": found_segment_id}
         else:
             return {'changed': False}
 
