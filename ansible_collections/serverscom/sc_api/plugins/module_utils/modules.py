@@ -1070,14 +1070,24 @@ class ScL2SegmentsInfo():
 
 
 class ScL2SegmentInfo():
-    def __init__(self, endpoint, token, id):
+    def __init__(self, endpoint, token, id, name):
         self.api = ScApi(token, endpoint)
         self.id = id
+        self.name = name
 
     def run(self):
-        networks = list(self.api.list_l2_segment_networks(self.id))
-        members = list(self.api.list_l2_segment_members(self.id))
-        l2_segment = self.api.get_l2_segment(self.id)
+        id = self.id
+        if self.name:
+            for segment in self.api.list_l2_segments():
+                if segment['name'] == self.name:
+                    if self.name:
+                        raise ModuleError("Multiple segments with the same name found. Use id.")
+                    id = segment['id']
+            if not self.id:  # Either ID is from args, or we found it, or it can't be found
+                raise ModuleError(f"Unable to find segment with name {self.name}")
+        networks = list(self.api.list_l2_segment_networks(id))
+        members = list(self.api.list_l2_segment_members(id))
+        l2_segment = self.api.get_l2_segment(id)
         l2_segment['networks'] = networks
         l2_segment['members'] = members
         return {

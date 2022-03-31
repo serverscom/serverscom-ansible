@@ -39,9 +39,16 @@ options:
           in Profile -> Public API section.
     id:
       type: str
-      required: true
       description:
         - ID of the L2 segement
+        - Either I(name) or I(id) is required
+
+    name:
+      type: str
+      description:
+        - Name of the L2 segment
+        - Either I(name) or I(id) is required
+
 """
 
 RETURN = """
@@ -130,8 +137,10 @@ def main():
         argument_spec={
             'token': {'type': 'str', 'no_log': True, 'required': True},
             'endpoint': {'default': DEFAULT_API_ENDPOINT},
-            'id': {'required': True}
+            'id': {},
+            'name': {}
         },
+        required_one_of=[['id', 'name']],
         supports_check_mode=True
     )
     try:
@@ -139,6 +148,7 @@ def main():
             endpoint=module.params['endpoint'],
             token=module.params['token'],
             id=module.params['id'],
+            name=module.params['id']
         )
         module.exit_json(**sc_info.run())
     except SCBaseError as e:

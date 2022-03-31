@@ -601,7 +601,7 @@ class ScApi():
         )
 
     def put_l2_segment_update(self, l2_segment_id, members):
-        body = {"members":members}
+        body = {"members": members}
         return self.api_helper.make_put_request(
             path=f"/l2_segments/{l2_segment_id}",
             body=body,
