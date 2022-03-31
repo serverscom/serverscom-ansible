@@ -1080,10 +1080,10 @@ class ScL2SegmentInfo():
         if self.name:
             for segment in self.api.list_l2_segments():
                 if segment['name'] == self.name:
-                    if self.name:
+                    if id:
                         raise ModuleError("Multiple segments with the same name found. Use id.")
                     id = segment['id']
-            if not self.id:  # Either ID is from args, or we found it, or it can't be found
+            if not id:  # Either ID is from args, or we found it, or it can't be found
                 raise ModuleError(f"Unable to find segment with name {self.name}")
         networks = list(self.api.list_l2_segment_networks(id))
         members = list(self.api.list_l2_segment_members(id))
