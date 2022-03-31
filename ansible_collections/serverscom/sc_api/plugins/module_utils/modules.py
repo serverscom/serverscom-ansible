@@ -1164,7 +1164,7 @@ class ScL2Segment():
             if locations.issubset(set(location_group['location_ids'])) and location_group['group_type'] == self.type:
                 suitable_location_groups.add(location_group['id'])
         if not suitable_location_groups:
-            ModuleError(f"Unable to find location group for all members in locations: {', '.join(locations)}")
+            ModuleError(f"Unable to find location group for all members in locations: {repr(locations)}")
         return suitable_location_groups
 
     def get_member_location_group_id(self):
