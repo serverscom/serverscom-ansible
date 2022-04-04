@@ -1099,7 +1099,8 @@ class ScL2SegmentInfo():
 class ScL2Segment():
     def __init__(
             self, endpoint, token, name, segment_id,
-            state, type, members, location_group_id,
+            state, type, members, members_present,
+            members_absent, location_group_id,
             wait, update_interval, checkmode
     ):
         self.api = ScApi(token, endpoint)
@@ -1108,6 +1109,8 @@ class ScL2Segment():
         self.state = state
         self.type = type
         self.members = members
+        self.members_present = members_present
+        self.members_absent = members_absent
         self.location_group_id = location_group_id
         self.wait = wait
         self.update_interval = update_interval
@@ -1123,6 +1126,7 @@ class ScL2Segment():
             return api_object['name'] == segment_name
 
     def get_segment_id(self):
+        assert not self.members_present
         existing_segment_id = None
         if self.segment_id:
             existing_segment_id = self.api.get_l2_segment_or_none(self.segment_id)['id']

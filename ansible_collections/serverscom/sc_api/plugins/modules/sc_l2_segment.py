@@ -86,12 +86,16 @@ options:
       elements: dict
       description:
         - List of servers and mode of connection (native or trunk)
-        - Required if I(state)=C(present)
+        - (Either I(members) or I(members_present) or I(members_absent)
+          required if I(state)=C(present)
         - L2 segment should contains at least two members
         - Server can be member of only one L2 segment in I(mode)=C(native)
         - Server can participate in multiple L2 segments in I(mode)=C(trunk)
         - Server can be present in a given segment only once (e.g. it's impossible
-          to have the same segment with two different vlan IDs on the same server).
+          to have the same segment with two different vlan IDs on the same server)
+        - L2 segment is reconfigured to keep only listed members
+        - Either I(members) or I(members_present) can be used
+        - Either I(members) or I(members_absent) can be used
 
       suboptions:
         id:
@@ -114,6 +118,72 @@ options:
             - If I(type) is changed for a given server
               it will be reconfigured twice, removed from L2
               segment and added back with a new mode.
+
+    members_present:
+      type: list
+      elements: dict
+      description:
+        - List of servers and mode of connection (native or trunk)
+        - Existing servers in L2 segement are not affected, except for
+          possible mode change (this option only assure that servers are added)
+        - (Either I(members) or I(members_present) or I(members_absent)
+          required if I(state)=C(present)
+        - L2 segment should contains at least two members
+        - Server can be member of only one L2 segment in I(mode)=C(native)
+        - Server can participate in multiple L2 segments in I(mode)=C(trunk)
+        - Server can be present in a given segment only once (e.g. it's impossible
+          to have the same segment with two different vlan IDs on the same server).
+        - Either I(members) or I(members_present) can be used.
+        - Either I(members) or I(members_absent) can be used.
+
+      suboptions:
+        id:
+          type: str
+          required: true
+          description:
+            - ID of the server to be present in L2 segment
+
+        mode:
+          type: str
+          choices: ['trunk', 'native']
+          default: native
+          description:
+            - Access mode of server in L2 segment
+            - C(native) provdes direct connection to L2 segment
+            - C(trunk) add L2 segment as tagged vlan
+            - Server can be only in one segment in C(native) mode
+            - Server can be present in multiple L2 segments
+              in C(trunk) mode
+            - If I(type) is changed for a given server
+              it will be reconfigured twice, removed from L2
+              segment and added back with a new mode.
+
+    members_absent:
+      type: list
+      elements: dict
+      description:
+        - List of servers to be absent in L2 segment
+        - Other servers in L2 segement are not affected
+          (this option only assure that listed servers are removed)
+        - (Either I(members) or I(members_present) or I(members_absent)
+          required if I(state)=C(present)
+        - L2 segment should contains at least two members
+        - Either I(members) or I(members_present) can be used.
+        - Either I(members) or I(members_absent) can be used.
+
+      suboptions:
+        id:
+          type: str
+          required: true
+          description:
+            - ID of the server to be present in L2 segment
+
+        mode:
+          type: str
+          required: false
+          description:
+            - Ignored, existing for compatibility of
+              arguments with I(members_present)
 
     location_group_id:
         type: str
@@ -222,7 +292,7 @@ EXAMPLES = """
         - id: 7p6bE0p3
           mode: native
 
-- name: Remove  server 7p6bE0p3 from L2 segment
+- name: Reduce L2 segment to two servers
   serverscom.sc_api.sc_l2_segment:
     token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MzgxMjEsInR5cGUiOiJVc2VyIiwiYWNjZXNzX2dyYW50X2lkIjoyNjgwNywiZXhwIjoyMjI2OTk3NjMwfQ.rO4nGXNgXggjNmMJBLXovOh1coNrDWl4dGrGFupYXJE'
     name: L2 example
@@ -232,6 +302,24 @@ EXAMPLES = """
           mode: native
         - id: GmyAZkm0
           mode: native
+
+- name: Assure server 7p6bE0p3 is present in L2 segment, ignoring other servers
+  serverscom.sc_api.sc_l2_segment:
+    token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MzgxMjEsInR5cGUiOiJVc2VyIiwiYWNjZXNzX2dyYW50X2lkIjoyNjgwNywiZXhwIjoyMjI2OTk3NjMwfQ.rO4nGXNgXggjNmMJBLXovOh1coNrDWl4dGrGFupYXJE'
+    name: L2 example
+    type: private
+    members_present:
+        - id: 7p6bE0p3
+          mode: trunk
+
+- name: Removing 7p6bE0p3 from L2 segment, ignoring other servers
+  serverscom.sc_api.sc_l2_segment:
+    token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MzgxMjEsInR5cGUiOiJVc2VyIiwiYWNjZXNzX2dyYW50X2lkIjoyNjgwNywiZXhwIjoyMjI2OTk3NjMwfQ.rO4nGXNgXggjNmMJBLXovOh1coNrDWl4dGrGFupYXJE'
+    name: L2 example
+    type: private
+    members_absent:
+        - id: 7p6bE0p3
+          mode: trunk
 
 - name: Remove L2 segment
   serverscom.sc_api.sc_l2_segment:
@@ -288,19 +376,37 @@ def main():
                     "mode": {"choices": ["native", "trunk"], "default": "native"},
                 },
             },
+            "members_present": {
+                "type": "list",
+                "elements": "dict",
+                "options": {
+                    "id": {"required": True},
+                    "mode": {"choices": ["native", "trunk"], "default": "native"},
+                },
+            },
+            "members_absent": {
+                "type": "list",
+                "elements": "dict",
+                "options": {
+                    "id": {"required": True},
+                    "mode": {},
+                },
+            },
             "location_group_id": {},
             "wait": {"type": "int", "default": 1200},
             "update_interval": {"type": "int", "default": 30},
         },
         mutually_exclusive=[
             ("name", "segment_id"),
+            ("members", "members_present"),
+            ("members", "members_absent"),
         ],
         supports_check_mode=True,
     )
     if module.params["state"] == "present":
-        if not module.params["members"]:
-            module.fail_json("state=present required members")
-        if len(module.params["members"]) < 2:
+        if not any([module.params["members"], module.params["members_present"], module.params["members_absent"]]):
+            module.fail_json("state=present required either members, or members_present, or members_absent")
+        if module.params["members"] and len(module.params["members"]) < 2:
             module.fail_json("members argument must contain at least two servers")
     try:
         sc_info = ScL2Segment(
@@ -311,6 +417,8 @@ def main():
             state=module.params["state"],
             type=module.params["type"],
             members=module.params["members"],
+            members_present=module.params["members_present"],
+            members_absent=module.params["members_absent"],
             location_group_id=module.params["location_group_id"],
             wait=module.params["wait"],
             update_interval=module.params["update_interval"],
