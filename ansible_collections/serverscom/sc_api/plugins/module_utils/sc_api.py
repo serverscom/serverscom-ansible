@@ -588,7 +588,7 @@ class ScApi():
             path=f"/l2_segments/{l2_segment_id}",
             query_parameters=None,
             body=None,
-            good_codes=[204],
+            good_codes=[202, 204],
         )
 
     def post_l2_segment(self, name, type, location_group_id, members):
