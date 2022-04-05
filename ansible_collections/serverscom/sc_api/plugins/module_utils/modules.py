@@ -1252,17 +1252,38 @@ class ScL2Segment():
         res['changed'] = changed
         return res
 
+    @staticmethod
+    def prep_present_list(members):
+        for member in members:
+            if "mode" in member:
+                yield member
+            else:
+                yield {
+                    'id': member['id'],
+                    'mode': "native"
+                }
+
+    @staticmethod
+    def prep_absent_list(members, old_members):
+        for member in members:
+            for old_member in old_members:
+                if old_member['id'] == member['id']:
+                    yield old_member
+                    break
+            else:
+                yield member  # keep None because it's not in the old_members anyway
+
     def update_partial(self, segment_id):
         changed = False
         members_lg = self.get_member_location_group_id(self.members_present)
         segment = self.api.get_l2_segment(segment_id)
         if members_lg != segment['location_group_id']:
             raise ModuleError(f"members location group { members_lg } does not match location group for existing segment: { segment['location_group_id'] }")
-        existing_members = self._listdict_to_set(self._simplify_members(self.api.list_l2_segment_members(segment_id)))
-        members_present = self._listdict_to_set(self.members_present)
-        members_absent = self._listdict_to_set(self.members_absent)
-
-        resulting_members = existing_members | members_present - members_absent
+        old_list = list(self._simplify_members(self.api.list_l2_segment_members(segment_id)))
+        existing_members = self._listdict_to_set(old_list)
+        members_present = self._listdict_to_set(self.prep_present_list(self.members_present))
+        members_absent = self._listdict_to_set(self.prep_absent_list(self.members_absent, old_list))
+        resulting_members = (existing_members | members_present) - members_absent
         del_list = self._set_to_listdict(existing_members - resulting_members)
         add_list = self._set_to_listdict(resulting_members - existing_members)
         send_list = self._set_to_listdict(resulting_members)
@@ -1283,7 +1304,6 @@ class ScL2Segment():
         res['members_kept'] = list(reduced_list)
         res['changed'] = changed
         return res
-
 
     def absent(self):
         found_segment_id = self.get_segment_id()

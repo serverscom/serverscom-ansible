@@ -68,7 +68,7 @@
           - test4 is changed
           - test4.results[0].location_group_id == test4.results[1].location_group_id
           - test4.results[0].location_group_id > 0
-
+- block:
     - name: Test5, Create public segment for real
       sc_l2_segment:
         token: '{{ sc_token }}'
@@ -84,6 +84,7 @@
           - id: 3dw6qlmE
             mode: native
       register: test5
+      tags: create
 
     - name: Check Test5
       assert:
@@ -181,6 +182,37 @@
           - "test8.members_added == [{'id': '3dw6qlmE', 'mode': 'trunk'}]"
           - "test8.members_removed == [{'id': '3dw6qlmE', 'mode': 'native'}]"
 
+    - name: Check Test8
+      assert:
+        that:
+          - test8 is changed
+          - "test8.members_added == [{'id': '3dw6qlmE', 'mode': 'trunk'}]"
+          - "test8.members_removed == [{'id': '3dw6qlmE', 'mode': 'native'}]"
+
+    - name: Test9, Use member_present and member_absent
+      sc_l2_segment:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name: integration-test
+        state: present
+        type: private
+        members_present:
+          - id: kmXYw6dw
+            mode: trunk
+        members_absent:
+          - id: GdbY8LmA
+      register: test9
+      tags: test9
+    - debug: var=test9
+      tags: test9
+    - name: Assert test9
+      assert:
+        that:
+          - test9 is changed
+          - test9.members_added|length == 1
+          - test9.members_removed|length == 1
+          - test9.members_kept|length == 2
+      tags: assert9
     - name: Try to use sc_l2_segments_info
       sc_l2_segments_info:
         token: '{{ sc_token }}'
@@ -242,7 +274,7 @@
           - test10 is changed
           - test10.id == test5.id
 
-- name: Test11, test impossible location group
+- name: Test21, test impossible location group
   sc_l2_segment:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
@@ -254,10 +286,10 @@
         mode: trunk
       - id: VmrDN01x  # DFW, US
         mode: trunk
-  register: test11
-  failed_when: '"msg" not in test11'
+  register: test21
+  failed_when: '"msg" not in test21'
 
-- name: Check test11
+- name: Check test21
   assert:
     that:
-      - '"Unable to find location group" in test11.msg'
+      - '"Unable to find location group" in test21.msg'
