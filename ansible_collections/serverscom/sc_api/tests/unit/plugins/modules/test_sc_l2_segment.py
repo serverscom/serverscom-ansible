@@ -14,6 +14,8 @@ __metaclass__ = type
 def test__listdict_to_set_trivial():
     assert ScL2Segment._listdict_to_set([]) == set()
 
+def test__listdict_to_set_None():
+    assert ScL2Segment._listdict_to_set(None) == set()
 
 def test__set_to_listdict_trivial():
     assert ScL2Segment._set_to_listdict(set()) == []

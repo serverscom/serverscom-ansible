@@ -1126,7 +1126,6 @@ class ScL2Segment():
             return api_object['name'] == segment_name
 
     def get_segment_id(self):
-        assert not self.members_present
         existing_segment_id = None
         if self.segment_id:
             existing_segment_id = self.api.get_l2_segment_or_none(self.segment_id)['id']
@@ -1168,10 +1167,10 @@ class ScL2Segment():
             segment = self.api.get_l2_segment_or_none(segment_id)
             ready = (not segment['id'])
 
-    def guess_member_location_groups(self):
+    def guess_member_location_groups(self, members):
         locations = set()
         suitable_location_groups = set()
-        for member in self.members:
+        for member in members:
             srv = self.api.get_dedicated_servers(member['id'])
             locations.add(srv['location_id'])
         for location_group in self.api.list_l2_location_groups():
@@ -1181,8 +1180,8 @@ class ScL2Segment():
             raise ModuleError(f"Unable to find location group for all members in locations: {repr(locations)}")
         return suitable_location_groups
 
-    def get_member_location_group_id(self):
-        member_guessed_lgs = self.guess_member_location_groups()
+    def get_member_location_group_id(self, members):
+        member_guessed_lgs = self.guess_member_location_groups(members)
         if self.location_group_id:
             if self.location_group_id in member_guessed_lgs:
                 return self.location_group_id
@@ -1192,17 +1191,18 @@ class ScL2Segment():
         return member_guessed_lgs.pop()  # only one is in the set
 
     def create(self):
-        lg = self.get_member_location_group_id()
+        members = self.members or self.members_present  # we can ignore members_absent for create mode
+        lg = self.get_member_location_group_id(members)
         if not self.name:
             raise ModuleError("Creation of L2 segment required name")
         if not self.type:
             raise ModuleError("Creation of L2 segment required type")
         if self.checkmode:
             return {'changed': True, "location_group_id": lg}
-        res = self.api.post_l2_segment(self.name, self.type, lg, self.members)
+        res = self.api.post_l2_segment(self.name, self.type, lg, members)
         self.wait_for_active_segment(res['id'])
         res = self.api.get_l2_segment(res['id'])
-        res['members_added'] = self.members
+        res['members_added'] = members
         res['members_removed'] = []
         res['changed'] = True
         return res
@@ -1212,7 +1212,7 @@ class ScL2Segment():
         return set(
             [
                 tuple(d.items())
-                for d in iterable
+                for d in iterable or []
             ]
         )
 
@@ -1225,9 +1225,9 @@ class ScL2Segment():
         for m in iterable:
             yield {'id': m['id'], 'mode': m['mode']}
 
-    def update(self, segment_id):
+    def update_full(self, segment_id):
         changed = False
-        members_lg = self.get_member_location_group_id()
+        members_lg = self.get_member_location_group_id(self.members)
         segment = self.api.get_l2_segment(segment_id)
         if members_lg != segment['location_group_id']:
             raise ModuleError(f"members location group { members_lg } does not match location group for existing segment: { segment['location_group_id'] }")
@@ -1252,6 +1252,39 @@ class ScL2Segment():
         res['changed'] = changed
         return res
 
+    def update_partial(self, segment_id):
+        changed = False
+        members_lg = self.get_member_location_group_id(self.members_present)
+        segment = self.api.get_l2_segment(segment_id)
+        if members_lg != segment['location_group_id']:
+            raise ModuleError(f"members location group { members_lg } does not match location group for existing segment: { segment['location_group_id'] }")
+        existing_members = self._listdict_to_set(self._simplify_members(self.api.list_l2_segment_members(segment_id)))
+        members_present = self._listdict_to_set(self.members_present)
+        members_absent = self._listdict_to_set(self.members_absent)
+
+        resulting_members = existing_members | members_present - members_absent
+        del_list = self._set_to_listdict(existing_members - resulting_members)
+        add_list = self._set_to_listdict(resulting_members - existing_members)
+        send_list = self._set_to_listdict(resulting_members)
+        reduced_list = self._set_to_listdict(existing_members - members_absent)
+        if resulting_members != existing_members:
+            changed = True
+            if not self.checkmode:
+                # If member is already with one type and is in members_present with
+                # different type we need to remove it first (API requirement)
+                if del_list and add_list:
+                    self.api.put_l2_segment_update(segment_id, reduced_list)
+                    self.wait_for_active_segment(segment_id)
+                self.api.put_l2_segment_update(segment_id, send_list)
+                self.wait_for_active_segment(segment_id)
+        res = self.api.get_l2_segment(segment_id)
+        res['members_added'] = list(add_list)
+        res['members_removed'] = list(del_list)
+        res['members_kept'] = list(reduced_list)
+        res['changed'] = changed
+        return res
+
+
     def absent(self):
         found_segment_id = self.get_segment_id()
         if found_segment_id:
@@ -1265,7 +1298,9 @@ class ScL2Segment():
     def present(self):
         found_segment_id = self.get_segment_id()
         if found_segment_id:
-            return self.update(found_segment_id)
+            if self.members_present or self.members_absent:
+                return self.update_partial(found_segment_id)
+            return self.update_full(found_segment_id)
         else:
             return self.create()
 
