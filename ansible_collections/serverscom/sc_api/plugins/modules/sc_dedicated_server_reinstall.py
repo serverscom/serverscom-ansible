@@ -240,7 +240,7 @@ def main():
                 'elements': 'dict'
             },
             'operating_system_id': {'type': 'int'},
-            'ssh_keys': {'type': 'list', 'elements': 'str'},
+            'ssh_keys': {'type': 'list', 'elements': 'str', 'no_log': False},
             'ssh_key_name': {'type': 'str'},
             'wait': {'type': 'int', 'default': 86400},
             'update_interval': {'type': 'int', 'default': 60},

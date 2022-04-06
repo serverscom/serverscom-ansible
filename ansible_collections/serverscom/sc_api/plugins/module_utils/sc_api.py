@@ -109,27 +109,27 @@ class ApiHelper():
         if response.status_code == 401:
             raise APIError(
                 status_code=response.status_code,
-                api_url=response.url,
+                api_url=prep_request.url,
                 msg='401 Unauthorized. Check if token is valid.',
             )
 
         if response.status_code == 404:
             raise APIError404(
                 status_code=response.status_code,
-                api_url=response.url,
+                api_url=prep_request.url,
                 msg='404 Not Found.',
             )
         if response.status_code == 409:
             raise APIError409(
                 status_code=response.status_code,
-                api_url=response.url,
-                msg='409 Conflict. ' + str(response.content),
+                api_url=prep_request.url,
+                msg=f'409 Conflict. { response.content }',
             )
         if response.status_code not in good_codes:
             raise APIError(
                 status_code=response.status_code,
-                api_url=response.url,
-                msg=f'API Error: {response.content }',
+                api_url=prep_request.url,
+                msg=f'API Error: { response.content }',
             )
         return response
 
@@ -560,7 +560,7 @@ class ScApi():
 
     def list_l2_location_groups(self):
         return self.api_helper.make_multipage_request(
-            path="l2_segments/location_groups"
+            path="/l2_segments/location_groups"
         )
 
     def list_l2_segment_members(self, l2_segment_id):
@@ -576,27 +576,34 @@ class ScApi():
     def get_l2_segment(self, l2_segment_id):
         return self.api_helper.make_get_request(path=f"/l2_segments/{l2_segment_id}")
 
+    def get_l2_segment_or_none(self, l2_segment_id):
+        try:
+            seg = self.api_helper.make_get_request(path=f"/l2_segments/{l2_segment_id}")
+        except APIError404:
+            seg = {'id': None}
+        return seg
+
     def delete_l2_segment(self, l2_segment_id):
         return self.api_helper.make_delete_request(
             path=f"/l2_segments/{l2_segment_id}",
             query_parameters=None,
             body=None,
-            good_codes=[204],
+            good_codes=[202, 204],
         )
 
-    def put_l2_segment_update(self, l2_segment_id, name, members):
-        body = {"name": name, "members": members}
-        return self.api_helper.make_put_request(
-            path=f"/l2_segments/{l2_segment_id}",
+    def post_l2_segment(self, name, type, location_group_id, members):
+        body = {"name": name, "members": members, "type": type, "location_group_id": location_group_id}
+        return self.api_helper.make_post_request(
+            path="/l2_segments/",
             body=body,
             query_parameters=None,
             good_codes=[200, 202],
         )
 
-    def put_l2_segment_update(self, l2_segment_id, create, delete):
-        body = {"create": create, "delete": delete}
+    def put_l2_segment_update(self, l2_segment_id, members):
+        body = {"members": members}
         return self.api_helper.make_put_request(
-            path=f"/l2_segments/{l2_segment_id}/networks",
+            path=f"/l2_segments/{l2_segment_id}",
             body=body,
             query_parameters=None,
             good_codes=[200, 202],

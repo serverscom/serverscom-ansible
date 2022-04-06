@@ -6,7 +6,7 @@
   when: not sc_endpoint or not sc_token
 
 - name: Test invalid token
-  sc_dedicated_server_info:
+  sc_l2_segments_info:
     token: invalid
     endpoint: '{{ sc_endpoint }}'
   register: test1
