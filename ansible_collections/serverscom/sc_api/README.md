@@ -64,5 +64,5 @@ List of modules
 * `sc_cloud_computing_instance_state` - Manage shutdown/rescue/rebooted state for instance
 * `sc_l2_segment_info` - information about L2 segment
 * `sc_l2_segments_info` - list of existing L2 segments
-* `sc_l2_segment.py` - Creation/delelition/membership modification for L2 segments
+* `sc_l2_segment` - Creation/delelition/membership modification for L2 segments
 
