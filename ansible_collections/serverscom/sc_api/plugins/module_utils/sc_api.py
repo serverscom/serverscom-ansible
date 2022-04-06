@@ -123,13 +123,13 @@ class ApiHelper():
             raise APIError409(
                 status_code=response.status_code,
                 api_url=prep_request.url,
-                msg='409 Conflict. ' + str(response.content),
+                msg=f'409 Conflict. { response.content }',
             )
         if response.status_code not in good_codes:
             raise APIError(
                 status_code=response.status_code,
                 api_url=prep_request.url,
-                msg=f'API Error: {response.content }',
+                msg=f'API Error: { response.content }',
             )
         return response
 
