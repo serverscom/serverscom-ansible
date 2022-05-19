@@ -1,0 +1,109 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+  when: not sc_endpoint or not sc_token
+
+- block:
+    - name: Test prep, create public segment
+      sc_l2_segment:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name: integration-test
+        state: present
+        type: public
+        members:
+          - id: A12bgw1N
+            mode: native
+          - id: 7p6bxgp3
+            mode: native
+      register: test5
+      tags: create
+
+    - name: Test1, remove aliases from segement without aliases
+      sc_l2_segment_aliases:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name: integration-test
+        count: 0
+      register: test1_res
+    - name: Test1 check results
+      assert:
+        that:
+          - test1_res is not changed
+
+    - name: Test2, add aliases in check mode
+      sc_l2_segment_aliases:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name: integration-test
+        count: 2
+      check_mode: true
+      register: test2_res
+    - name: Test2 check results
+      assert:
+        that:
+          - test2_res is changed
+
+    - name: Test3, add aliases for real
+      sc_l2_segment_aliases:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name: integration-test
+        count: 2
+      register: test3_res
+    - name: Test3 check results
+      assert:
+        that:
+          - test3_res is changed
+          - test3_res.ipv4_list|length == 2
+          - test3_res.aliases|length == 2
+          - test3_res.aliases_count == 2
+          - test3_res.id is defined
+          - test3_res.ipv6_list == []
+
+
+    - name: Test4, remove alias by ID
+      sc_l2_segment_aliases:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name: integration-test
+        aliases_absent:
+          - '{{ test3_res.aliases[0].id }}'
+
+      register: test4_res
+    - name: Test4 check results
+      assert:
+        that:
+          - test4_res is changed
+          - test4_res.ipv4_list|length == 1
+          - test4_res.aliases|length == 1
+          - test4_res.aliases_count == 1
+          - test4_res.aliases_ids == 1
+
+    - name: Test5, remove non-existing alias
+      sc_l2_segment_aliases:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name: integration-test
+        aliases_absent:
+          - '{{ test3_res.aliases[0].id }}'  # should have been removed at test4
+      register: test5_res
+    - name: Test5 check results
+      assert:
+        that:
+          - test4_res is not changed
+          - test4_res.ipv4_list|length == 1
+          - test4_res.aliases|length == 1
+          - test4_res.aliases_count == 1
+          - test4_res.aliases_ids == 1
+
+  always:
+    - name: Test cleanup, Delete public segment
+      sc_l2_segment:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name: integration-test
+        state: absent
+        type: public

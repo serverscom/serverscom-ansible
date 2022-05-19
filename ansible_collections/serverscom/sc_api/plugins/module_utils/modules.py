@@ -1329,3 +1329,113 @@ class ScL2Segment():
             return self.absent()
         else:  # present
             return self.present()
+
+
+class ScL2SegmentAliases():
+    def __init__(
+            self, endpoint, token, name, segment_id,
+            count, aliases_absent,
+            wait, update_interval, checkmode
+    ):
+        self.api = ScApi(token, endpoint)
+        self.name = name
+        self.segment_id = segment_id
+        self.count = count
+        self.aliases_absent = aliases_absent
+        self.wait = wait
+        self.update_interval = update_interval
+        self.checkmode = checkmode
+
+    # TODO: code repeated from ScL2Segment
+    def get_segment_id(self):
+        existing_segment_id = None
+        if self.segment_id:
+            existing_segment_id = self.api.get_l2_segment(self.segment_id)['id']
+        else:
+            for segment in self.api.list_l2_segments():
+                if segment['name'] == self.name:
+                    if existing_segment_id:  # duplicate found
+                        raise ModuleError(msg=f"Duplicate segment with name {self.name} found.")
+                    existing_segment_id = segment['id']
+            if not existing_segment_id:
+                raise ModuleError(f"Segment { self.name } is not found.")
+        return existing_segment_id
+
+
+    def wait_for(self, l2):
+        start_time = time.time()
+        if not self.wait:
+            return
+        while l2['status'] == 'pending':
+            time.sleep(self.update_interval)
+            elapsed = time.time() - start_time
+            if elapsed > self.wait:
+                raise WaitError(
+                    msg=f"Timeout while waiting for L2 {l2['id']}."
+                    f" Last status was {l2['status']}",
+                    timeout=elapsed
+                )
+            l2  = self.api.get_l2_segment(l2['id'])
+
+    def prep_result(self, changed):
+        aliases = list(self.api.list_l2_segment_networks(self.found_segment_id))
+        ipv4_list = [
+            alias['cidr'].split('/')[0] for alias in aliases if alias['family'] == 'ipv4'
+        ]
+        ipv6_list = [
+            alias['cidr'].split('/')[0] for alias in aliases if alias['family'] == 'ipv6'
+        ]
+        return {
+            'changed': changed,
+            'aliases': aliases,
+            'aliases_count': len(aliases),
+            'ipv4_list': ipv4_list,
+            'ipv6_list': ipv6_list,
+            'id': self.found_segment_id
+        }
+
+    def add_aliases(self, add_count):
+        if not self.checkmode:
+            create_array = [{
+                'mask': 32,
+                'distribution_method': 'route'
+            }] * add_count
+            res = self.api.put_l2_segment_networks(self.found_segment_id, create=create_array, delete=[])
+            self.wait_for(res)
+        return self.prep_result(True)
+
+    @staticmethod
+    def extract_ids(aliases):
+        return [alias['id'] for alias in aliases]
+
+    @staticmethod
+    def get_del_list(aliases_existing_ids, aliases_absent_ids):
+        return list(set(aliases_absent_ids)  & set(aliases_existing_ids))
+
+    def remove_aliases(self, to_remove_ids):
+        del_list = self.get_del_list(self.existing_aliases_id, to_remove_ids)
+        if del_list:
+            changed = True
+            if not self.checkmode:
+                res = self.api.put_l2_segment_networks(self.found_segment_id, create=[], delete=del_list)
+                self.wait_for(res)
+        return self.prep_result(changed)
+
+    def set_count(self):
+        changed = False
+        if len(self.existing_aliases) < self.count:
+            return self.add_aliases(self.count - len(self.existing_aliases_id))
+        elif len(self.existing_aliases) > self.count:
+            return self.remove_aliases(self.existing_aliases_id[self.count:])
+        return self.prep_result(changed)
+
+    def run(self):
+        self.found_segment_id = self.get_segment_id()
+        self.existing_aliases = list(self.api.list_l2_segment_networks(self.found_segment_id))
+        self.existing_aliases_id = self.extract_ids(self.existing_aliases)
+        if self.aliases_absent:
+            return self.remove_aliases()
+        else:
+            if self.count is None:
+                raise ModuleError('Count must not be None')
+            return self.set_count()
