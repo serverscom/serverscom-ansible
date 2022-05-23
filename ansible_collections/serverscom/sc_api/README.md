@@ -65,4 +65,5 @@ List of modules
 * `sc_l2_segment_info` - information about L2 segment
 * `sc_l2_segments_info` - list of existing L2 segments
 * `sc_l2_segment` - Creation/delelition/membership modification for L2 segments
+* `sc_l2_segment_aliases` - Adding and removing IP addresses to/from L2 segments
 
