@@ -573,6 +573,19 @@ class ScApi():
             path=f"/l2_segments/{l2_segment_id}/networks"
         )
 
+    def put_l2_segment_networks(self, l2_segment_id, create, delete):
+        '''create: object: mask (int), distribution_method: must be "route"'''
+        body = {
+            "create": create,
+            "delete": delete
+        }
+        return self.api_helper.make_put_request(
+            path=f"/l2_segments/{l2_segment_id}/networks",
+            query_parameters=None,
+            body=body,
+            good_codes=[200, 202]
+        )
+
     def get_l2_segment(self, l2_segment_id):
         return self.api_helper.make_get_request(path=f"/l2_segments/{l2_segment_id}")
 
