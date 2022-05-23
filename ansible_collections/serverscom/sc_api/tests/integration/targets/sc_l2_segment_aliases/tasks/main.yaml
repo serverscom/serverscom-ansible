@@ -77,7 +77,7 @@
         that:
           - test4_res is changed
           - test4_res.ipv4_list|length == 1
-          - test4_res.aliases[0] == test4_res.aliases[1] # there are two aliases, we should kept the one we hadn't deleted
+          - test4_res.aliases[0] == test3_res.aliases[1] # there are two aliases, we should kept the one we hadn't deleted
           - test4_res.aliases_count == 1
 
     - name: Test5, remove non-existing alias
@@ -93,7 +93,7 @@
         that:
           - test5_res is not changed
           - test5_res.ipv4_list|length == 1
-          - test5_res.aliases == 1
+          - test5_res.aliases|length == 1
           - test5_res.aliases_count == 1
 
   always:
