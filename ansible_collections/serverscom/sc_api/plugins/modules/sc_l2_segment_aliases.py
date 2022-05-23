@@ -91,23 +91,30 @@ options:
 """
 
 RETURN = """
+id:
+    description:
+        - Id of the segment
+    returned: on success
+    type: list
+
 aliases:
     description:
         - List of aliases
     returned: on success
-    type: list
-    elements: complex
+    type: complex
     contains:
       id:
         description:
           - ID of alias
         type: str
       family:
+        type: str
         description:
           - Either ipv4 or ipv6
       cidr:
-        description
-          - IP address of the alias
+        type: str
+        description:
+          - IP address of the alias with /32 mask
 
 alias_count:
     description:
@@ -120,14 +127,14 @@ ipv4_list:
         - List of IPv4 addresses
     returned: on success
     type: list
-    elements: std
+    elements: str
 
 ipv6_list:
     description:
         - List of IPv6 addresses
     returned: on success
     type: list
-    elements: std
+    elements: str
 
 api_url:
     description: URL for the failed request

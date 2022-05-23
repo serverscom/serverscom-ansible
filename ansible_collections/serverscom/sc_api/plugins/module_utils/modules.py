@@ -1361,7 +1361,6 @@ class ScL2SegmentAliases():
                 raise ModuleError(f"Segment { self.name } is not found.")
         return existing_segment_id
 
-
     def wait_for(self, l2):
         start_time = time.time()
         if not self.wait:
@@ -1375,7 +1374,7 @@ class ScL2SegmentAliases():
                     f" Last status was {l2['status']}",
                     timeout=elapsed
                 )
-            l2  = self.api.get_l2_segment(l2['id'])
+            l2 = self.api.get_l2_segment(l2['id'])
 
     def prep_result(self, changed):
         aliases = list(self.api.list_l2_segment_networks(self.found_segment_id))
@@ -1410,9 +1409,10 @@ class ScL2SegmentAliases():
 
     @staticmethod
     def get_del_list(aliases_existing_ids, aliases_absent_ids):
-        return list(set(aliases_absent_ids)  & set(aliases_existing_ids))
+        return list(set(aliases_absent_ids) & set(aliases_existing_ids))
 
     def remove_aliases(self, to_remove_ids):
+        changed = False
         del_list = self.get_del_list(self.existing_aliases_id, to_remove_ids)
         if del_list:
             changed = True
@@ -1434,7 +1434,7 @@ class ScL2SegmentAliases():
         self.existing_aliases = list(self.api.list_l2_segment_networks(self.found_segment_id))
         self.existing_aliases_id = self.extract_ids(self.existing_aliases)
         if self.aliases_absent:
-            return self.remove_aliases()
+            return self.remove_aliases(self.aliases_absent)
         else:
             if self.count is None:
                 raise ModuleError('Count must not be None')
