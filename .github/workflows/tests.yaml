@@ -61,9 +61,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install flake8 pytest
           pip install -r requirements.txt
+      - name: Configure secrets
+        run: |
+          echo "sc_token: ${{ secrets.SC_TOKEN }}" > ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
       - name: Unit tests with dependencies
-        run: ansible-test units --requirements --python 3.8  # add integration here
+        run: |
+          /bin/false
+          ansible-test units --requirements --python 3.8  # add integration here
         working-directory: ansible_collections/serverscom/sc_api
+      - name: Cleanup secrets
+        if: always()
+        run: |
+          dd if=/dev/zero bs=4k count=1 of=ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
 
   build:
     runs-on: ubuntu-latest
