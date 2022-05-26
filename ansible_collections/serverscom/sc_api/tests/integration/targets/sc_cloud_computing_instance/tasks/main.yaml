@@ -17,14 +17,6 @@
     - sc_endpoint not in test1.api_url
     - test1.status_code != 401
 
-
-# - sc_cloud_computing_instances_info:
-#       token: '{{ sc_token }}'
-#       endpoint: '{{ sc_endpoint }}'
-#   register: info
-#
-# - debug: var=info
-
 - name: Test2, state=absent of absent instance by id
   sc_cloud_computing_instance:
     token: '{{ sc_token }}'
@@ -141,8 +133,6 @@
         wait: 600
         update_interval: 5
       register: test6
-
-    - debug: var=test6
 
     - name: Test6, get list of instances
       sc_cloud_computing_instances_info:
@@ -273,8 +263,6 @@
         endpoint: '{{ sc_endpoint }}'
       register: test7_instances_check_mode_delete
 
-    - debug: var=test7_instances_check_mode_delete
-
     - name: Check Test7 after check_mode delete
       assert:
         that:
@@ -339,7 +327,6 @@
       register: test8_image
       failed_when: false
 
-    - debug: var=[test8_flavor,test8_image]
     - name: Check test 8
       assert:
         that:
