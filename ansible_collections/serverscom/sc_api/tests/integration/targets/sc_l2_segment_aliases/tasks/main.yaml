@@ -14,9 +14,9 @@
         state: present
         type: public
         members:
-          - id: A12bgw1N
+          - id: '{{ existing_server1_id }}'
             mode: native
-          - id: 7p6bxgp3
+          - id: '{{ existing_server2_id }}'
             mode: native
       register: test5
       tags: create
