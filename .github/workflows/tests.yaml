@@ -121,7 +121,7 @@ jobs:
       - name: Extract version
         id: version
         run: |
-          version=$(cat galaxy.yml |grep ^version|awk '{print $2}')
+          version=$(grep ^version galaxy.yml|awk '{print $2}')
           echo "::set-output name=version::$version"
         working-directory: ansible_collections/serverscom/sc_api
       - name: Print artifact info
