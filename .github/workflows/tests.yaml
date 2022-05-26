@@ -65,8 +65,28 @@ jobs:
         run: |
           echo "sc_token: '${{ secrets.SC_TOKEN }}'" >> ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
       - name: Unit tests with dependencies
-        run: |
-          ansible-test integration --requirements --python 3.8  sc_ssh_key
+        run:
+          ansible-test integration --requirements --python 3.8
+            sc_ssh_key
+            sc_baremetal_locations_info
+            sc_cloud_computing_flavors_info
+            sc_cloud_computing_images_info
+            sc_cloud_computing_regions_info
+            sc_cloud_computing_openstack_credentials
+      # sc_baremetal_servers_info
+      # sc_cloud_computing_instance
+      # sc_cloud_computing_instance_info
+      # sc_cloud_computing_instance_ptr
+      # sc_cloud_computing_instances_info
+      # sc_cloud_computing_instance_state
+      # sc_cloud_computing_instance__reinstall
+      # sc_dedicated_server_info
+      # sc_dedicated_server_reinstall_long
+      # sc_dedicated_server_reinstall_quick
+      # sc_l2_segment
+      # sc_l2_segment_aliases
+      # sc_l2_segments_info
+
         working-directory: ansible_collections/serverscom/sc_api
       - name: Cleanup secrets
         if: always()
