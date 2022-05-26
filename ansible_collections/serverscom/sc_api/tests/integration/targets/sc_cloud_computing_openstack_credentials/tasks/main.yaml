@@ -31,11 +31,17 @@
       - "'v1/cloud_computing/regions/424242/credentials' in test2.api_url"
       - test2.status_code == 404
 
+- name: Test3 prep, get regions
+  sc_cloud_computing_regions_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+  register: regions
+
 - name: Test3, Get creds for region1
   sc_cloud_computing_openstack_credentials:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    region_id: 0
+    region_id: '{{ regions.regions[0].id }}'
   register: creds
 
 - name: Check Test3
