@@ -63,16 +63,17 @@ jobs:
           pip install -r requirements.txt
       - name: Configure secrets
         run: |
-          echo "sc_token: ${{ secrets.SC_TOKEN }}" > ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
+          echo "sc_token: '${{ secrets.SC_TOKEN }}'" >> ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
       - name: Unit tests with dependencies
         run: |
-          /bin/false
-          ansible-test units --requirements --python 3.8  # add integration here
+          ansible-test integration --requirements --python 3.8  sc_ssh_key
         working-directory: ansible_collections/serverscom/sc_api
       - name: Cleanup secrets
         if: always()
         run: |
-          dd if=/dev/zero bs=4k count=1 of=ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
+          dd if=/dev/zero bs=4k count=4 of=ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
+          sync
+          sync
 
   build:
     runs-on: ubuntu-latest
