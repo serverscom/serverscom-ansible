@@ -17,6 +17,11 @@
     - sc_endpoint not in test1.api_url
     - test1.status_code != 401
 
+- name: Test3 prep, get regions
+  sc_cloud_computing_regions_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+  register: regions
 
 - name: Testsuite2, create and delete ptr records
   block:
@@ -25,7 +30,7 @@
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         state: present
-        region_id: 0
+        region_id: '{{ regions.regions[0].id }}'
         flavor_name: SSD.30
         image_regexp: 'Ubuntu.+'
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
