@@ -64,10 +64,9 @@ jobs:
       - name: Configure secrets
         run: |
           echo "sc_token: '${{ secrets.SC_TOKEN }}'" >> ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
-      - name: Unit tests with dependencies
+      - name: Integration tests
         run:
           ansible-test integration --requirements --python 3.8
-
             sc_ssh_key
             sc_baremetal_locations_info
             sc_baremetal_servers_info

@@ -65,18 +65,24 @@
     that:
       - test4 is not changed
 
+- name: Test prep, get region id
+  sc_cloud_computing_regions_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+  register: regions
+
 - name: Tests prep, Get image id
   sc_cloud_computing_images_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    region_id: 0
+    region_id: '{{ regions.regions[0].id }}'
   register: img_info
 
 - name: Tests prep, Get flavor id
   sc_cloud_computing_flavors_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    region_id: 0
+    region_id: '{{ regions.regions[0].id }}'
   register: flavor_info
 
 - name: Test5, create absent instance in check_mode
@@ -86,7 +92,7 @@
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         state: present
-        region_id: 0
+        region_id: '{{ regions.regions[0].id }}'
         flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: ec354674-e844-11ea-ac53-83e1244f3049
@@ -125,7 +131,7 @@
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         state: present
-        region_id: 0
+        region_id: '{{ regions.regions[0].id }}'
         flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: 52310c60-7446-482d-a30e-2bedeb515878
@@ -157,7 +163,7 @@
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         state: present
-        region_id: 0
+        region_id: '{{ regions.regions[0].id }}'
         flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: 52310c60-7446-482d-a30e-2bedeb515878
@@ -173,7 +179,7 @@
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         state: present
-        region_id: 0
+        region_id: '{{ regions.regions[0].id }}'
         flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: 52310c60-7446-482d-a30e-2bedeb515878
@@ -213,7 +219,7 @@
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         state: present
-        region_id: 0
+        region_id: '{{ regions.regions[0].id }}'
         flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
@@ -315,7 +321,7 @@
         endpoint: '{{ sc_endpoint }}'
         state: present
         name: 15a0688b-44f6-41e2-971c-4e860c402373
-        region_id: 0
+        region_id: '{{ regions.regions[0].id }}'
         flavor_name: 'dont.exist'
         image_id: '{{ img_info.cloud_images[0].id }}'
       register: test8_flavor
@@ -327,7 +333,7 @@
         endpoint: '{{ sc_endpoint }}'
         state: present
         name: 15a0688b-44f6-41e2-971c-4e860c402373
-        region_id: 0
+        region_id: '{{ regions.regions[0].id }}'
         flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
         image_regexp: a.+dont.exist
       register: test8_image
@@ -357,7 +363,7 @@
         endpoint: '{{ sc_endpoint }}'
         state: present
         name: 8d2779e6-eb72-11ea-970f-733ca983e4ca
-        region_id: 0
+        region_id: '{{ regions.regions[0].id }}'
         flavor_name: 'SSD.30'
         image_regexp: 'Ubuntu.+'
       register: test9_create
