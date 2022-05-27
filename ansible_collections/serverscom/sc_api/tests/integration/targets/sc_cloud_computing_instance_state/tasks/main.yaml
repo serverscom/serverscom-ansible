@@ -19,12 +19,17 @@
 
 - name: Testsuite
   block:
+    - name: prep
+      sc_cloud_computing_regions_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+      register: regions
     - name: Testsuite prepare, create instance
       sc_cloud_computing_instance:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         state: present
-        region_id: 0
+        region_id: '{{ regions.regions[0].id }}'
         flavor_name: SSD.30
         image_regexp: 'Ubuntu.+'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
@@ -326,6 +331,6 @@
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         state: absent
-        region_id: 0
+        region_id: '{{ regions.regions[0].id }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         wait: 600
