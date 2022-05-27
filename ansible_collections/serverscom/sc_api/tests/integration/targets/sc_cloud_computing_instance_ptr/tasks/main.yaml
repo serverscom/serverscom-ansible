@@ -199,6 +199,6 @@
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         state: absent
-        region_id: 0
+        region_id: '{{ regions.regions[0].id }}'
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         wait: 600
