@@ -63,7 +63,7 @@ jobs:
           pip install -r requirements.txt
       - name: Configure integration tests
         run: |
-          cat integration_config.yml.template|envsubst > ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
+          envsubst < integration_config.yml.template > ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
         env:
           SC_TOKEN: '${{ secrets.SC_TOKEN }}'
       - name: Integration tests

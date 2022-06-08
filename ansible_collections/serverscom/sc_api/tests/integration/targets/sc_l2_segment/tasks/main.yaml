@@ -81,6 +81,8 @@
             mode: native
           - id: '{{ existing_server2_id }}'
             mode: native
+          - id: '{{ existing_server3_id }}'
+            mode: native
       register: test5
       tags: create
 
@@ -174,18 +176,18 @@
           - "test8.members_added == [{'id': 'existing_server2_id', 'mode': 'trunk'}]"
           - "test8.members_removed == [{'id': 'existing_server2_id', 'mode': 'native'}]"
 
-    - name: Test9, Use member_present and member_absent
+    - name: Test9, Use member_absent
       sc_l2_segment:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: integration-test
         state: present
         type: private
-        members_present:
-          - id: '{{ existing_server2_id }}'
-            mode: trunk
         members_absent:
           - id: '{{ existing_server2_id }}'
+        members_present:
+          - id: '{{ existing_server3_id }}'
+
       register: test9
       tags: test9
     - name: Assert test9
@@ -196,13 +198,14 @@
           - test9.members_removed|length == 1
           - test9.members_kept|length == 1
       tags: assert9
+
     - name: Try to use sc_l2_segments_info
       sc_l2_segments_info:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
       register: segments
 
-    - name: Test segments info
+    - name: Test sc_l2_segments_info module
       assert:
         that:
           - |
@@ -243,7 +246,7 @@
           - segment_by_name.l2_segment.status == 'active'
 
   always:
-    - name: Test10, Delete public segment for real
+    - name: Test10 and cleanup, Delete public segment for real
       sc_l2_segment:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
