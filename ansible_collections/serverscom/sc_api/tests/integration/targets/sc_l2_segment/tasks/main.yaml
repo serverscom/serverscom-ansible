@@ -56,6 +56,8 @@
             mode: native
           - id: '{{ existing_server2_id }}'
             mode: native
+          - id: '{{ existing_server3_id }}'
+            mode: native
       check_mode: true
       register: test4
       loop:
@@ -81,6 +83,8 @@
             mode: native
           - id: '{{ existing_server2_id }}'
             mode: native
+          - id: '{{ existing_server3_id }}'
+            mode: native
       register: test5
       tags: create
 
@@ -104,6 +108,8 @@
           - id: '{{ existing_server1_id }}'
             mode: native
           - id: '{{ existing_server2_id }}'
+            mode: native
+          - id: '{{ existing_server3_id }}'
             mode: native
       register: test5a
 
@@ -143,6 +149,8 @@
             mode: native
           - id: '{{ existing_server2_id }}'
             mode: trunk
+          - id: '{{ existing_server3_id }}'
+            mode: native
       check_mode: true
       register: test7
 
@@ -165,14 +173,16 @@
             mode: native
           - id: '{{ existing_server2_id }}'
             mode: trunk
+          - id: '{{ existing_server3_id }}'
+            mode: native
       register: test8
-
     - name: Check Test8
       assert:
         that:
           - test8 is changed
-          - "test8.members_added == [{'id': 'existing_server2_id', 'mode': 'trunk'}]"
-          - "test8.members_removed == [{'id': 'existing_server2_id', 'mode': 'native'}]"
+          - "test8.members_added == [{'id': existing_server2_id, 'mode': 'trunk'}]"
+          - "test8.members_removed == [{'id': existing_server2_id, 'mode': 'native'}]"
+          - "test8.members_kept|length == 2"
 
     - name: Test9, Use member_absent
       sc_l2_segment:
