@@ -61,9 +61,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install flake8 pytest
           pip install -r requirements.txt
-      - name: Configure secrets
+      - name: Configure integration tests
         run: |
-          echo "sc_token: '${{ secrets.SC_TOKEN }}'" >> ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
+          cat integration_config.yml.template|envsubst > ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
+        env:
+          SC_TOKEN: '${{ secrets.SC_TOKEN }}'
       - name: Integration tests
         run:
           ansible-test integration --requirements --python 3.8
