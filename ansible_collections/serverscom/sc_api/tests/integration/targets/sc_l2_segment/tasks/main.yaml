@@ -21,7 +21,7 @@
   sc_l2_segment:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    segment_id: '{{ non_existing_server_id }}' # any valid but absent ID is good
+    segment_id: '{{ non_existing_id }}' # any valid but absent ID is good
     state: absent
   register: test2
 

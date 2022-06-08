@@ -21,7 +21,7 @@
   sc_dedicated_server_reinstall:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    id: '{{ non_existing_server_id }}'
+    id: '{{ non_existing_id }}'
     drives_layout_template: raid1-simple
   register: test2
   failed_when: false
@@ -56,7 +56,7 @@
   sc_dedicated_server_reinstall:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    id: '{{ non_existing_server_id }}'
+    id: '{{ non_existing_id }}'
     drives_layout_template: raid1-simple
     ssh_keys:
       - '58:e5:58:e9:38:10:82:57:d9:82:11:8c:f6:44:68:e8'
