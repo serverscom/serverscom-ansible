@@ -81,8 +81,6 @@
             mode: native
           - id: '{{ existing_server2_id }}'
             mode: native
-          - id: '{{ existing_server3_id }}'
-            mode: native
       register: test5
       tags: create
 
