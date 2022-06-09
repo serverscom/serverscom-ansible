@@ -193,14 +193,11 @@
         type: private
         members_absent:
           - id: '{{ existing_server2_id }}'
-
       register: test9
-      tags: test9
     - name: Assert test9
       assert:
         that:
           - test9 is changed
-          - test9.members_added|length == 1
           - test9.members_removed|length == 1
           - test9.members_kept|length == 2
       tags: assert9
