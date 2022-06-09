@@ -18,7 +18,7 @@
             mode: native
           - id: '{{ existing_server2_id }}'
             mode: native
-      register: test5
+      register: test_prep
       tags: create
 
     - name: Test1, remove aliases from segement without aliases
