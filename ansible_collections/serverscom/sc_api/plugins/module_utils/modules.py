@@ -1254,7 +1254,7 @@ class ScL2Segment():
 
     @staticmethod
     def prep_present_list(members):
-        for member in members:
+        for member in members or []:
             if "mode" in member:
                 yield member
             else:
@@ -1275,10 +1275,11 @@ class ScL2Segment():
 
     def update_partial(self, segment_id):
         changed = False
-        members_lg = self.get_member_location_group_id(self.members_present)
         segment = self.api.get_l2_segment(segment_id)
-        if members_lg != segment['location_group_id']:
-            raise ModuleError(f"members location group { members_lg } does not match location group for existing segment: { segment['location_group_id'] }")
+        if self.members_present:
+            members_lg = self.get_member_location_group_id(self.members_present)
+            if members_lg != segment['location_group_id']:
+                raise ModuleError(f"members location group { members_lg } does not match location group for existing segment: { segment['location_group_id'] }")
         old_list = list(self._simplify_members(self.api.list_l2_segment_members(segment_id)))
         existing_members = self._listdict_to_set(old_list)
         members_present = self._listdict_to_set(self.prep_present_list(self.members_present))
