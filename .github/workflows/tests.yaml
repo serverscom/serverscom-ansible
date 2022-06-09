@@ -50,6 +50,23 @@ jobs:
     runs-on: ubuntu-latest
     needs: quick_tests
     concurrency: API
+    strategy:
+      matrix:
+        module:
+          - sc_ssh_key
+          - sc_baremetal_locations_info
+          - sc_baremetal_servers_info
+          - sc_cloud_computing_flavors_info
+          - sc_cloud_computing_regions_info
+          - sc_cloud_computing_images_info
+          - sc_cloud_computing_openstack_credentials
+          - sc_cloud_computing_instance
+          - sc_cloud_computing_instance_info
+          - sc_cloud_computing_instance_ptr
+          - sc_cloud_computing_instances_info
+          - sc_l2_segment
+          - sc_l2_segment_aliases
+          - sc_l2_segments_info
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -69,21 +86,7 @@ jobs:
           SC_TOKEN: '${{ secrets.SC_TOKEN }}'
       - name: Integration tests
         run:
-          ansible-test integration --requirements --python 3.8
-            sc_ssh_key
-            sc_baremetal_locations_info
-            sc_baremetal_servers_info
-            sc_cloud_computing_flavors_info
-            sc_cloud_computing_regions_info
-            sc_cloud_computing_images_info
-            sc_cloud_computing_openstack_credentials
-            sc_cloud_computing_instance
-            sc_cloud_computing_instance_info
-            sc_cloud_computing_instance_ptr
-            sc_cloud_computing_instances_info
-            sc_l2_segment
-            sc_l2_segment_aliases
-            sc_l2_segments_info
+          ansible-test integration --requirements --python 3.8 ${{ matrix.module }}
       # sc_cloud_computing_instance_state
       # sc_cloud_computing_instance_reinstall
       # sc_dedicated_server_info
