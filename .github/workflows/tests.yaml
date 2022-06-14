@@ -86,7 +86,7 @@ jobs:
             sc_l2_segment_aliases
             sc_l2_segments_info
             sc_dedicated_server_reinstall_quick
-            # sc_dedicated_server_reinstall_long
+            sc_dedicated_server_reinstall_long
         # sc_cloud_computing_instance_state - ?
         # sc_cloud_computing_instance_reinstall  - broken and unfinished
 
