@@ -52,13 +52,16 @@
     fail_on_absent: false
     id: '{{ existing_server1_id }}'
   register: test4
-
+- debug: var=test4
 - name: Check Test4
   assert:
     that:
       - test4 is success
-      - test4.id == '0m592Zmn'
+      - test4.id == '{{ existing_server1_id }}'
       - test4.configuration|length > 0
       - test4.configuration_details|length > 0
       - test4.found
-      - test4.power_status == 'powered_off'
+      - test4.power_status
+      - test4.location_id
+      - test4.status
+      - test4.type == "dedicated_server"
