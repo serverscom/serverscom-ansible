@@ -41,7 +41,7 @@
   sc_dedicated_server_reinstall:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    id: '{{ existing_server1_id }}'
+    id: '{{ existing_server2_id }}'
     drives_layout_template: raid1-simple
     operating_system_id: 49
     hostname: reinstall2
@@ -56,21 +56,12 @@
       - test2.timeout > 10
       - "'Server is not ready' in test2.msg"
 
-- name: wait until installtion is done 2
-  sc_dedicated_server_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
-    name: '{{ existing_server1_id }}'
-  register: info
-  until: info.ready == 1
-  delay: 30
-  retries: 180
 
 - name: Test3, reinstall with wait-mode with raid1-template
   sc_dedicated_server_reinstall:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    id: '{{ existing_server1_id }}'
+    id: '{{ existing_server3_id }}'
     drives_layout_template: raid1-simple
     hostname: raid1test
     operating_system_id: 49
@@ -84,7 +75,17 @@
   assert:
     that:
       - test3.ready
-       - test3.title == raid1test
+      - test3.title == "raid1test"
+
+- name: wait until installtion is done 2
+  sc_dedicated_server_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    name: '{{ existing_server1_id }}'
+  register: info
+  until: info.ready == 1
+  delay: 30
+  retries: 180
 
 - name: Test4, reinstall with raid0_tempalte
   sc_dedicated_server_reinstall:
@@ -105,4 +106,4 @@
       - test4 is changed
       - test1.id == existing_server1_id
       - test4.power_status == "powered_on"
-      - test4.title == raid0test
+      - test4.title == "raid0test"
