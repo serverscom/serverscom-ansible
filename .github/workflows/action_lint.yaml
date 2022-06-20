@@ -10,11 +10,16 @@ jobs:
   workflow-linting:
     name: Workflow Linting
     runs-on: ubuntu-20.04
+    container:
+      image: rhysd/actionlint:latest
+      options: --user=0 --entrypoint=/bin/sh
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: Install docker
-        id: buildx
-        uses: docker/setup-buildx-action@v1.3.0
+      - run: find .
+        # working-directory: ".github"
+      - run: pwd
+        # working-directory: ".github"
       - name: actionlint
-        run: find .github/workflows/ -type f -print0|xargs -0 docker run -v "$(realpath .github):/.github" rhysd/actionlint:latest
+        run: /usr/local/bin/actionlint
+        # working-directory: ".github"

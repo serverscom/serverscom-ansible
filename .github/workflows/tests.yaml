@@ -3,6 +3,8 @@ name: Ansible collection
 
 'on':
   push:
+    paths-ignore:
+      - '.github/**'
 
 jobs:
   lint:
