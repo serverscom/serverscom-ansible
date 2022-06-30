@@ -1,0 +1,7 @@
+---
+sc_endpoint: https://api.servers.com/v1
+existing_server1_id: Vmrzwomx
+existing_server2_id: 3dzAvZmK
+existing_server3_id: bdkMlWpL
+non_existing_id: gd0EL519
+sc_token: "${SC_TOKEN}"

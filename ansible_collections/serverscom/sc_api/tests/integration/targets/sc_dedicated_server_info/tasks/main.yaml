@@ -20,7 +20,7 @@
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     fail_on_absent: false
-    id: 'gd0EL519'
+    id: '{{ non_existing_id }}'
   register: test2
 
 - name: Check Test2
@@ -30,13 +30,12 @@
       - test2.found == false
       - test2.ready == false
 
-
 - name: Test3, Absent server with failure
   sc_dedicated_server_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     fail_on_absent: true
-    id: 'gd0EL519'
+    id: '{{ non_existing_id }}'
   register: test3
   ignore_errors: true
 
@@ -46,46 +45,23 @@
       - test3 is not success
       - test3.status_code == 404
 
-#  may be flaky, need a real server in shutdown state
-- name: Test4, Information for real not ready server
+- name: Test4, Information for real server
   sc_dedicated_server_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     fail_on_absent: false
-    id: '0m592Zmn'
+    id: '{{ existing_server1_id }}'
   register: test4
-
 - debug: var=test4
-
 - name: Check Test4
   assert:
     that:
       - test4 is success
-      - test4.id == '0m592Zmn'
+      - test4.id == '{{ existing_server1_id }}'
       - test4.configuration|length > 0
       - test4.configuration_details|length > 0
       - test4.found
-      - test4.power_status == 'powered_off'
-      - test4.ready == false
-
-#  may be flaky, need a real server in running state
-- name: Test5, Information for real and ready server
-  sc_dedicated_server_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
-    fail_on_absent: false
-    id: 'ApOr4a1O'
-  register: test5
-
-- debug: var=test5
-
-- name: Check Test5
-  assert:
-    that:
-      - test5 is success
-      - test5.id == 'ApOr4a1O'
-      - test5.configuration|length > 0
-      - test5.configuration_details|length > 0
-      - test5.found
-      - test5.power_status == 'powered_on'
-      - test5.ready == true
+      - test4.power_status
+      - test4.location_id
+      - test4.status
+      - test4.type == "dedicated_server"

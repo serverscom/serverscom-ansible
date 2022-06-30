@@ -12,28 +12,26 @@
   sc_dedicated_server_reinstall:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    id: '{{ existing_server_id }}'
+    id: '{{ existing_server1_id }}'
     drives_layout_template: raid1-simple
     operating_system_id: 49
     hostname: reinstall
     wait: 0
   register: test1
 
-- debug: var=test1
-
 - name: Check Test1
   assert:
     that:
       - test1 is changed
-      - test1.operational_status == 'installation'
-      - test1.id == existing_server_id
+      - test1.operational_status == "installation"
+      - test1.id == existing_server1_id
+      - test1.power_status == "powered_on"
 
-# this is LONG
 - name: Test1, wait until installtion is done
   sc_dedicated_server_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    name: '{{ existing_server_id }}'
+    name: '{{ existing_server1_id }}'
   register: info
   until: info.ready == 1
   delay: 30
@@ -43,7 +41,7 @@
   sc_dedicated_server_reinstall:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    id: '{{ existing_server_id }}'
+    id: '{{ existing_server2_id }}'
     drives_layout_template: raid1-simple
     operating_system_id: 49
     hostname: reinstall2
@@ -52,31 +50,20 @@
   register: test2
   failed_when: false
 
-- debug: var=test2
-
 - name: Check Test2
   assert:
     that:
       - test2.timeout > 10
       - "'Server is not ready' in test2.msg"
 
-# this is LONG
-- name: wait until installtion is done 2
-  sc_dedicated_server_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
-    name: '{{ existing_server_id }}'
-  register: info
-  until: info.ready == 1
-  delay: 30
-  retries: 180
 
 - name: Test3, reinstall with wait-mode with raid1-template
   sc_dedicated_server_reinstall:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    id: '{{ existing_server_id }}'
+    id: '{{ existing_server3_id }}'
     drives_layout_template: raid1-simple
+    hostname: raid1test
     operating_system_id: 49
     wait: 3600
     update_interval: 30
@@ -84,21 +71,39 @@
       - f7:90:27:e6:97:5e:6d:ad:31:51:65:26:8d:82:ac:f9
   register: test3
 
-- debug: var=test3
-
 - name: Check Test3
   assert:
     that:
       - test3.ready
+      - test3.title == "raid1test"
+
+- name: wait until installtion is done 2
+  sc_dedicated_server_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    name: '{{ existing_server1_id }}'
+  register: info
+  until: info.ready == 1
+  delay: 30
+  retries: 180
 
 - name: Test4, reinstall with raid0_tempalte
   sc_dedicated_server_reinstall:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    id: '{{ existing_server_id }}'
+    id: '{{ existing_server1_id }}'
     drives_layout_template: raid0-simple
     operating_system_id: 49
     hostname: raid0test
     ssh_key_name: amarao
     wait: 3600
     update_interval: 30
+  register: test4
+
+- name: Check Test4
+  assert:
+    that:
+      - test4 is changed
+      - test1.id == existing_server1_id
+      - test4.power_status == "powered_on"
+      - test4.title == "raid0test"

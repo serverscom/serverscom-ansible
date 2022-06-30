@@ -21,7 +21,7 @@
   sc_dedicated_server_reinstall:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    id: '{{ non_existing_server_id }}'
+    id: '{{ non_existing_id }}'
     drives_layout_template: raid1-simple
   register: test2
   failed_when: false
@@ -38,7 +38,7 @@
   sc_dedicated_server_reinstall:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    id: '{{ existing_server_id }}'
+    id: '{{ existing_server1_id }}'
     drives_layout_template: raid1-simple
     ssh_key_name: should-not-exists
     operating_system_id: '42'
@@ -56,7 +56,7 @@
   sc_dedicated_server_reinstall:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    id: '{{ non_existing_server_id }}'
+    id: '{{ non_existing_id }}'
     drives_layout_template: raid1-simple
     ssh_keys:
       - '58:e5:58:e9:38:10:82:57:d9:82:11:8c:f6:44:68:e8'
@@ -70,4 +70,4 @@
     that:
       - test4 is not changed
       - test4.status_code == 404
-      - '"v1/hosts/dedicated_servers/gd0EL519/reinstall" in test4.api_url'
+      - '"v1/hosts/dedicated_servers/{{ non_existing_id }}/reinstall" in test4.api_url'

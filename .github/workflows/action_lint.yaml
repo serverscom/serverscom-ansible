@@ -1,0 +1,20 @@
+---
+name: Lint workflows
+
+"on":
+  push:
+    paths:
+      - ".github/**"
+
+jobs:
+  workflow-linting:
+    name: Workflow Linting
+    runs-on: ubuntu-20.04
+    container:
+      image: rhysd/actionlint:1.6.15
+      options: --user=0 --entrypoint=/bin/sh
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: actionlint
+        run: /usr/local/bin/actionlint .github/workflows/*

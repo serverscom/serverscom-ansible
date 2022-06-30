@@ -21,7 +21,7 @@
   sc_l2_segment:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    segment_id: dQKnqxAR
+    segment_id: '{{ non_existing_id }}'  # any valid but absent ID is good
     state: absent
   register: test2
 
@@ -52,9 +52,11 @@
         state: present
         type: private
         members:
-          - id: GdbY8LmA
+          - id: '{{ existing_server1_id }}'
             mode: native
-          - id: LmK5671k
+          - id: '{{ existing_server2_id }}'
+            mode: native
+          - id: '{{ existing_server3_id }}'
             mode: native
       check_mode: true
       register: test4
@@ -77,11 +79,11 @@
         state: present
         type: private
         members:
-          - id: GdbY8LmA
+          - id: '{{ existing_server1_id }}'
             mode: native
-          - id: LmK5671k
+          - id: '{{ existing_server2_id }}'
             mode: native
-          - id: 3dw6qlmE
+          - id: '{{ existing_server3_id }}'
             mode: native
       register: test5
       tags: create
@@ -103,11 +105,11 @@
         state: present
         type: private
         members:
-          - id: GdbY8LmA
+          - id: '{{ existing_server1_id }}'
             mode: native
-          - id: LmK5671k
+          - id: '{{ existing_server2_id }}'
             mode: native
-          - id: 3dw6qlmE
+          - id: '{{ existing_server3_id }}'
             mode: native
       register: test5a
 
@@ -143,12 +145,12 @@
         state: present
         type: private
         members:
-          - id: GdbY8LmA
+          - id: '{{ existing_server1_id }}'
             mode: native
-          - id: LmK5671k
-            mode: native
-          - id: 3dw6qlmE
+          - id: '{{ existing_server2_id }}'
             mode: trunk
+          - id: '{{ existing_server3_id }}'
+            mode: native
       check_mode: true
       register: test7
 
@@ -156,8 +158,8 @@
       assert:
         that:
           - test7 is changed
-          - "test7.members_added == [{'id': '3dw6qlmE', 'mode': 'trunk'}]"
-          - "test7.members_removed == [{'id': '3dw6qlmE', 'mode': 'native'}]"
+          - "test7.members_added == [{'id': existing_server2_id, 'mode': 'trunk'}]"
+          - "test7.members_removed == [{'id': existing_server2_id, 'mode': 'native'}]"
 
     - name: Test8, Switch server type from native to trunk
       sc_l2_segment:
@@ -167,59 +169,46 @@
         state: present
         type: private
         members:
-          - id: GdbY8LmA
+          - id: '{{ existing_server1_id }}'
             mode: native
-          - id: LmK5671k
-            mode: native
-          - id: 3dw6qlmE
+          - id: '{{ existing_server2_id }}'
             mode: trunk
+          - id: '{{ existing_server3_id }}'
+            mode: native
       register: test8
-
     - name: Check Test8
       assert:
         that:
           - test8 is changed
-          - "test8.members_added == [{'id': '3dw6qlmE', 'mode': 'trunk'}]"
-          - "test8.members_removed == [{'id': '3dw6qlmE', 'mode': 'native'}]"
+          - "test8.members_added == [{'id': existing_server2_id, 'mode': 'trunk'}]"
+          - "test8.members_removed == [{'id': existing_server2_id, 'mode': 'native'}]"
+          - "test8.members_kept|length == 2"
 
-    - name: Check Test8
-      assert:
-        that:
-          - test8 is changed
-          - "test8.members_added == [{'id': '3dw6qlmE', 'mode': 'trunk'}]"
-          - "test8.members_removed == [{'id': '3dw6qlmE', 'mode': 'native'}]"
-
-    - name: Test9, Use member_present and member_absent
+    - name: Test9, Use member_absent
       sc_l2_segment:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: integration-test
         state: present
         type: private
-        members_present:
-          - id: kmXYw6dw
-            mode: trunk
         members_absent:
-          - id: GdbY8LmA
+          - id: '{{ existing_server2_id }}'
       register: test9
-      tags: test9
-    - debug: var=test9
-      tags: test9
     - name: Assert test9
       assert:
         that:
           - test9 is changed
-          - test9.members_added|length == 1
           - test9.members_removed|length == 1
           - test9.members_kept|length == 2
       tags: assert9
+
     - name: Try to use sc_l2_segments_info
       sc_l2_segments_info:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
       register: segments
 
-    - name: Test segments info
+    - name: Test sc_l2_segments_info module
       assert:
         that:
           - |
@@ -238,7 +227,7 @@
           - segment_by_id is not changed
           - segment_by_id.l2_segment.name == 'integration-test'
           - segment_by_id.l2_segment.id  == test5.id
-          - segment_by_id.l2_segment.members|length == 3
+          - segment_by_id.l2_segment.members|length == 2
           - segment_by_id.l2_segment.networks == []
           - segment_by_id.l2_segment.status == 'active'
 
@@ -255,12 +244,12 @@
           - segment_by_name is not changed
           - segment_by_name.l2_segment.name == 'integration-test'
           - segment_by_name.l2_segment.id  == test5.id
-          - segment_by_name.l2_segment.members|length == 3
+          - segment_by_name.l2_segment.members|length == 2
           - segment_by_name.l2_segment.networks == []
           - segment_by_name.l2_segment.status == 'active'
 
   always:
-    - name: Test10, Delete public segment for real
+    - name: Test10 and cleanup, Delete public segment for real
       sc_l2_segment:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
@@ -273,23 +262,3 @@
         that:
           - test10 is changed
           - test10.id == test5.id
-
-- name: Test21, test impossible location group
-  sc_l2_segment:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
-    name: integration-test-invalid
-    state: present
-    type: public
-    members:
-      - id: 3dw6qlmE  # LUX, EU
-        mode: trunk
-      - id: VmrDN01x  # DFW, US
-        mode: trunk
-  register: test21
-  failed_when: '"msg" not in test21'
-
-- name: Check test21
-  assert:
-    that:
-      - '"Unable to find location group" in test21.msg'

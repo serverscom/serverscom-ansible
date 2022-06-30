@@ -19,10 +19,17 @@
     endpoint: '{{ sc_endpoint }}'
   register: test2
 
-- debug: var=test2
-
 - name: Check Test2
   assert:
     that:
       - test2 is not changed
       - test2.baremetal_servers|length > 0
+      - test2.baremetal_servers[0].configuration
+      - test2.baremetal_servers[0].id
+      - test2.baremetal_servers[0].location_code
+      - test2.baremetal_servers[0].location_id
+      - test2.baremetal_servers[0].operational_status
+      - test2.baremetal_servers[0].private_ipv4_address
+      - test2.baremetal_servers[0].public_ipv4_address
+      - test2.baremetal_servers[0].title
+      - test2.baremetal_servers[0].type

@@ -5,6 +5,12 @@
     msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
   when: not sc_endpoint or not sc_token
 
+- name: prep, get regions
+  sc_cloud_computing_regions_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+  register: regions
+
 - name: Testsuite
   block:
     - name: Prepare, create instance
@@ -12,7 +18,7 @@
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         state: present
-        region_id: 0
+        region_id: '{{ regions.regions[0].id }}'
         flavor_name: SSD.30
         image_regexp: 'Ubuntu.+'
         name: '{{ instance_name }}'
@@ -22,12 +28,6 @@
         wait: 600
         update_interval: 5
       register: instance
-
-    - debug: var=instance
-
-    - name: API bug workaround
-      pause:
-        seconds: 30
 
     - name: Test1, simple reinstall
       sc_cloud_computing_instance:
@@ -82,6 +82,6 @@
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         state: absent
-        region_id: 0
+        region_id: '{{ regions.regions[0].id }}'
         name: '{{ instance_name }}'
         wait: 600

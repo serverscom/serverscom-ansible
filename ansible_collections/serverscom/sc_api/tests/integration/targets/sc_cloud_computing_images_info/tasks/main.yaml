@@ -31,11 +31,17 @@
       - "'v1/cloud_computing/regions/424242/images' in test2.api_url"
       - test2.status_code == 404
 
-- name: Test3, Get image from region 0
+- name: Test3 prep, get regions
+  sc_cloud_computing_regions_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+  register: regions
+
+- name: Test3, Get image from any regions
   sc_cloud_computing_images_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    region_id: 0
+    region_id: '{{ regions.regions[0].id }}'
   register: test3
 
 - name: Check Test3
