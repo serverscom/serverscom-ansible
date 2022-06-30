@@ -16,10 +16,5 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - run: find .
-        # working-directory: ".github"
-      - run: pwd
-        # working-directory: ".github"
       - name: actionlint
-        run: /usr/local/bin/actionlint
-        # working-directory: ".github"
+        run: /usr/local/bin/actionlint .github/workflows/*
