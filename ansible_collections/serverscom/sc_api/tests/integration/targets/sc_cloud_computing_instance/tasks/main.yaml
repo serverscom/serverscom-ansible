@@ -396,8 +396,8 @@
         state: present
         name: d1b69136-00ed-11ed-a8dc-dbb69a235481
         region_id: '{{ regions.regions[0].id }}'
-        gpn: True
-        ipv4: False
+        gpn: true
+        ipv4: false
         flavor_name: 'SSD.30'
         image_regexp: 'Ubuntu.+'
         ssh_key_name: 95f41cea-00fc-11ed-bfa8-33691f518c37
