@@ -433,20 +433,27 @@ class ScApi():
 
     def post_instance(
         self, region_id, name, flavor_id, image_id,
-        gpn_enabled, ipv6_enabled, ssh_key_fingerprint, backup_copies
+        gpn_enabled, ipv6_enabled, ipv4_enabled, ssh_key_fingerprint,
+        backup_copies, user_data
     ):
         body = {
             'region_id': region_id,
             'name': name,
             'flavor_id': flavor_id,
             'image_id': image_id,
-            'gpn_enabled': bool(gpn_enabled),
-            'ipv6_enabled': bool(ipv6_enabled),
         }
+        if gpn_enabled:
+            body['gpn_enabled'] = True
+        if not ipv4_enabled:
+            body['ipv4_enabled'] = False
+        if ipv6_enabled:
+            body['ipv6_enabled'] = False
         if ssh_key_fingerprint:
             body['ssh_key_fingerprint'] = ssh_key_fingerprint
         if backup_copies is not None:
             body['backup_copies'] = backup_copies
+        if user_data:
+            body['user_data'] = user_data
         return self.api_helper.make_post_request(
             path='/cloud_computing/instances',
             body=body,

@@ -378,3 +378,44 @@
         endpoint: '{{ sc_endpoint }}'
         state: absent
         name: 8d2779e6-eb72-11ea-970f-733ca983e4ca
+
+- name: Test10, use of GP only with userdata
+  block:
+    - name: Test10 create instanace with GP only and custom userdata
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: present
+        name: d1b69136-00ed-11ed-a8dc-dbb69a235481
+        region_id: '{{ regions.regions[0].id }}'
+        gpn: True
+        ipv4: False
+        flavor_name: 'SSD.30'
+        image_regexp: 'Ubuntu.+'
+        user_data: |
+          #cloud-config
+          apt:
+            preserve_sources_list: false
+            primary:
+              - arches: [default]
+                uri: http://mirror.servers.com/ubuntu
+            security:
+              - arches: [default]
+                uri: http://mirror.servers.com/ubuntu
+      register: test10
+
+    - debug: var=test10
+    - name: Check test10
+      assert:
+        that:
+          - test10 is changed
+          - test10 is changed
+          - test10.name == 'd1b69136-00ed-11ed-a8dc-dbb69a235481'
+
+  always:
+    - name: Test10, cleanup
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: absent
+        name: d1b69136-00ed-11ed-a8dc-dbb69a235481

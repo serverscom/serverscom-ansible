@@ -502,9 +502,10 @@ class ScCloudComputingInstanceCreate():
         region_id, name,
         image_id, image_regexp,
         flavor_id, flavor_name,
-        gpn_enabled, ipv6_enabled,
+        gpn_enabled, ipv4_enabled, ipv6_enabled,
         ssh_key_fingerprint, ssh_key_name,
         backup_copies,
+        user_data,
         wait, update_interval,
         checkmode
     ):
@@ -525,12 +526,14 @@ class ScCloudComputingInstanceCreate():
             must=True
         )
         self.gpn_enabled = gpn_enabled
+        self.ipv4_enabled = ipv4_enabled
         self.ipv6_enabled = ipv6_enabled
         self.ssh_key_fingerprint = self.get_ssh_key_fingerprint(
             ssh_key_fingerprint,
             ssh_key_name
         )
         self.backup_copies = backup_copies
+        self.user_data = user_data
         self.wait = wait
         self.update_interval = update_interval
         self.checkmode = checkmode
@@ -565,9 +568,11 @@ class ScCloudComputingInstanceCreate():
             flavor_id=self.flavor_id,
             image_id=self.image_id,
             gpn_enabled=self.image_id,
+            ipv4_enabled=self.ipv4_enabled,
             ipv6_enabled=self.ipv6_enabled,
             ssh_key_fingerprint=self.ssh_key_fingerprint,
-            backup_copies=self.backup_copies
+            backup_copies=self.backup_copies,
+            user_data=self.user_data
         )
         return instance
 

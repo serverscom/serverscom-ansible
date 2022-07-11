@@ -136,8 +136,16 @@ options:
         default: false
         description:
           - Enable Global Private network for the instance.
-          - Local Private network is always allocated for instances regardless
-            of Global Private network status.
+          - Local Private network is always allocated for the instance
+            regardless of Global Private network status.
+          - Is used only for for I(state)=C(present).
+
+    ipv4:
+        type: bool
+        default: true
+        description:
+          - Enable external IPv4 network
+          - Local Private IPv4 network is always allocated for the instance
           - Is used only for for I(state)=C(present).
 
     ipv6:
@@ -178,6 +186,15 @@ options:
           - Value C(0) disables daily backups.
           - Is used only for for I(state)=C(present).
           - Ignored for I(state)=C(absent).
+
+    user_data:
+        type: str
+        default: ""
+        description:
+          - User data to pass to the newly created instance
+          - See https://cloudinit.readthedocs.io/en/latest/topics/format.html for
+            possible formats
+          - Is used only for for I(state)=C(present).
 
     wait:
       type: int
@@ -407,10 +424,12 @@ def main():
             'flavor_id': {},
             'flavor_name': {},
             'gpn': {'type': 'bool', 'default': False},
+            'ipv4': {'type': 'bool', 'default': True},
             'ipv6': {'type': 'bool', 'default': False},
             'ssh_key_fingerprint': {"no_log": False},
             'ssh_key_name': {},
             'backup_copies': {'type': 'int', 'default': 5},
+            'user_data': {'type': 'str', 'default': ''},
             'wait': {'type': 'int', 'default': 600},
             'update_interval': {'type': 'int', 'default': 5},
             'retry_on_conflicts': {'type': 'bool', 'default': True},
@@ -443,10 +462,12 @@ def main():
                 flavor_id=module.params['flavor_id'],
                 flavor_name=module.params['flavor_name'],
                 gpn_enabled=module.params['gpn'],
+                ipv4_enabled=module.params['ipv4'],
                 ipv6_enabled=module.params['ipv6'],
                 ssh_key_fingerprint=module.params['ssh_key_fingerprint'],
                 ssh_key_name=module.params['ssh_key_name'],
                 backup_copies=module.params['backup_copies'],
+                user_data=module.params['user_data'],
                 wait=module.params['wait'],
                 update_interval=module.params['update_interval'],
                 checkmode=module.check_mode
