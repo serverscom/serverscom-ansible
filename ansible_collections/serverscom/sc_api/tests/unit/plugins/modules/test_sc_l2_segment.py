@@ -40,15 +40,19 @@ def test_prep_absent_list():
         {"id": "GdbY8LmA", "mode": "native"},
     ]
     res = list(ScL2Segment.prep_absent_list(members, old_members))
-    assert res == [{
-        "id": "GdbY8LmA",
-        "mode": "native",
-    }]
+    assert res == [
+        {
+            "id": "GdbY8LmA",
+            "mode": "native",
+        }
+    ]
 
 
 def test_simplify_members():
-    data = [{
-        "id": "GdbY8LmA",
-        "mode": "native",
-    }]
+    data = [
+        {
+            "id": "GdbY8LmA",
+            "mode": "native",
+        }
+    ]
     assert list(ScL2Segment._simplify_members(data)) == data

@@ -2,16 +2,18 @@
 # GNU General Public License v3.0+
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 import pytest
 import mock
-from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import ScDedicatedServerInfo  # noqa
+from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
+    ScDedicatedServerInfo,
+)  # noqa
 
 
 __metaclass__ = type
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def module():
     module = mock.MagicMock()
     return module

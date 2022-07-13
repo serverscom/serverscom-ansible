@@ -5,15 +5,17 @@
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 
 
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
 DOCUMENTATION = """
 ---
@@ -180,7 +182,7 @@ import json
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,
-    ScCloudComputingInstancesInfo
+    ScCloudComputingInstancesInfo,
 )
 
 __metaclass__ = type
@@ -189,22 +191,22 @@ __metaclass__ = type
 def main():
     module = AnsibleModule(
         argument_spec={
-            'token': {'type': 'str', 'no_log': True, 'required': True},
-            'endpoint': {'default': DEFAULT_API_ENDPOINT},
-            'region_id': {'type': 'int'}
+            "token": {"type": "str", "no_log": True, "required": True},
+            "endpoint": {"default": DEFAULT_API_ENDPOINT},
+            "region_id": {"type": "int"},
         },
-        supports_check_mode=True
+        supports_check_mode=True,
     )
     try:
         instances = ScCloudComputingInstancesInfo(
-            endpoint=module.params['endpoint'],
-            token=module.params['token'],
-            region_id=module.params['region_id']
+            endpoint=module.params["endpoint"],
+            token=module.params["token"],
+            region_id=module.params["region_id"],
         )
         module.exit_json(**instances.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

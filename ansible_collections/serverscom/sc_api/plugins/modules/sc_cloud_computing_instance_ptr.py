@@ -5,15 +5,17 @@
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 
 
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
 DOCUMENTATION = """
 ---
@@ -150,7 +152,7 @@ import json
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,
-    ScCloudComputingInstancePtr
+    ScCloudComputingInstancePtr,
 )
 
 __metaclass__ = type
@@ -159,50 +161,43 @@ __metaclass__ = type
 def main():
     module = AnsibleModule(
         argument_spec={
-            'endpoint': {'default': DEFAULT_API_ENDPOINT},
-            'token': {'type': 'str', 'no_log': True, 'required': True},
-            'state': {
-                'type': 'str',
-                'choices': ['present', 'absent', 'query'],
-                'required': True
+            "endpoint": {"default": DEFAULT_API_ENDPOINT},
+            "token": {"type": "str", "no_log": True, "required": True},
+            "state": {
+                "type": "str",
+                "choices": ["present", "absent", "query"],
+                "required": True,
             },
-            'instance_id': {},
-            'name': {'aliases': ['instance_name']},
-            'region_id': {'type': 'int'},
-            'ip': {'default': 'all'},
-            'domain': {},
-            'ttl': {'type': 'int'},
-            'priority': {'type': 'int'}
+            "instance_id": {},
+            "name": {"aliases": ["instance_name"]},
+            "region_id": {"type": "int"},
+            "ip": {"default": "all"},
+            "domain": {},
+            "ttl": {"type": "int"},
+            "priority": {"type": "int"},
         },
-        mutually_exclusive=[
-            ['name', 'instance_id']
-        ],
-        required_if=[
-            [
-                "state", "present",
-                ["domain"]
-            ]
-        ],
-        supports_check_mode=True
+        mutually_exclusive=[["name", "instance_id"]],
+        required_if=[["state", "present", ["domain"]]],
+        supports_check_mode=True,
     )
     try:
         ptr = ScCloudComputingInstancePtr(
-            endpoint=module.params['endpoint'],
-            token=module.params['token'],
-            state=module.params['state'],
-            instance_id=module.params['instance_id'],
-            name=module.params['name'],
-            region_id=module.params['region_id'],
-            ip=module.params['ip'],
-            domain=module.params['domain'],
-            ttl=module.params['ttl'],
-            priority=module.params['priority'],
-            checkmode=module.check_mode
+            endpoint=module.params["endpoint"],
+            token=module.params["token"],
+            state=module.params["state"],
+            instance_id=module.params["instance_id"],
+            name=module.params["name"],
+            region_id=module.params["region_id"],
+            ip=module.params["ip"],
+            domain=module.params["domain"],
+            ttl=module.params["ttl"],
+            priority=module.params["priority"],
+            checkmode=module.check_mode,
         )
         module.exit_json(**ptr.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

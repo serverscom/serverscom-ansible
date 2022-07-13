@@ -5,13 +5,16 @@
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
 DOCUMENTATION = """
 ---
@@ -213,7 +216,7 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,
-    ScDedicatedServerReinstall
+    ScDedicatedServerReinstall,
 )
 
 
@@ -223,56 +226,49 @@ __metaclass__ = type
 def main():
     module = AnsibleModule(
         argument_spec={
-            'token': {'type': 'str', 'no_log': True, 'required': True},
-            'endpoint': {'default': DEFAULT_API_ENDPOINT},
-            'server_id': {
-                'type': 'str',
-                'required': True,
-                'aliases': ['id', 'name']
+            "token": {"type": "str", "no_log": True, "required": True},
+            "endpoint": {"default": DEFAULT_API_ENDPOINT},
+            "server_id": {"type": "str", "required": True, "aliases": ["id", "name"]},
+            "hostname": {"type": "str"},
+            "drives_layout_template": {
+                "type": "str",
+                "choices": ["raid1-simple", "raid0-simple"],
             },
-            'hostname': {'type': 'str'},
-            'drives_layout_template': {
-                'type': 'str',
-                'choices': ['raid1-simple', 'raid0-simple']
-            },
-            'drives_layout': {
-                'type': 'list',
-                'elements': 'dict'
-            },
-            'operating_system_id': {'type': 'int'},
-            'ssh_keys': {'type': 'list', 'elements': 'str', 'no_log': False},
-            'ssh_key_name': {'type': 'str'},
-            'wait': {'type': 'int', 'default': 86400},
-            'update_interval': {'type': 'int', 'default': 60},
-            'user_data': {'type': 'str'}
+            "drives_layout": {"type": "list", "elements": "dict"},
+            "operating_system_id": {"type": "int"},
+            "ssh_keys": {"type": "list", "elements": "str", "no_log": False},
+            "ssh_key_name": {"type": "str"},
+            "wait": {"type": "int", "default": 86400},
+            "update_interval": {"type": "int", "default": 60},
+            "user_data": {"type": "str"},
         },
         supports_check_mode=True,
         mutually_exclusive=[
-            ['ssh_keys', 'ssh_key_name'],
-            ['drives_layout', 'drives_layout_template']
+            ["ssh_keys", "ssh_key_name"],
+            ["drives_layout", "drives_layout_template"],
         ],
-        required_one_of=[['drives_layout', 'drives_layout_template']]
+        required_one_of=[["drives_layout", "drives_layout_template"]],
     )
     try:
         sc_dedicated_server_reinstall = ScDedicatedServerReinstall(
-            endpoint=module.params['endpoint'],
-            token=module.params['token'],
-            server_id=module.params['server_id'],
-            hostname=module.params['hostname'],
-            drives_layout_template=module.params['drives_layout_template'],
-            drives_layout=module.params['drives_layout'],
-            operating_system_id=module.params['operating_system_id'],
-            ssh_keys=module.params['ssh_keys'],
-            ssh_key_name=module.params['ssh_key_name'],
-            wait=module.params['wait'],
-            update_interval=module.params['update_interval'],
-            user_data=module.params['user_data'],
-            checkmode=module.check_mode
+            endpoint=module.params["endpoint"],
+            token=module.params["token"],
+            server_id=module.params["server_id"],
+            hostname=module.params["hostname"],
+            drives_layout_template=module.params["drives_layout_template"],
+            drives_layout=module.params["drives_layout"],
+            operating_system_id=module.params["operating_system_id"],
+            ssh_keys=module.params["ssh_keys"],
+            ssh_key_name=module.params["ssh_key_name"],
+            wait=module.params["wait"],
+            update_interval=module.params["update_interval"],
+            user_data=module.params["user_data"],
+            checkmode=module.check_mode,
         )
         module.exit_json(**sc_dedicated_server_reinstall.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
