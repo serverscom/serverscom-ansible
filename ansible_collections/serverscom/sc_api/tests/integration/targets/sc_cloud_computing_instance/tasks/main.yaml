@@ -378,3 +378,61 @@
         endpoint: '{{ sc_endpoint }}'
         state: absent
         name: 8d2779e6-eb72-11ea-970f-733ca983e4ca
+
+- name: Test10, use of GP only with userdata
+  block:
+    - name: Test10 preparation, register a new key
+      sc_ssh_key:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        public_key: '{{ lookup("file", "key1.pub") }}'
+        name: 95f41cea-00fc-11ed-bfa8-33691f518c37
+        state: present
+      register: test10_key
+    - name: Test10 create instanace with GP only and custom userdata
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: present
+        name: d1b69136-00ed-11ed-a8dc-dbb69a235481
+        region_id: '{{ regions.regions[0].id }}'
+        gpn: true
+        ipv4: false
+        flavor_name: 'SSD.30'
+        image_regexp: 'Ubuntu.+'
+        ssh_key_name: 95f41cea-00fc-11ed-bfa8-33691f518c37
+        user_data: |
+          #cloud-config
+          apt:
+            preserve_sources_list: false
+            primary:
+              - arches: [default]
+                uri: http://mirror.servers.com/ubuntu
+            security:
+              - arches: [default]
+                uri: http://mirror.servers.com/ubuntu
+      register: test10
+
+    - name: Check test10
+      assert:
+        that:
+          - test10 is changed
+          - test10 is changed
+          - test10.gpn_enabled
+          - test10.private_ipv4_address
+          - not test10.public_ipv4_address
+          - test10.name == 'd1b69136-00ed-11ed-a8dc-dbb69a235481'
+
+  always:
+    - name: Test10, cleanup
+      sc_cloud_computing_instance:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: absent
+        name: d1b69136-00ed-11ed-a8dc-dbb69a235481
+    - name: clean ssh key
+      sc_ssh_key:
+        name: 95f41cea-00fc-11ed-bfa8-33691f518c37
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        state: absent
