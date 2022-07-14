@@ -5,15 +5,17 @@
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 
 
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
 DOCUMENTATION = """
 ---
@@ -119,7 +121,7 @@ import json
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,
-    ScSshKey
+    ScSshKey,
 )
 
 __metaclass__ = type
@@ -128,35 +130,35 @@ __metaclass__ = type
 def main():
     module = AnsibleModule(
         argument_spec={
-            'token': {'type': 'str', 'no_log': True, 'required': True},
-            'endpoint': {'default': DEFAULT_API_ENDPOINT},
-            'state': {
-                'type': 'str',
-                'choices': ['present', 'absent'],
-                'required': True
+            "token": {"type": "str", "no_log": True, "required": True},
+            "endpoint": {"default": DEFAULT_API_ENDPOINT},
+            "state": {
+                "type": "str",
+                "choices": ["present", "absent"],
+                "required": True,
             },
-            'name': {},
-            'public_key': {},
-            'fingerprint': {},
-            'replace': {'type': 'bool', 'default': False}
+            "name": {},
+            "public_key": {},
+            "fingerprint": {},
+            "replace": {"type": "bool", "default": False},
         },
-        supports_check_mode=True
+        supports_check_mode=True,
     )
     try:
         sc_ssh_key = ScSshKey(
-            endpoint=module.params['endpoint'],
-            token=module.params['token'],
-            name=module.params['name'],
-            state=module.params['state'],
-            public_key=module.params['public_key'],
-            fingerprint=module.params['fingerprint'],
-            replace=module.params['replace'],
-            checkmode=module.check_mode
+            endpoint=module.params["endpoint"],
+            token=module.params["token"],
+            name=module.params["name"],
+            state=module.params["state"],
+            public_key=module.params["public_key"],
+            fingerprint=module.params["fingerprint"],
+            replace=module.params["replace"],
+            checkmode=module.check_mode,
         )
         module.exit_json(**sc_ssh_key.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -5,15 +5,17 @@
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 
 
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
 DOCUMENTATION = """
 ---
@@ -400,7 +402,7 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     ScCloudComputingInstanceCreate,
     ScCloudComputingInstanceDelete,
     ScCloudComputingInstanceReinstall,
-    ScCloudComputingInstanceUpgrade
+    ScCloudComputingInstanceUpgrade,
 )
 
 __metaclass__ = type
@@ -409,116 +411,109 @@ __metaclass__ = type
 def main():
     module = AnsibleModule(
         argument_spec={
-            'token': {'no_log': True, 'required': True},
-            'endpoint': {'default': DEFAULT_API_ENDPOINT},
-            'state': {
-                'type': 'str',
-                'choices': ['present', 'absent', 'reinstalled', 'upgraded'],
-                'required': True
+            "token": {"no_log": True, "required": True},
+            "endpoint": {"default": DEFAULT_API_ENDPOINT},
+            "state": {
+                "type": "str",
+                "choices": ["present", "absent", "reinstalled", "upgraded"],
+                "required": True,
             },
-            'instance_id': {},
-            'region_id': {'type': 'int'},
-            'name': {},
-            'image_id': {},
-            'image_regexp': {},
-            'flavor_id': {},
-            'flavor_name': {},
-            'gpn': {'type': 'bool', 'default': False},
-            'ipv4': {'type': 'bool', 'default': True},
-            'ipv6': {'type': 'bool', 'default': False},
-            'ssh_key_fingerprint': {"no_log": False},
-            'ssh_key_name': {},
-            'backup_copies': {'type': 'int', 'default': 5},
-            'user_data': {'type': 'str', 'default': ''},
-            'wait': {'type': 'int', 'default': 600},
-            'update_interval': {'type': 'int', 'default': 5},
-            'retry_on_conflicts': {'type': 'bool', 'default': True},
-            'confirm_upgrade': {'type': 'bool', 'default': True}
+            "instance_id": {},
+            "region_id": {"type": "int"},
+            "name": {},
+            "image_id": {},
+            "image_regexp": {},
+            "flavor_id": {},
+            "flavor_name": {},
+            "gpn": {"type": "bool", "default": False},
+            "ipv4": {"type": "bool", "default": True},
+            "ipv6": {"type": "bool", "default": False},
+            "ssh_key_fingerprint": {"no_log": False},
+            "ssh_key_name": {},
+            "backup_copies": {"type": "int", "default": 5},
+            "user_data": {"type": "str", "default": ""},
+            "wait": {"type": "int", "default": 600},
+            "update_interval": {"type": "int", "default": 5},
+            "retry_on_conflicts": {"type": "bool", "default": True},
+            "confirm_upgrade": {"type": "bool", "default": True},
         },
         mutually_exclusive=[
-            ['ssh_key_name', 'ssh_key_fingerprint'],
-            ['name', 'instance_id'],
-            ['instance_id', 'region_id'],
-            ['flavor_name', 'flavor_id'],
-            ['image_regexp', 'image_id']
+            ["ssh_key_name", "ssh_key_fingerprint"],
+            ["name", "instance_id"],
+            ["instance_id", "region_id"],
+            ["flavor_name", "flavor_id"],
+            ["image_regexp", "image_id"],
         ],
-        required_if=[
-            [
-                "state", "present",
-                ["region_id"]
-            ]
-        ],
-        supports_check_mode=True
+        required_if=[["state", "present", ["region_id"]]],
+        supports_check_mode=True,
     )
     try:
-        if module.params['state'] == 'present':
+        if module.params["state"] == "present":
             instance = ScCloudComputingInstanceCreate(
-                endpoint=module.params['endpoint'],
-                token=module.params['token'],
-                region_id=module.params['region_id'],
-                name=module.params['name'],
-                image_id=module.params['image_id'],
-                image_regexp=module.params['image_regexp'],
-                flavor_id=module.params['flavor_id'],
-                flavor_name=module.params['flavor_name'],
-                gpn_enabled=module.params['gpn'],
-                ipv4_enabled=module.params['ipv4'],
-                ipv6_enabled=module.params['ipv6'],
-                ssh_key_fingerprint=module.params['ssh_key_fingerprint'],
-                ssh_key_name=module.params['ssh_key_name'],
-                backup_copies=module.params['backup_copies'],
-                user_data=module.params['user_data'],
-                wait=module.params['wait'],
-                update_interval=module.params['update_interval'],
-                checkmode=module.check_mode
+                endpoint=module.params["endpoint"],
+                token=module.params["token"],
+                region_id=module.params["region_id"],
+                name=module.params["name"],
+                image_id=module.params["image_id"],
+                image_regexp=module.params["image_regexp"],
+                flavor_id=module.params["flavor_id"],
+                flavor_name=module.params["flavor_name"],
+                gpn_enabled=module.params["gpn"],
+                ipv4_enabled=module.params["ipv4"],
+                ipv6_enabled=module.params["ipv6"],
+                ssh_key_fingerprint=module.params["ssh_key_fingerprint"],
+                ssh_key_name=module.params["ssh_key_name"],
+                backup_copies=module.params["backup_copies"],
+                user_data=module.params["user_data"],
+                wait=module.params["wait"],
+                update_interval=module.params["update_interval"],
+                checkmode=module.check_mode,
             )
-        elif module.params['state'] == 'absent':
+        elif module.params["state"] == "absent":
             instance = ScCloudComputingInstanceDelete(
-                endpoint=module.params['endpoint'],
-                token=module.params['token'],
-                instance_id=module.params['instance_id'],
-                region_id=module.params['region_id'],
-                name=module.params['name'],
-                wait=module.params['wait'],
-                update_interval=module.params['update_interval'],
-                retry_on_conflicts=module.params['retry_on_conflicts'],
-                checkmode=module.check_mode
+                endpoint=module.params["endpoint"],
+                token=module.params["token"],
+                instance_id=module.params["instance_id"],
+                region_id=module.params["region_id"],
+                name=module.params["name"],
+                wait=module.params["wait"],
+                update_interval=module.params["update_interval"],
+                retry_on_conflicts=module.params["retry_on_conflicts"],
+                checkmode=module.check_mode,
             )
-        elif module.params['state'] == 'reinstalled':
+        elif module.params["state"] == "reinstalled":
             instance = ScCloudComputingInstanceReinstall(
-                endpoint=module.params['endpoint'],
-                token=module.params['token'],
-                instance_id=module.params['instance_id'],
-                region_id=module.params['region_id'],
-                name=module.params['name'],
-                image_id=module.params['image_id'],
-                image_regexp=module.params['image_regexp'],
-                wait=module.params['wait'],
-                update_interval=module.params['update_interval'],
-                checkmode=module.check_mode
+                endpoint=module.params["endpoint"],
+                token=module.params["token"],
+                instance_id=module.params["instance_id"],
+                region_id=module.params["region_id"],
+                name=module.params["name"],
+                image_id=module.params["image_id"],
+                image_regexp=module.params["image_regexp"],
+                wait=module.params["wait"],
+                update_interval=module.params["update_interval"],
+                checkmode=module.check_mode,
             )
-        elif module.params['state'] == 'upgraded':
+        elif module.params["state"] == "upgraded":
             instance = ScCloudComputingInstanceUpgrade(
-                endpoint=module.params['endpoint'],
-                token=module.params['token'],
-                instance_id=module.params['instance_id'],
-                region_id=module.params['region_id'],
-                name=module.params['name'],
-                flavor_id=module.params['flavor_id'],
-                flavor_name=module.params['flavor_name'],
-                confirm_upgrade=module.params['confirm_upgrade'],
-                wait=module.params['wait'],
-                update_interval=module.params['update_interval'],
-                checkmode=module.check_mode
+                endpoint=module.params["endpoint"],
+                token=module.params["token"],
+                instance_id=module.params["instance_id"],
+                region_id=module.params["region_id"],
+                name=module.params["name"],
+                flavor_id=module.params["flavor_id"],
+                flavor_name=module.params["flavor_name"],
+                confirm_upgrade=module.params["confirm_upgrade"],
+                wait=module.params["wait"],
+                update_interval=module.params["update_interval"],
+                checkmode=module.check_mode,
             )
         else:
-            raise NotImplementedError(
-                f'Unsupported state={module.params["state"]}.'
-            )
+            raise NotImplementedError(f'Unsupported state={module.params["state"]}.')
         module.exit_json(**instance.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

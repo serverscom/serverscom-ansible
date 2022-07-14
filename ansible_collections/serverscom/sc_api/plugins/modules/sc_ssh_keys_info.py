@@ -5,15 +5,17 @@
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 
 
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
 DOCUMENTATION = """
 ---
@@ -91,7 +93,7 @@ import json
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,
-    ScSshKeysInfo
+    ScSshKeysInfo,
 )
 
 __metaclass__ = type
@@ -100,20 +102,20 @@ __metaclass__ = type
 def main():
     module = AnsibleModule(
         argument_spec={
-            'token': {'type': 'str', 'no_log': True, 'required': True},
-            'endpoint': {'default': DEFAULT_API_ENDPOINT},
+            "token": {"type": "str", "no_log": True, "required": True},
+            "endpoint": {"default": DEFAULT_API_ENDPOINT},
         },
-        supports_check_mode=True
+        supports_check_mode=True,
     )
     try:
         sc_ssh_key = ScSshKeysInfo(
-            endpoint=module.params['endpoint'],
-            token=module.params['token'],
+            endpoint=module.params["endpoint"],
+            token=module.params["token"],
         )
         module.exit_json(**sc_ssh_key.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -227,7 +227,7 @@ def main():
             aliases_absent=module.params["aliases_absent"],
             wait=module.params["wait"],
             update_interval=module.params["update_interval"],
-            checkmode=module.check_mode
+            checkmode=module.check_mode,
         )
         module.exit_json(**sc_info.run())
     except SCBaseError as e:

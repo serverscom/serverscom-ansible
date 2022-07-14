@@ -5,13 +5,16 @@
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
 DOCUMENTATION = """
 ---
@@ -95,7 +98,7 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,
-    ScCloudComputingRegionsInfo
+    ScCloudComputingRegionsInfo,
 )
 
 
@@ -105,22 +108,22 @@ __metaclass__ = type
 def main():
     module = AnsibleModule(
         argument_spec={
-            'search_pattern': {'type': 'str'},
-            'token': {'type': 'str', 'no_log': True, 'required': True},
-            'endpoint': {'default': DEFAULT_API_ENDPOINT},
+            "search_pattern": {"type": "str"},
+            "token": {"type": "str", "no_log": True, "required": True},
+            "endpoint": {"default": DEFAULT_API_ENDPOINT},
         },
-        supports_check_mode=True
+        supports_check_mode=True,
     )
     try:
         sc_info = ScCloudComputingRegionsInfo(
-            endpoint=module.params['endpoint'],
-            token=module.params['token'],
-            search_pattern=module.params['search_pattern'],
+            endpoint=module.params["endpoint"],
+            token=module.params["token"],
+            search_pattern=module.params["search_pattern"],
         )
         module.exit_json(**sc_info.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

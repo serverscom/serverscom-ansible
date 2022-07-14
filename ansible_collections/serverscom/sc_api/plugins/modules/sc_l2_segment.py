@@ -404,8 +404,16 @@ def main():
         supports_check_mode=True,
     )
     if module.params["state"] == "present":
-        if not any([module.params["members"], module.params["members_present"], module.params["members_absent"]]):
-            module.fail_json("state=present required either members, or members_present, or members_absent")
+        if not any(
+            [
+                module.params["members"],
+                module.params["members_present"],
+                module.params["members_absent"],
+            ]
+        ):
+            module.fail_json(
+                "state=present required either members, or members_present, or members_absent"
+            )
         if module.params["members"] and len(module.params["members"]) < 2:
             module.fail_json("members argument must contain at least two servers")
     try:
@@ -422,7 +430,7 @@ def main():
             location_group_id=module.params["location_group_id"],
             wait=module.params["wait"],
             update_interval=module.params["update_interval"],
-            checkmode=module.check_mode
+            checkmode=module.check_mode,
         )
         module.exit_json(**sc_info.run())
     except SCBaseError as e:

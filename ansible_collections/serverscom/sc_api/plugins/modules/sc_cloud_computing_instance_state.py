@@ -5,15 +5,17 @@
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
 
 
 __metaclass__ = type
 
 
-ANSIBLE_METADATA = {'metadata_version': '1.1',
-                    'status': ['preview'],
-                    'supported_by': 'community'}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
 DOCUMENTATION = """
 ---
@@ -282,7 +284,7 @@ import json
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,
-    ScCloudComputingInstanceState
+    ScCloudComputingInstanceState,
 )
 
 __metaclass__ = type
@@ -291,48 +293,43 @@ __metaclass__ = type
 def main():
     module = AnsibleModule(
         argument_spec={
-            'endpoint': {'default': DEFAULT_API_ENDPOINT},
-            'token': {'type': 'str', 'no_log': True, 'required': True},
-            'state': {
-                'type': 'str',
-                'choices': ['shutdown', 'normal', 'rescue', 'rebooted'],
-                'required': True
+            "endpoint": {"default": DEFAULT_API_ENDPOINT},
+            "token": {"type": "str", "no_log": True, "required": True},
+            "state": {
+                "type": "str",
+                "choices": ["shutdown", "normal", "rescue", "rebooted"],
+                "required": True,
             },
-            'instance_id': {},
-            'name': {'aliases': ['instance_name']},
-            'image_id': {},
-            'image_regexp': {},
-            'region_id': {'type': 'int'},
-            'wait': {'type': 'int', 'default': 600},
-            'update_interval': {'type': 'int', 'default': 5}
+            "instance_id": {},
+            "name": {"aliases": ["instance_name"]},
+            "image_id": {},
+            "image_regexp": {},
+            "region_id": {"type": "int"},
+            "wait": {"type": "int", "default": 600},
+            "update_interval": {"type": "int", "default": 5},
         },
-        mutually_exclusive=[
-            ['name', 'instance_id'],
-            ['image_id', 'image_regexp']
-        ],
-        required_one_of=[
-            ["name", "instance_id"]
-        ],
-        supports_check_mode=True
+        mutually_exclusive=[["name", "instance_id"], ["image_id", "image_regexp"]],
+        required_one_of=[["name", "instance_id"]],
+        supports_check_mode=True,
     )
     try:
         instance_state = ScCloudComputingInstanceState(
-            endpoint=module.params['endpoint'],
-            token=module.params['token'],
-            state=module.params['state'],
-            instance_id=module.params['instance_id'],
-            name=module.params['name'],
-            region_id=module.params['region_id'],
-            image_id=module.params['image_id'],
-            image_regexp=module.params['image_regexp'],
-            wait=module.params['wait'],
-            update_interval=module.params['update_interval'],
-            checkmode=module.check_mode
+            endpoint=module.params["endpoint"],
+            token=module.params["token"],
+            state=module.params["state"],
+            instance_id=module.params["instance_id"],
+            name=module.params["name"],
+            region_id=module.params["region_id"],
+            image_id=module.params["image_id"],
+            image_regexp=module.params["image_regexp"],
+            wait=module.params["wait"],
+            update_interval=module.params["update_interval"],
+            checkmode=module.check_mode,
         )
         module.exit_json(**instance_state.run())
     except SCBaseError as e:
         module.exit_json(**e.fail())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
