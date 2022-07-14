@@ -85,7 +85,7 @@
         endpoint: '{{ sc_endpoint }}'
         state: present
         region_id: '{{ regions.regions[0].id }}'
-        flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
+        flavor_id: '{{ (flavor_info.cloud_flavors|sort(attribute="disk"))[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: ec354674-e844-11ea-ac53-83e1244f3049
         backup_copies: 0
@@ -124,7 +124,7 @@
         endpoint: '{{ sc_endpoint }}'
         state: present
         region_id: '{{ regions.regions[0].id }}'
-        flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
+        flavor_id: '{{ (flavor_info.cloud_flavors|sort(attribute="disk"))[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: 52310c60-7446-482d-a30e-2bedeb515878
         backup_copies: 0
@@ -154,7 +154,7 @@
         endpoint: '{{ sc_endpoint }}'
         state: present
         region_id: '{{ regions.regions[0].id }}'
-        flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
+        flavor_id: '{{ (flavor_info.cloud_flavors|sort(attribute="disk"))[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: 52310c60-7446-482d-a30e-2bedeb515878
         backup_copies: 0
@@ -170,7 +170,7 @@
         endpoint: '{{ sc_endpoint }}'
         state: present
         region_id: '{{ regions.regions[0].id }}'
-        flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
+        flavor_id: '{{ (flavor_info.cloud_flavors|sort(attribute="disk"))[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: 52310c60-7446-482d-a30e-2bedeb515878
         backup_copies: 0
@@ -210,7 +210,7 @@
         endpoint: '{{ sc_endpoint }}'
         state: present
         region_id: '{{ regions.regions[0].id }}'
-        flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
+        flavor_id: '{{ (flavor_info.cloud_flavors|sort(attribute="disk"))[0].id }}'
         image_id: '{{ img_info.cloud_images[0].id }}'
         name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
         backup_copies: 0
@@ -322,7 +322,7 @@
         state: present
         name: 15a0688b-44f6-41e2-971c-4e860c402373
         region_id: '{{ regions.regions[0].id }}'
-        flavor_id: '{{ flavor_info.cloud_flavors[0].id }}'
+        flavor_id: '{{ (flavor_info.cloud_flavors|sort(attribute="disk"))[0].id }}'
         image_regexp: a.+dont.exist
       register: test8_image
       failed_when: false
