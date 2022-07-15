@@ -27,7 +27,7 @@
       - test1.id == existing_server1_id
       - test1.power_status == "powered_on"
 
-- name: Test1, wait until installtion is done
+- name: Test1, wait until installation is done
   sc_dedicated_server_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
@@ -77,7 +77,7 @@
       - test3.ready
       - test3.title == "raid1test"
 
-- name: wait until installtion is done 2
+- name: wait until installation is done 2
   sc_dedicated_server_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'

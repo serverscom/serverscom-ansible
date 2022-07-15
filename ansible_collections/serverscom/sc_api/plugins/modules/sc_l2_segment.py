@@ -195,7 +195,7 @@ options:
 
     wait:
       type: int
-      default: 1200
+      default: 1800
       description:
         - Max wait time for operation to be finished.
         - By default waiting for L2 segment to become active.
@@ -393,7 +393,7 @@ def main():
                 },
             },
             "location_group_id": {},
-            "wait": {"type": "int", "default": 1200},
+            "wait": {"type": "int", "default": 1800},
             "update_interval": {"type": "int", "default": 30},
         },
         mutually_exclusive=[
