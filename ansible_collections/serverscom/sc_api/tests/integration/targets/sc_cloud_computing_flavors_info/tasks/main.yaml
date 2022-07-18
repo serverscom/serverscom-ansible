@@ -38,22 +38,21 @@
     endpoint: '{{ sc_endpoint }}'
   register: reg_info
 
-- name: Test3, Get all flavors from all regions
+- name: Test3, Get flavors
   sc_cloud_computing_flavors_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    region_id: '{{ item.id }}'
+    region_id: '{{ reg_info.regions[0].id  }}'
   register: test3
-  loop: '{{ reg_info.regions }}'
 
-# - debug: var=test3
+- debug: var=test3
 - name: Check Test3
   assert:
     that:
-      - test3.results[0] is not changed
-      - test3.results[0].cloud_flavors|length > 0
-      - test3.results[0].cloud_flavors[0].id
-      - test3.results[0].cloud_flavors[0].disk > 0
-      - test3.results[0].cloud_flavors[0].name
-      - test3.results[0].cloud_flavors[0].ram > 0
-      - test3.results[0].cloud_flavors[0].vcpus > 0
+      - test3 is not changed
+      - test3.cloud_flavors|length > 0
+      - test3.cloud_flavors[0].id
+      - test3.cloud_flavors[0].disk > 0
+      - test3.cloud_flavors[0].name
+      - test3.cloud_flavors[0].ram > 0
+      - test3.cloud_flavors[0].vcpus > 0
