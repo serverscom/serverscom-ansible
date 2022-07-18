@@ -30,6 +30,18 @@
     that:
       - test2 is not changed
 
+- name: Test2a, state=absent of absent instance by id in a region
+  sc_cloud_computing_instance:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    instance_id: dQKnqxAR
+    region_code: AMS3
+    state: absent
+  register: test2a
+  failed_when: test2a is changed
+  tags:
+    - test2a
+
 - name: Test3, state=absent for absent instance by name
   sc_cloud_computing_instance:
     token: "{{ sc_token }}"
@@ -344,7 +356,9 @@
         name: 15a0688b-44f6-41e2-971c-4e860c402373
         wait: 600
 
-- name: Test9 image by regexp and flavor by name
+- name: Test9 image by regexp, flavor by name and region_code
+  tags:
+    - test9
   block:
     - name: Test9 create instanace with image by regexp and flavor by name
       sc_cloud_computing_instance:
@@ -352,7 +366,7 @@
         endpoint: "{{ sc_endpoint }}"
         state: present
         name: 8d2779e6-eb72-11ea-970f-733ca983e4ca
-        region_id: "{{ regions.regions[0].id }}"
+        region_code: AMS3
         flavor_name: "SSD.30"
         image_regexp: "Ubuntu.+"
       register: test9_create
@@ -439,3 +453,16 @@
         token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
         state: absent
+
+- name: Test11, check illegal region_code
+  tags: test11
+  sc_cloud_computing_instance:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    state: present
+    region_code: BADCODE
+    flavor_id: '{{ (flavor_info.cloud_flavors|sort(attribute="disk"))[0].id }}'
+    image_id: "{{ img_info.cloud_images[0].id }}"
+    name: ec354674-e844-11ea-ac53-83e1244f3049
+  register: test11
+  failed_when: "'Cloud region with code BADCODE is not found' not in test11.msg"

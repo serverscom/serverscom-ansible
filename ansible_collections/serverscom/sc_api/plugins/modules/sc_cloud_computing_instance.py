@@ -76,9 +76,24 @@ options:
         - Id of the cloud region for the instance
         - Use M(sc_cloud_computing_regions_info) to get list of available
           regions.
-        - Required for I(state)=C(present).
-        - May be used for other I(state) to narrow search to one region with
-          I(name).
+        - I(region_id) or I(region_code) is required for I(state)=C(present).
+        - May be used to narrow search to one region with I(name)
+          when used for existed instance.
+        - Mutually exclusive with I(region_code).
+
+    region_code:
+      type: str
+      description:
+        - Letter code (like WAS1 or AMS1) for region.
+        - Must be one of listed in M(sc_cloud_computing_regions_info) or
+          module will fail.
+        - No regular expressions or substrings are allowed. Code must match
+          with one of existing regions precicely.
+        - Case sensitive.
+        - I(region_id) or I(region_code) is required for I(state)=C(present).
+        - Mutially exclusive with I(region_id).
+        - May be used to narrow search to one region with I(name)
+          when used for existed instance.
 
     name:
       type: str
@@ -442,10 +457,17 @@ def main():
             ["ssh_key_name", "ssh_key_fingerprint"],
             ["name", "instance_id"],
             ["instance_id", "region_id"],
+            ["region_id", "region_code"],
             ["flavor_name", "flavor_id"],
             ["image_regexp", "image_id"],
         ],
-        required_if=[["state", "present", ["region_id"]]],
+        required_if=[
+            ["state", "present", ["region_id", "region_code"], True],
+            ["state", "present", ["flavor_name", "flavor_id"], True],
+            ["state", "present", ["image_regexp", "image_id"], True],
+            ["state", "present", ["name"]],
+            ["state", "absent", ["name", "instance_id"], True],
+        ],
         supports_check_mode=True,
     )
     try:

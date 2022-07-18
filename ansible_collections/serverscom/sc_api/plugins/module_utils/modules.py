@@ -470,11 +470,10 @@ class ScCloudComputingInstanceCreate:
     ):
         self.checkmode = checkmode
         self.api = ScApi(token, endpoint)
-        if region_id is None:
-            raise ModuleError("region_id is mandatory for state=present.")
-        self.region_id = region_id
-        if not name:
-            raise ModuleError("Name is mandatory for state=present.")
+        if region_code:
+            self.region_id = self.api.toolbox.find_cloud_region_by_code(region_code)
+        else:
+            self.region_id = region_id
         self.name = name
         self.instance_id = None
         self.flavor_id = self.get_flavor_id(flavor_id, flavor_name)
@@ -582,7 +581,10 @@ class ScCloudComputingInstanceDelete:
     ):
         self.checkmode = checkmode
         self.api = ScApi(token, endpoint)
-        self.region_id = region_id
+        if region_code:
+            self.region_id = self.api.toolbox.find_cloud_region_by_code(region_code)
+        else:
+            self.region_id = region_id
         self.name = name
         self.instance_id = instance_id
         if update_interval > wait:
@@ -879,14 +881,18 @@ class ScCloudComputingInstanceReinstall:
         checkmode,
     ):
         self.api = ScApi(token, endpoint)
+        if region_code:
+            self.region_id = self.api.toolbox.find_cloud_region_by_code(region_code)
+        else:
+            self.region_id = region_id
         self.instance = self.api.toolbox.find_instance(
-            instance_id=instance_id, instance_name=name, region_id=region_id, must=True
+            instance_id=instance_id, instance_name=name, region_id=self.region_id, must=True
         )
         if not image_id and not image_regexp:
             self.image_id = self.instance["image_id"]
         else:
             self.image_id = self.api.toolbox.find_image_id(
-                image_id=image_id, image_regexp=image_regexp, region_id=region_id
+                image_id=image_id, image_regexp=image_regexp, region_id=self.region_id
             )
         self.wait = wait
         self.update_interval = update_interval
@@ -952,11 +958,15 @@ class ScCloudComputingInstanceUpgrade:
         checkmode,
     ):
         self.api = ScApi(token, endpoint)
+        if region_code:
+            self.region_id = self.api.toolbox.find_cloud_region_by_code(region_code)
+        else:
+            self.region_id = region_id
         self.instance = self.api.toolbox.find_instance(
-            instance_id=instance_id, instance_name=name, region_id=region_id, must=True
+            instance_id=instance_id, instance_name=name, region_id=self.region_id, must=True
         )
         self.flavor_id = self.api.toolbox.find_cloud_flavor_id_by_name(
-            flavor_id=flavor_id, flavor_name=flavor_name, region_id=region_id
+            flavor_id=flavor_id, flavor_name=flavor_name, region_id=self.region_id
         )
         self.confirm_upgrade = confirm_upgrade
         self.wait = wait

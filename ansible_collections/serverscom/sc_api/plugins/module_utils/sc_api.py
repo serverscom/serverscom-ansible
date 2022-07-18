@@ -272,6 +272,12 @@ class ScApiToolbox:
             flavor_name=flavor_name, region_id=region_id, must=True
         )
 
+    def find_cloud_region_by_code(self, region_code):
+        for region in self.api.list_regions():
+            if region["code"] == region_code:
+                return region["id"]
+        raise ToolboxError(f"Cloud region with code {region_code} is not found")
+
 
 # naiming convention:
 # Prefixes:
