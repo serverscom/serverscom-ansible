@@ -88,7 +88,7 @@ options:
         - List of servers and mode of connection (native or trunk)
         - (Either I(members) or I(members_present) or I(members_absent)
           required if I(state)=C(present)
-        - L2 segment should contains at least two members
+        - L2 segment should contains at least one member
         - Server can be member of only one L2 segment in I(mode)=C(native)
         - Server can participate in multiple L2 segments in I(mode)=C(trunk)
         - Server can be present in a given segment only once (e.g. it's impossible
@@ -128,7 +128,7 @@ options:
           possible mode change (this option only assure that servers are added)
         - (Either I(members) or I(members_present) or I(members_absent)
           required if I(state)=C(present)
-        - L2 segment should contains at least two members
+        - L2 segment should contains at least one member
         - Server can be member of only one L2 segment in I(mode)=C(native)
         - Server can participate in multiple L2 segments in I(mode)=C(trunk)
         - Server can be present in a given segment only once (e.g. it's impossible
@@ -414,8 +414,6 @@ def main():
             module.fail_json(
                 "state=present required either members, or members_present, or members_absent"
             )
-        if module.params["members"] and len(module.params["members"]) < 2:
-            module.fail_json("members argument must contain at least two servers")
     try:
         sc_info = ScL2Segment(
             endpoint=module.params["endpoint"],
