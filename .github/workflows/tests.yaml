@@ -1,5 +1,5 @@
 ---
-name: Ansible collection
+name: Test and build
 
 "on":
   push:
@@ -80,7 +80,7 @@ jobs:
           sc_cloud_computing_instance_info
           sc_cloud_computing_instance_ptr
           sc_cloud_computing_instances_info
-        # sc_cloud_computing_instance_state - ?
+          sc_cloud_computing_instance_state
         # sc_cloud_computing_instance_reinstall  - broken and unfinished
 
         working-directory: ansible_collections/serverscom/sc_api
