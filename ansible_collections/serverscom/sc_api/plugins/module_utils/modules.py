@@ -478,7 +478,7 @@ class ScCloudComputingInstanceCreate:
         self.instance_id = None
         self.flavor_id = self.get_flavor_id(flavor_id, flavor_name)
         self.image_id = self.api.toolbox.find_image_id(
-            image_id=image_id, image_regexp=image_regexp, region_id=region_id, must=True
+            image_id=image_id, image_regexp=image_regexp, region_id=self.region_id, must=True
         )
         self.gpn_enabled = gpn_enabled
         self.ipv4_enabled = ipv4_enabled
