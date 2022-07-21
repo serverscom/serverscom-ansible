@@ -446,7 +446,13 @@
         token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
         state: absent
+        retry_on_conflicts: true
         name: d1b69136-00ed-11ed-a8dc-dbb69a235481
+      register: cleanup
+      until: cleanup is success
+      delay: 2
+      retries: 2
+      ignore_errors: true
     - name: clean ssh key
       sc_ssh_key:
         name: 95f41cea-00fc-11ed-bfa8-33691f518c37
