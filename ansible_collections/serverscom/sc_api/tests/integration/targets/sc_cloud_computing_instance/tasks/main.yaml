@@ -35,7 +35,7 @@
     token: "{{ sc_token }}"
     endpoint: "{{ sc_endpoint }}"
     instance_id: dQKnqxAR
-    region_code: AMS3
+    region_code: NL03
     state: absent
   register: test2a
   failed_when: test2a is changed
@@ -366,7 +366,7 @@
         endpoint: "{{ sc_endpoint }}"
         state: present
         name: 8d2779e6-eb72-11ea-970f-733ca983e4ca
-        region_code: AMS3
+        region_code: NL03
         flavor_name: "SSD.30"
         image_regexp: "Ubuntu.+"
       register: test9_create
