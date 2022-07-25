@@ -1,7 +1,7 @@
 ---
 namespace: serverscom
 name: sc_api
-version: 0.0.7
+version: 0.0.8
 readme: README.md
 authors:
   - George Shuklin <george.shuklin@gmail.com>
