@@ -519,7 +519,7 @@ class ScCloudComputingInstanceCreate:
             name=self.name,
             flavor_id=self.flavor_id,
             image_id=self.image_id,
-            gpn_enabled=self.image_id,
+            gpn_enabled=self.gpn_enabled,
             ipv4_enabled=self.ipv4_enabled,
             ipv6_enabled=self.ipv6_enabled,
             ssh_key_fingerprint=self.ssh_key_fingerprint,
