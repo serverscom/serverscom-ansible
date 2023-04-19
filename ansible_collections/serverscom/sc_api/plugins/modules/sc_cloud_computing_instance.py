@@ -330,7 +330,7 @@ public_ipv4_address:
 public_ipv6_address:
   type: str
   description:
-    - IPv5 address for instance.
+    - IPv6 address for instance.
     - May be missing if no IPv6 address was ordered or public inteface
      was detached via Openstack API.
   returned: on success
