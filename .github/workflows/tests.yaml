@@ -5,6 +5,7 @@ name: Test and build
   push:
     paths-ignore:
       - ".github/**"
+  workflow_dispatch:
 
 jobs:
   lint:
@@ -25,7 +26,6 @@ jobs:
           - "3.8"
           - "3.7"
           - "3.6"
-          # - "3.10"
     steps:
       - name: Checkout
         uses: actions/checkout@v3
