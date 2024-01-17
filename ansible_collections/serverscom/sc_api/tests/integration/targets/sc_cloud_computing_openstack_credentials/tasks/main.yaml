@@ -2,13 +2,13 @@
 - name: Check if there are sc_token and sc_endpoint variables
   no_log: true
   fail:
-    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+    msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
   when: not sc_endpoint or not sc_token
 
 - name: Test invalid token
   sc_cloud_computing_openstack_credentials:
     token: invalid
-    endpoint: '{{ sc_endpoint }}'
+    endpoint: "{{ sc_endpoint }}"
     region_id: 424242
   register: test1
   failed_when:
@@ -18,8 +18,8 @@
 
 - name: Test2, List for non-existing region
   sc_cloud_computing_openstack_credentials:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
     region_id: 424242
   register: test2
   failed_when: test2.status_code!=404
@@ -33,15 +33,15 @@
 
 - name: Test3 prep, get regions
   sc_cloud_computing_regions_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
   register: regions
 
 - name: Test3, Get creds for region1
   sc_cloud_computing_openstack_credentials:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
-    region_id: '{{ regions.regions[0].id }}'
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    region_id: "{{ regions.regions[0].id }}"
   register: creds
 
 - name: Check Test3
@@ -54,12 +54,12 @@
       - creds.password
 
 - name: Validate creds
-  os_auth:
+  openstack.cloud.auth:
     auth:
-      auth_url: '{{ creds.url }}'
-      username: '{{ creds.username }}'
-      password: '{{ creds.password }}'
-      project_name: '{{ creds.tenant_name }}'
+      auth_url: "{{ creds.url }}"
+      username: "{{ creds.username }}"
+      password: "{{ creds.password }}"
+      project_name: "{{ creds.tenant_name }}"
       os_user_domain_name: default
       os_project_domain_name: default
   register: os
