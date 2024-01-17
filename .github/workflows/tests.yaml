@@ -23,9 +23,7 @@ jobs:
     strategy:
       matrix:
         python_version:
-          - "3.8"
-          - "3.7"
-          - "3.6"
+          - "3.11"
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -36,7 +34,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 pytest
           pip install -r requirements.txt
       - name: Sanity tests with dependencies
         run: ansible-test sanity --requirements --python ${{ matrix.python_version }}
@@ -62,7 +59,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 pytest
           pip install -r requirements.txt
       - name: Configure integration tests
         run: |
@@ -105,7 +101,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 pytest
           pip install -r requirements.txt
       - name: Configure integration tests
         run: |
@@ -143,7 +138,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 pytest
           pip install -r requirements.txt
       - name: Configure integration tests
         run: |
@@ -179,7 +173,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 pytest
           pip install -r requirements.txt
       - name: Remove tests from final distribution
         run: rm -r tests/
