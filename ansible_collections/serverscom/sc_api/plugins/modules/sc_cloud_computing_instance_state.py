@@ -26,7 +26,8 @@ short_description: Manage instance states
 description: >
     Allow to control power state and rescue mode for instance.
     This module does not allow removal and creation of the instance,
-    use M(sc_cloud_computing_instance) with state=present/absent.
+    use M(serverscom.sc_api.sc_cloud_computing_instance)
+    with state=present/absent.
 
 options:
     endpoint:
@@ -111,9 +112,9 @@ options:
         - Value C(0) is used to disable wait.
         - If C(0) is set, module works in 'fire-and-forget' mode.
         - ACTIVE state doesn't mean that instance is ready to accept ssh
-          connections. Use M(wait_for_connection) module wait until instance
-          finishes booting. handlers or when statement may be used
-          to preserve idempotency.
+          connections. Use M(ansible.builtin.wait_for_connection) module
+          wait until instance finishes booting.
+          handlers or when statement may be used to preserve idempotency.
 
     update_interval:
       type: int

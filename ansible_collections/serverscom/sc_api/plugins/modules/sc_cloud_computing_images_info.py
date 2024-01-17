@@ -47,8 +47,8 @@ options:
       required: true
       description:
         - Id of cloud computing region.
-        - Use I(sc_cloud_computing_regions_info) module to retrive list of
-          available regions.
+        - Use I(serverscom.sc_api.sc_cloud_computing_regions_info) module
+          to retrive list of available regions.
 """
 
 RETURN = """
