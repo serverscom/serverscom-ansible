@@ -7,13 +7,13 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
     SCBaseError,
     APIError404,
     APIError409,
-    DEFAULT_API_ENDPOIT,
+    DEFAULT_API_ENDPOINT,
     ScApi,
 )
 
 __metaclass__ = type
 
-_ignore = DEFAULT_API_ENDPOIT  # to mute linter, DEFAULT_API_ENDPOIT is for reexport.
+_ignored = DEFAULT_API_ENDPOINT  # to silence pylint warning, it is reimported
 
 CHANGED = True
 NOT_CHANGED = False
