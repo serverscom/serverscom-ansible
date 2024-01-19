@@ -155,7 +155,7 @@ options:
       elements: str
       description:
         - Array of fingerprints of public ssh keys to add for root user.
-        - Keys must be registered before use by module M(sc_ssh_key).
+        - Keys must be registered before use by module M(serverscom.sc_api.sc_ssh_key).
         - Mutually exclusive with I(ssh_key_name).
         - Server is reinstalled with root password only if no I(ssh_keys) or
           I(ssh_key_name) specified.
@@ -181,8 +181,8 @@ options:
             - When server become 'ready' after reinstallation,
               it can still be in booting state for some time
               and do not answer ssh/ping request.
-              Use M(wait_for_connection) module to wait the server
-              to become available though ssh.
+              Use M(serverscom.sc_api.wait_for_connection) module
+              to wait the server to become available though ssh.
             - Installation may start few minutes later than request,
               during this time server is responding with 'old' ssh.
 

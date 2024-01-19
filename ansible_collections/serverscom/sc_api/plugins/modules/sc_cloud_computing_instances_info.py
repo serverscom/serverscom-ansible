@@ -45,8 +45,8 @@ options:
       type: int
       description:
         - Id of cloud computing region to filter.
-        - Use I(sc_cloud_computing_regions_info) module to retrive list of
-          available regions.
+        - Use I(serverscom.sc_api.sc_cloud_computing_regions_info) module
+          to retrive list of available regions.
         - Module returns instances for all regions if I(region_id) is not
           specified.
 """
@@ -178,7 +178,6 @@ EXAMPLES = """
 
 
 from ansible.module_utils.basic import AnsibleModule
-import json
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,

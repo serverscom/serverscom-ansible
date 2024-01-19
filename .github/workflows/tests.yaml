@@ -5,6 +5,7 @@ name: Test and build
   push:
     paths-ignore:
       - ".github/**"
+  workflow_dispatch:
 
 jobs:
   lint:
@@ -22,10 +23,7 @@ jobs:
     strategy:
       matrix:
         python_version:
-          - "3.8"
-          - "3.7"
-          - "3.6"
-          # - "3.10"
+          - "3.11"
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -36,7 +34,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 pytest
           pip install -r requirements.txt
       - name: Sanity tests with dependencies
         run: ansible-test sanity --requirements --python ${{ matrix.python_version }}
@@ -55,14 +52,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Set up Python 3.8
+      - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.8"
+          python-version: "3.11"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 pytest
           pip install -r requirements.txt
       - name: Configure integration tests
         run: |
@@ -70,7 +66,7 @@ jobs:
         env:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
-        run: ansible-test integration --requirements --python 3.8
+        run: ansible-test integration --requirements --python 3.11
           sc_ssh_key
           sc_cloud_computing_flavors_info
           sc_cloud_computing_regions_info
@@ -98,14 +94,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Set up Python 3.8
+      - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.8"
+          python-version: "3.11"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 pytest
           pip install -r requirements.txt
       - name: Configure integration tests
         run: |
@@ -113,7 +108,7 @@ jobs:
         env:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
-        run: ansible-test integration --requirements --python 3.8
+        run: ansible-test integration --requirements --python 3.11
           sc_ssh_key
           sc_baremetal_locations_info
           sc_baremetal_servers_info
@@ -136,14 +131,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Set up Python 3.8
+      - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.8"
+          python-version: "3.11"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 pytest
           pip install -r requirements.txt
       - name: Configure integration tests
         run: |
@@ -151,7 +145,7 @@ jobs:
         env:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
-        run: ansible-test integration --requirements --python 3.8
+        run: ansible-test integration --requirements --python 3.11
           sc_l2_segment
           sc_l2_segment_aliases
           sc_l2_segments_info
@@ -172,14 +166,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Set up Python 3.8
+      - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: "3.11"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 pytest
           pip install -r requirements.txt
       - name: Remove tests from final distribution
         run: rm -r tests/

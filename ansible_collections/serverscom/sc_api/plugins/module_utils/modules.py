@@ -13,6 +13,7 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
 
 __metaclass__ = type
 
+_ignored = DEFAULT_API_ENDPOINT  # to silence pylint warning, it is reimported
 
 CHANGED = True
 NOT_CHANGED = False

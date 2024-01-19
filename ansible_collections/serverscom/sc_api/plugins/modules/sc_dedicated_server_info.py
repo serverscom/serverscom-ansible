@@ -250,7 +250,7 @@ ready:
 
 EXAMPLES = """
 - name: Get server info
-  sc_dedicated_server_info:
+  serverscom.sc_api.sc_dedicated_server_info:
     token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MzgxMjEsInR5cGUiOiJVc2VyIiwiYWNjZXNzX2dyYW50X2lkIjoyNjgwNywiZXhwIjoyMjI2OTk3NjMwfQ.rO4nGXNgXggjNmMJBLXovOh1coNrDWl4dGrGFupYXJE'
     id: '0m592Zmn'
   register: srv
@@ -259,7 +259,7 @@ EXAMPLES = """
     msg: 'Server {{ srv.name }} has IP {{ srv.public_ipv4_address }}'
 
 - name: Wait until server is ready
-  sc_dedicated_server_info:
+  serverscom.sc_api.sc_dedicated_server_info:
     token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MzgxMjEsInR5cGUiOiJVc2VyIiwiYWNjZXNzX2dyYW50X2lkIjoyNjgwNywiZXhwIjoyMjI2OTk3NjMwfQ.rO4nGXNgXggjNmMJBLXovOh1coNrDWl4dGrGFupYXJE'
     id: '0m592Zmn'
   register: srv
@@ -270,7 +270,6 @@ EXAMPLES = """
 
 
 from ansible.module_utils.basic import AnsibleModule
-import json
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,

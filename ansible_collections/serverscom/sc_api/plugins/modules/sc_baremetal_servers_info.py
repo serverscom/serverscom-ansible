@@ -26,7 +26,7 @@ description: >
     Retrive list of all existing dedicated baremetal servers.
 
 notes:
-  - Not to be confused with M(sc_dedicated_servers_info).
+  - Not to be confused with M(serverscom.sc_api.sc_dedicated_servers_info).
   - Includes information for both dedicated and other types of servers
     (f.e. kubernetes baremetal node)
 
@@ -88,7 +88,6 @@ EXAMPLES = """
 
 
 from ansible.module_utils.basic import AnsibleModule
-import json
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,

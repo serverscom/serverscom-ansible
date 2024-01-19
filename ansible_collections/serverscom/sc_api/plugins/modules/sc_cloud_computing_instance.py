@@ -74,8 +74,8 @@ options:
       type: int
       description:
         - Id of the cloud region for the instance
-        - Use M(sc_cloud_computing_regions_info) to get list of available
-          regions.
+        - Use M(serverscom.sc_api.sc_cloud_computing_regions_info) to get list
+          of available regions.
         - Required for I(state)=C(present).
         - May be used for other I(state) to narrow search to one region with
           I(name).
@@ -162,8 +162,8 @@ options:
         type: str
         description:
           - Fingerprint of the public ssh key to use for user cloud-user.
-          - Fingerprint must be registered. Use M(sc_ssh_key) to register
-            public key.
+          - Fingerprint must be registered. Use M(serverscom.sc_api.sc_ssh_key)
+            to register public key.
           - Mutually exclusive with I(ssh_key_name)
           - Instance is created with password if no I(ssh_key_fingerprint)
             or I(ssh_key_name) is used.
@@ -209,8 +209,8 @@ options:
         - Value C(0) is used to disable wait.
         - If C(0) is set, module works in 'fire-and-forget' mode.
         - ACTIVE state doesn't mean that instance is ready to accept ssh
-          connections. Use M(wait_for_connection) module wait until instance
-          finishes booting.
+          connections. Use M(ansible.builtin.wait_for_connection) module
+          to wait until instance finishes booting.
         - wait time is independent for I(retry_on_conflicts) and status wait.
         - If instance is in conflicting state, first module will retry up to
           I(wait) seconds to delete it, and then wait for I(wait) seconds for
@@ -242,8 +242,8 @@ options:
        - Upgrades are autoconfirmed in 72 hours.
        - Used only for I(state)=C(upgraded), ignored of other I(state).
        - If instance is in the state AWAITING_UPGRADE_CONFIRM,
-         calling M(cloud_computing_instance) with I(state)=C(upgraded)
-         confirm upgrade.
+         calling M(serverscom.sc_api.cloud_computing_instance)
+         with I(state)=C(upgraded) confirm upgrade.
        - If I(wait)=C(0) instance upgrage is not confirmed even if
          I(confirm_upgrade)=C(true).
 """
@@ -376,7 +376,7 @@ status_code:
 
 EXAMPLES = """
 - name: Delete instance by ID
-  sc_cloud_computing_instance:
+  serverscom.sc_api.sc_cloud_computing_instance:
     token: '{{ sc_token }}'
     instance_id: M7e5Ba2v
     state: absent
@@ -384,7 +384,7 @@ EXAMPLES = """
     update_interval: 5
 
 - name: Delete instance by name in region 3
-  sc_cloud_computing_instance:
+  serverscom.sc_api.sc_cloud_computing_instance:
     token: '{{ sc_token }}'
     name: test
     region_id: 3
