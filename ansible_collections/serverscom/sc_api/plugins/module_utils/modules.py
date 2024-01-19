@@ -629,6 +629,10 @@ class ScCloudComputingInstanceDelete:
                     time.sleep(self.update_interval)
                 else:
                     raise
+            except APIError404:
+                # We expected to delete instance and it's gone
+                # == happy end
+                pass
             instance = instance = self.api.toolbox.find_instance(
                 self.instance_id, self.name, self.region_id, must=False
             )
