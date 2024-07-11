@@ -153,6 +153,7 @@
           - "'52310c60-7446-482d-a30e-2bedeb515878' in test6_instances|to_json"
           - test6.status == 'ACTIVE'
           - test6.name == '52310c60-7446-482d-a30e-2bedeb515878'
+          - test6.public_ipv6_address
 
     - name: Test6, create the same instance second time
       sc_cloud_computing_instance:
