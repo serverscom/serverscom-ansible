@@ -33,7 +33,7 @@
   sc_cloud_computing_instances_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    region_id: 1
+    region_id: 2
   register: test3
 
 - name: Check Test3
