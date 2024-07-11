@@ -416,7 +416,7 @@ class ScApi:
         if not ipv4_enabled:
             body["ipv4_enabled"] = False
         if ipv6_enabled:
-            body["ipv6_enabled"] = False
+            body["ipv6_enabled"] = True
         if ssh_key_fingerprint:
             body["ssh_key_fingerprint"] = ssh_key_fingerprint
         if backup_copies is not None:
