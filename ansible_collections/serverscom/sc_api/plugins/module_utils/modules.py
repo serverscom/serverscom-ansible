@@ -1160,7 +1160,7 @@ class ScL2Segment:
         segment = self.api.get_l2_segment(segment_id)
         if members_lg != segment["location_group_id"]:
             raise ModuleError(
-                f"members location group { members_lg } does not match location group for existing segment: { segment['location_group_id'] }"
+                f"members location group {members_lg} does not match location group for existing segment: {segment['location_group_id']}"
             )
         existing_members = self._listdict_to_set(
             self._simplify_members(self.api.list_l2_segment_members(segment_id))
@@ -1210,7 +1210,7 @@ class ScL2Segment:
             members_lg = self.get_member_location_group_id(self.members_present)
             if members_lg != segment["location_group_id"]:
                 raise ModuleError(
-                    f"members location group { members_lg } does not match location group for existing segment: { segment['location_group_id'] }"
+                    f"members location group {members_lg} does not match location group for existing segment: {segment['location_group_id']}"
                 )
         old_list = list(
             self._simplify_members(self.api.list_l2_segment_members(segment_id))
@@ -1306,7 +1306,7 @@ class ScL2SegmentAliases:
                         )
                     existing_segment_id = segment["id"]
             if not existing_segment_id:
-                raise ModuleError(f"Segment { self.name } is not found.")
+                raise ModuleError(f"Segment {self.name} is not found.")
         return existing_segment_id
 
     def wait_for(self, l2):
@@ -1379,7 +1379,7 @@ class ScL2SegmentAliases:
         if len(self.existing_aliases) < self.count:
             return self.add_aliases(self.count - len(self.existing_aliases_id))
         elif len(self.existing_aliases) > self.count:
-            return self.remove_aliases(self.existing_aliases_id[self.count:])
+            return self.remove_aliases(self.existing_aliases_id[self.count :])
         return self.prep_result(changed)
 
     def run(self):
