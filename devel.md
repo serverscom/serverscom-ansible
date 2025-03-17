@@ -9,13 +9,13 @@
 Running sanity checks:
 
 ```
-ansible-test sanity --requirements --python 3.11
+ansible-test sanity --requirements --python 3.13
 ```
 
 unit tests:
 
 ```
-ansible-test units --requirements --python 3.11
+ansible-test units --requirements --python 3.13
 ```
 (if you get odd errors from pytest, don't forget --requirements)
 
