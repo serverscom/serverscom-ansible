@@ -115,13 +115,13 @@ class ApiHelper:
             raise APIError409(
                 status_code=response.status_code,
                 api_url=prep_request.url,
-                msg=f"409 Conflict. { response.content }",
+                msg=f"409 Conflict. {response.content}",
             )
         if response.status_code not in good_codes:
             raise APIError(
                 status_code=response.status_code,
                 api_url=prep_request.url,
-                msg=f"API Error: { response.content }",
+                msg=f"API Error: {response.content}",
             )
         return response
 
@@ -172,8 +172,7 @@ class ApiHelper:
         while self.is_next():
             response = self.send_request(good_codes=[200])
             list_from_api = self.decode(response)
-            for api_object in list_from_api:
-                yield api_object
+            yield from list_from_api
             self.prepare_next(response)
 
 
@@ -190,7 +189,8 @@ class ScApiToolbox:
             if key["name"] == ssh_key_name:
                 return key["fingerprint"]
         if must:
-            raise ToolboxError(f"Unable to find registered ssh key {ssh_key_name}")
+            raise ToolboxError(
+                f"Unable to find registered ssh key {ssh_key_name}")
 
     def find_cloud_image_id_by_name_regexp(self, regexp, region_id=None, must=False):
         for image in self.api.list_images(region_id):
@@ -242,9 +242,11 @@ class ScApiToolbox:
         same name.
         """
         if instance_id and instance_name:
-            raise ToolboxError("Both instance_id and instance_name are specified.")
+            raise ToolboxError(
+                "Both instance_id and instance_name are specified.")
         if not instance_id and not instance_name:
-            raise ToolboxError("Neither instance_id nor instance_name specified.")
+            raise ToolboxError(
+                "Neither instance_id nor instance_name specified.")
         if instance_id:
             try:
                 return self.api.get_instances(instance_id)
@@ -560,7 +562,8 @@ class ScApi:
 
     def get_l2_segment_or_none(self, l2_segment_id):
         try:
-            seg = self.api_helper.make_get_request(path=f"/l2_segments/{l2_segment_id}")
+            seg = self.api_helper.make_get_request(
+                path=f"/l2_segments/{l2_segment_id}")
         except APIError404:
             seg = {"id": None}
         return seg
