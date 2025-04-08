@@ -77,7 +77,6 @@ EXAMPLES = """
 - name: Get all servers
   sc_baremetal_servers_info:
     token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MzgxMjEsInR5cGUiOiJVc2VyIiwiYWNjZXNzX2dyYW50X2lkIjoyNjgwNywiZXhwIjoyMjI2OTk3NjMwfQ.rO4nGXNgXggjNmMJBLXovOh1coNrDWl4dGrGFupYXJE'
-    id: '0m592Zmn'
   register: srv_list
 
 - name: Report server information
