@@ -18,186 +18,46 @@ ANSIBLE_METADATA = {
 
 DOCUMENTATION = """
 ---
-module: sc_load_balancer_instance_l4
+module: sc_load_balancer_instance_info
+short_description: Retrieve load balancer instance information.
+description:
+  - Interacts with the Servers.com API to return detailed data for a specific load balancer instance.
+  - Returns attributes including type, id, name, location, cluster, log storage settings, external IPs, labels,
+    and detailed configuration for vhost and upstream zones (with L4/L7 specifics).
 version_added: "1.0.0"
 author: "Volodymyr Rudniev (@koef)"
-short_description: Create, update, or delete L4 load balancer instances via Servers.com Public API
-description:
-  - This module manages L4 load balancer instances.
-  - It supports creating, updating, and deleting load balancer instances.
-notes:
-  - For creation, "name", "location_id", "vhost_zones", and "upstream_zones" are required.
-  - For update, "id" is required along with any parameters to modify.
-  - For deletion, either "id" or "name" must be provided, but not both.
 options:
-  state:
-    description: Define the desired state of the load balancer instance.
+  token:
+    description:
+      - API access token for authentication.
     required: true
     type: str
-    choices: ["present", "absent"]
-  wait:
+  endpoint:
     description:
-      - "Maximum time in seconds to wait for the load balancer instance to reach the desired state after an action (e.g. deletion)."
-      - "Default value is 600 seconds."
+      - API endpoint URL.
     required: false
-    type: int
-    default: 600
-  update_interval:
+    type: str
+    default: https://api.servers.com/v1
+  fail_on_absent:
     description:
-      - "Interval in seconds between consecutive status checks during state transitions."
-      - "Default value is 5 seconds."
+      - Whether to fail if the load balancer instance is absent.
     required: false
-    type: int
-    default: 5
+    type: bool
+    default: true
   id:
     description:
-      - Unique identifier of the load balancer.
-      - Required for update operations; for deletion, either this or "name" must be provided.
+      - Unique identifier of the load balancer instance.
     required: false
     type: str
   name:
     description:
-      - Name for the load balancer.
-      - Required for creation; for deletion, either this or "id" must be provided.
+      - Human-readable name of the load balancer instance.
     required: false
     type: str
-  location_id:
-    description: "Location ID where the load balancer will be created. (Required for creation)"
-    required: false
-    type: int
-  cluster_id:
-    description: >
-      Unique identifier of a dedicated Load Balancer cluster.
-      If omitted, a shared cluster is used.
-    required: false
-    type: str
-  store_logs:
-    description: "Enable log storage. Default is false."
-    required: false
-    type: bool
-    default: false
-  store_logs_region_id:
-    description: "Cloud region ID for log storage."
-    required: false
-    type: int
-  new_external_ips_count:
-    description: "Number of new external IP addresses (update only)."
-    required: false
-    type: int
-  delete_external_ips:
-    description: "List of external IP addresses to delete (update only)."
-    required: false
-    type: list
-    elements: str
-  shared_cluster:
-    description: "If true, the load balancer will move to a shared cluster (update only)."
-    required: false
-    type: bool
-    default: true
-  vhost_zones:
-    description: "List of vhost zone objects defining forwarding rules."
-    required: true
-    type: list
-    elements: dict
-    suboptions:
-      id:
-        description: "Unique identifier of a zone. (1 to 255 characters)"
-        required: true
-        type: str
-      ports:
-        description: "Array of port numbers to apply the rule."
-        required: true
-        type: list
-        elements: int
-      udp:
-        description: "Enable UDP traffic balancing. Default is false."
-        required: false
-        type: bool
-        default: false
-      proxy_protocol:
-        description: "Enable proxy protocol. Default is false."
-        required: false
-        type: bool
-        default: false
-      upstream_id:
-        description: "Unique identifier of an upstream server."
-        required: true
-        type: str
-      description:
-        description: "Optional comment (max 255 characters)."
-        required: false
-        type: str
-  upstream_zones:
-    description: "List of upstream zone objects grouping upstream servers."
-    required: true
-    type: list
-    elements: dict
-    suboptions:
-      id:
-        description: "Unique identifier of a zone. (1 to 255 characters)"
-        required: true
-        type: str
-      method:
-        description: >
-          Traffic distribution method.
-          Options: "random.least_conn", "round-robin", "least_conn". Default is "random.least_conn".
-        required: false
-        type: str
-        choices: ["random.least_conn", "round-robin", "least_conn"]
-        default: "random.least_conn"
-      udp:
-        description: "Enable UDP traffic balancing. Default is false."
-        required: false
-        type: bool
-        default: false
-      hc_interval:
-        description: "Health check interval in seconds. Range: 1 to 60. Default is 5."
-        required: false
-        type: int
-        default: 5
-      hc_jitter:
-        description: "Health check jitter in seconds. Range: 0 to 60. Default is 5."
-        required: false
-        type: int
-        default: 5
-      upstreams:
-        description: "List of upstream server objects."
-        required: true
-        type: list
-        elements: dict
-        suboptions:
-          ip:
-            description: "IP address of the upstream server."
-            required: true
-            type: str
-          port:
-            description: "Port number of the upstream server."
-            required: true
-            type: int
-          weight:
-            description: "Traffic weight. Default is 1."
-            required: false
-            type: int
-            default: 1
-          max_conns:
-            description: "Maximum connections per upstream. Range: 1 to 65535. Default is 63000."
-            required: false
-            type: int
-            default: 63000
-          max_fails:
-            description: "Allowed failures before marking as unhealthy. Default is 0."
-            required: false
-            type: int
-            default: 0
-          fail_timeout:
-            description: "Health check timeout in seconds. Range: 1 to 60. Default is 30."
-            required: false
-            type: int
-            default: 30
-  labels:
-    description: "Dictionary of labels to attach to the load balancer."
-    required: false
-    type: dict
+notes:
+  - This module is read-only and supports check mode.
+requirements:
+  - Servers.com API access
 """
 
 RETURN = """
@@ -305,15 +165,15 @@ vhost_zones:
     udp:
       description: Indicates whether UDP traffic balancing is enabled. (L4 only)
       type: bool
-      default: false
+      sample: false
     proxy_protocol:
       description: Indicates if the proxy protocol is enabled. (L4 only)
       type: bool
-      default: false
+      sample: false
     acl_allow:
       description: Indicates if ACL rules are applied for balancing. (L4 only)
       type: bool
-      default: false
+      sample: false
     acl_list:
       description: An array of ACL rules. (L4 only)
       type: list
@@ -324,19 +184,19 @@ vhost_zones:
     ssl:
       description: Indicates if SSL termination is enabled. (L7 only)
       type: bool
-      default: false
+      sample: false
     http2:
       description: Indicates if HTTP/2 protocol is enabled. (L7 only)
       type: bool
-      default: false
+      sample: false
     http_to_https_redirect:
       description: Indicates if HTTP is redirected to HTTPS. (L7 only)
       type: bool
-      default: false
+      sample: false
     http2_push_preload:
       description: Indicates HTTP/2 push preload status. (L7 only)
       type: bool
-      default: false
+      sample: false
     domains:
       description: List of target domains for the vhost zone. (L7 only)
       type: list
@@ -350,7 +210,7 @@ vhost_zones:
       description: Transport Layer Security (TLS) preset. (L7 only)
       type: str
       choices: ["TLSv1.2", "TLSv1.3"]
-      default: "TLSv1.3"
+      sample: "TLSv1.3"
     proxy_request_headers:
       description: Custom HTTP headers passing via the Load Balancer. (L7 only)
       type: list
@@ -376,33 +236,33 @@ upstream_zones:
       type: str
       sample: "upstream-zone-456"
     hc_interval:
-      description: Interval for health checks in seconds.
+      description: Interval for health checks in seconds (default value is 5).
       type: int
-      default: 5
+      sample: 5
     hc_jitter:
-      description: Jitter value in seconds for health checks.
+      description: Jitter value in seconds for health checks (default value is 5).
       type: int
-      default: 5
+      sample: 5
 
     # L4-specific fields
     hc_fails:
-      description: Number of failed checks to remove an upstream server. (L4 only)
+      description: Number of failed checks to remove an upstream server. (L4 only, default value is 1)
       type: int
-      default: 1
+      sample: 1
     hc_passes:
-      description: Number of successful checks to reintegrate an upstream server. (L4 only)
+      description: Number of successful checks to reintegrate an upstream server. (L4 only, default value is 3)
       type: int
-      default: 3
+      sample: 3
     udp:
-      description: Indicates whether UDP traffic balancing is enabled. (L4 only)
+      description: Indicates whether UDP traffic balancing is enabled. (L4 only, default value is False)
       type: bool
-      default: false
+      sample: false
 
     # L7-specific fields
     ssl:
-      description: Indicates if SSL termination is enabled. (L7 only)
+      description: Indicates if SSL termination is enabled. (L7 only, default value is False)
       type: bool
-      default: false
+      sample: false
     hc_domain:
       description: Health check domain. (L7 only)
       type: str
@@ -412,30 +272,30 @@ upstream_zones:
       type: str
       sample: "/status"
     hc_method:
-      description: HTTP method for health checks. (L7 only)
+      description: HTTP method for health checks. (L7 only, default value is GET)
       type: str
       choices: ["GET", "HEAD"]
-      default: "GET"
+      sample: "GET"
     hc_mandatory:
-      description: If enabled, new upstreams must pass health checks before being used. (L7 only)
+      description: If enabled, new upstreams must pass health checks before being used. (L7 only, default value is False)
       type: bool
-      default: false
+      sample: false
     sticky:
-      description: Indicates whether a sticky cookie is enabled. (L7 only)
+      description: Indicates whether a sticky cookie is enabled. (L7 only, default value is True)
       type: bool
-      default: true
+      sample: true
     grpc:
-      description: Indicates if gRPC is enabled. (L7 only)
+      description: Indicates if gRPC is enabled. (L7 only) (default value is False)
       type: bool
-      default: false
+      sample: false
     hc_grpc_service:
       description: gRPC service name for health checks. (L7 only)
       type: str
       sample: "grpc-health-service"
     hc_grpc_status:
-      description: Expected gRPC status code for a healthy upstream. (L7 only)
+      description: Expected gRPC status code for a healthy upstream. (L7 only) (default value is 0)
       type: int
-      default: 0
+      sample: 0
 
     upstreams:
       description: List of upstream servers participating in load balancing.
@@ -451,28 +311,27 @@ upstream_zones:
           type: int
           sample: 8080
         weight:
-          description: Traffic weight assigned to the upstream.
+          description: Traffic weight assigned to the upstream (default value is 1).
           type: int
-          default: 1
+          sample: 1
         max_fails:
-          description: Maximum number of failures before marking upstream as unhealthy.
+          description: Maximum number of failures before marking upstream as unhealthy (default value is 0).
           type: int
-          default: 0
+          sample: 0
         fail_timeout:
-          description: Timeout period before marking an upstream as failed.
+          description: Timeout period before marking an upstream as failed (default value is 30).
           type: int
-          default: 30
+          sample: 30
         max_conns:
-          description: Maximum number of connections allowed per upstream.
+          description: Maximum number of connections allowed per upstream (default value is 63000).
           type: int
-          default: 63000
+          sample: 63000
         status:
           description: Current health status of the upstream.
           type: str
           choices: ["online", "offline", "unknown"]
           sample: "online"
 
-# L7 specific fields
 domains:
   type: list
   elements: str

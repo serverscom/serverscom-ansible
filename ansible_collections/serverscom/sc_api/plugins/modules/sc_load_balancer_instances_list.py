@@ -47,13 +47,11 @@ options:
     required: false
     description:
       - A human-readable name of a Load Balancer.
-    sample: "my-load-balancer"
 
   type:
     type: str
     description: Load Balancer instance type.
     required: false
-    sample: "l4"
     choices: ["l4", "l7"]
 """
 
@@ -66,68 +64,58 @@ load_balancer_instances:
     id:
       type: str
       description: A unique identifier of a balancer.
-      returned: on success
       sample: "G6MqJy1l"
 
     name:
       type: str
       description: A human-readable name of a balancer.
-      returned: on success
       sample: "some-balancer"
 
     type:
       type: str
       description: Load Balancer instance type.
-      returned: on success
       sample: "l4"
 
     status:
       type: str
       description: The current state of the balancer.
-      returned: on success
       sample: "active"
 
     external_addresses:
       type: list
       description: List of public IP addresses assigned to the balancer.
       elements: str
-      returned: on success
 
     location_id:
       type: int
       description: A unique identifier for the balancer's location.
-      returned: on success
       sample: 123
 
     cluster_id:
       type: str
-      description: A unique identifier of a dedicated cluster where the balancer is deployed.
-      returned: when shared_cluster is false
+      description: A unique identifier of a dedicated cluster where the balancer is deployed. Returned only if I(shared_cluster)=C(false).
       sample: "keeCh2Io"
 
     shared_cluster:
       type: bool
       description: Indicates whether the balancer is hosted on a shared cluster.
-      returned: on success
       sample: false
 
     labels:
       type: dict
       description: Labels associated with the load balancer resource.
-      returned: on success
       sample: {"env": "prod", "app": "web"}
 
     created_at:
       type: str
       description: The date and time when the balancer was created.
-      returned: on success
       sample: "2025-01-23T00:04:23Z"
 
     updated_at:
       type: str
       description: The date and time of the balancer's last update.
-      returned: on success
       sample: "2025-02-09T00:07:42Z"
+  returned: on success
 """
 
 EXAMPLES = """

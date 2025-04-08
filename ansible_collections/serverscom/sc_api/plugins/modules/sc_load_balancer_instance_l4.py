@@ -26,8 +26,13 @@ description:
   - This module manages L4 load balancer instances.
   - It supports creating, updating, and deleting load balancer instances.
 notes:
-  - For creation (state "present" without providing an "id"), "name", "location_id", "vhost_zones", and "upstream_zones" are required.
-  - For update (state "present" with an "id" or when identifying an existing object by "name"), provide either "id" or "name" (but not both) along with parameters to modify.
+  - |
+    For creation (state "present" without providing an "id"), "name",
+    "location_id", "vhost_zones", and "upstream_zones" are required.
+  - |
+    For update (state "present" with an "id" or when identifying an existing
+    object by "name"), provide either "id" or "name" (but not both) along with
+    parameters to modify.
   - For deletion (state "absent"), provide exactly one of "id" or "name".
 options:
   endpoint:
@@ -50,7 +55,9 @@ options:
     choices: ["present", "absent"]
   wait:
     description:
-      - "Maximum time in seconds to wait for the load balancer instance to reach the desired state after an action (e.g. deletion)."
+      - |
+        Maximum time in seconds to wait for the load balancer instance to reach
+        the desired state after an action (e.g. deletion)."
       - "Default value is 600 seconds."
     required: false
     type: int
@@ -87,7 +94,7 @@ options:
     required: false
     type: str
   store_logs:
-    description: "Enable log storage. Default is false."
+    description: "Enable log storage."
     required: false
     type: bool
     default: false
@@ -110,8 +117,7 @@ options:
     type: bool
     default: true
   vhost_zones:
-    description: "List of vhost zone objects defining forwarding rules."
-    required: true
+    description: "List of vhost zone objects defining forwarding rules. Required for creation."
     type: list
     elements: dict
     suboptions:
@@ -125,12 +131,12 @@ options:
         type: list
         elements: int
       udp:
-        description: "Enable UDP traffic balancing. Default is false."
+        description: "Enable UDP traffic balancing."
         required: false
         type: bool
         default: false
       proxy_protocol:
-        description: "Enable proxy protocol. Default is false."
+        description: "Enable proxy protocol."
         required: false
         type: bool
         default: false
@@ -143,8 +149,7 @@ options:
         required: false
         type: str
   upstream_zones:
-    description: "List of upstream zone objects grouping upstream servers."
-    required: true
+    description: "List of upstream zone objects grouping upstream servers. Required for creation."
     type: list
     elements: dict
     suboptions:
@@ -153,25 +158,23 @@ options:
         required: true
         type: str
       method:
-        description: >
-          Traffic distribution method.
-          Options: "random.least_conn", "round-robin", "least_conn". Default is "random.least_conn".
+        description: Traffic distribution method.
         required: false
         type: str
         choices: ["random.least_conn", "round-robin", "least_conn"]
         default: "random.least_conn"
       udp:
-        description: "Enable UDP traffic balancing. Default is false."
+        description: "Enable UDP traffic balancing."
         required: false
         type: bool
         default: false
       hc_interval:
-        description: "Health check interval in seconds. Range: 1 to 60. Default is 5."
+        description: "Health check interval in seconds. Range: 1 to 60."
         required: false
         type: int
         default: 5
       hc_jitter:
-        description: "Health check jitter in seconds. Range: 0 to 60. Default is 5."
+        description: "Health check jitter in seconds. Range: 0 to 60."
         required: false
         type: int
         default: 5
@@ -190,22 +193,22 @@ options:
             required: true
             type: int
           weight:
-            description: "Traffic weight. Default is 1."
+            description: "Traffic weight."
             required: false
             type: int
             default: 1
           max_conns:
-            description: "Maximum connections per upstream. Range: 1 to 65535. Default is 63000."
+            description: "Maximum connections per upstream. Range: 1 to 65535."
             required: false
             type: int
             default: 63000
           max_fails:
-            description: "Allowed failures before marking as unhealthy. Default is 0."
+            description: "Allowed failures before marking as unhealthy."
             required: false
             type: int
             default: 0
           fail_timeout:
-            description: "Health check timeout in seconds. Range: 1 to 60. Default is 30."
+            description: "Health check timeout in seconds. Range: 1 to 60."
             required: false
             type: int
             default: 30
@@ -277,7 +280,7 @@ vhost_zones:
   returned: always
   type: list
   elements: dict
-  suboptions:
+  contains:
     id:
       description: "Unique identifier of the vhost zone."
       returned: always
@@ -317,7 +320,7 @@ upstream_zones:
   returned: always
   type: list
   elements: dict
-  suboptions:
+  contains:
     id:
       description: "Unique identifier of the upstream zone."
       returned: always
@@ -352,7 +355,7 @@ upstream_zones:
       returned: always
       type: list
       elements: dict
-      suboptions:
+      contains:
         ip:
           description: "IPv4 address of the upstream server."
           returned: always

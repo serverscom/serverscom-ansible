@@ -14,6 +14,7 @@ ANSIBLE_METADATA = {
     "supported_by": "community",
 }
 
+
 DOCUMENTATION = """
 ---
 module: sc_load_balancer_instance_l7
@@ -21,398 +22,289 @@ version_added: "1.0.0"
 author: "Volodymyr Rudniev (@koef)"
 short_description: Create, update, or delete L7 load balancer instances via Servers.com Public API
 description:
-  - This module manages Load Balancer L7 instances by interacting with the hosting provider API.
-  - It supports creation, update, and deletion operations.
+  - Manages L7 load balancer instances by interacting with the Servers.com API.
+  - Supports creation, update, and deletion operations.
 options:
   token:
-    description:
-      - API authentication token.
+    description: API authentication token.
     required: true
     type: str
   endpoint:
     description:
       - API endpoint URL.
-    default: DEFAULT_API_ENDPOINT
+    required: false
     type: str
+    default: https://api.servers.com/v1
   state:
-    description:
-      - Desired state of the L7 instance.
+    description: Desired state of the L7 instance.
     required: true
-    choices: [ "present", "absent" ]
     type: str
+    choices: ["present", "absent"]
   id:
-    description:
-      - Unique identifier of the balancer.
-      - Required for update and deletion operations.
+    description: Unique identifier of the balancer (required for update and deletion).
     type: str
   name:
-    description:
-      - Name of the balancer.
-      - Required for creation if id is not provided.
+    description: Name of the balancer (required for creation if id is not provided).
     type: str
   location_id:
-    description:
-      - Location ID where the balancer will be created.
+    description: Location ID where the balancer will be created.
     type: int
   cluster_id:
-    description:
-      - Unique identifier of a dedicated Load Balancer cluster.
+    description: Unique identifier of a dedicated load balancer cluster.
     type: str
   store_logs:
-    description:
-      - Enable storing logs.
+    description: Enable storing logs.
     type: bool
     default: false
   store_logs_region_id:
-    description:
-      - Cloud region ID for logs storage.
+    description: Cloud region ID for logs storage.
     type: int
   geoip:
-    description:
-      - Enable GeoIP feature.
+    description: Enable GeoIP feature.
     type: bool
     default: false
   vhost_zones:
-    description:
-      - List of vhost zones (forwarding rules).
+    description: List of vhost zones (forwarding rules).
     type: list
     elements: dict
     suboptions:
       id:
-        description:
-          - Unique identifier of a zone.
-          - Must be a string between 1 and 255 characters.
+        description: Unique identifier of a zone. Must be a string between 1 and 255 characters.
         required: true
         type: str
       ports:
-        description:
-          - List of port numbers to apply the rule.
-          - Must be non-empty.
+        description: List of port numbers to apply the rule. Must be non-empty.
         required: true
         type: list
         elements: int
       ssl:
-        description:
-          - Enable SSL termination.
+        description: Enable SSL termination.
         type: bool
         default: false
       http2:
-        description:
-          - Enable HTTP/2 protocol.
+        description: Enable HTTP/2 protocol.
         type: bool
         default: false
       http_to_https_redirect:
-        description:
-          - Redirect HTTP traffic to HTTPS.
+        description: Redirect HTTP traffic to HTTPS.
         type: bool
         default: false
       http2_push_preload:
-        description:
-          - Enable HTTP/2 push preload.
+        description: Enable HTTP/2 push preload.
         type: bool
         default: false
       domains:
-        description:
-          - List of domain names for the rule.
-          - Must be non-empty.
+        description: List of domain names for the rule. Must be non-empty.
         required: true
         type: list
         elements: str
       ssl_certificate_id:
-        description:
-          - SSL certificate identifier.
+        description: "SSL certificate identifier."
         type: str
       location_zones:
-        description:
-          - List of location zones (rewrite rules).
+        description: "List of location zones (rewrite rules)."
         type: list
         elements: dict
-        suboptions:
-          location:
-            description:
-              - The path to be rewritten.
-              - Must be a string between 1 and 255 characters.
-            required: true
-            type: str
-          upstream_id:
-            description:
-              - Unique identifier of an upstream zone.
-              - Must be a string between 1 and 255 characters.
-            required: true
-            type: str
-          upstream_path:
-            description:
-              - Replacement path to use instead of the location.
-            type: str
-            default: "/"
       real_ip_header:
-        description:
-          - Real IP header configuration.
+        description: Real IP header configuration.
         type: dict
-        suboptions:
-          name:
-            description:
-              - Defines which HTTP header passes the real IP.
-              - Enum: "real_ip", "forwarded_for".
-            required: true
-            type: str
-          networks:
-            description:
-              - List of networks allowed.
-              - Must contain 1 to 64 items.
-            required: true
-            type: list
-            elements: str
   upstream_zones:
-    description:
-      - List of upstream zones (groups of upstream servers with predefined parameters).
+    description: List of upstream zones (groups of upstream servers with predefined parameters).
     type: list
     elements: dict
     suboptions:
       id:
-        description:
-          - Unique identifier of a zone.
-          - Must be a string between 1 and 255 characters.
+        description: Unique identifier of a zone. Must be a string between 1 and 255 characters.
         required: true
         type: str
       method:
-        description:
-          - Load balancing method.
-          - Enum: "random.least_conn", "round-robin", "least_conn".
-          - Default: "random.least_conn".
+        description: Load balancing method.
         type: str
         default: "random.least_conn"
+        choices: ["random.least_conn", "round-robin", "least_conn"]
       ssl:
-        description:
-          - Enable SSL termination.
+        description: Enable SSL termination.
         type: bool
         default: false
       sticky:
-        description:
-          - Enable sticky cookie.
+        description: Enable sticky cookie.
         type: bool
         default: true
       hc_interval:
-        description:
-          - Health check interval in seconds.
-          - Range: 1 to 60.
-          - Default: 5.
+        description: "Health check interval in seconds. Range: 1 to 60."
         type: int
         default: 5
       hc_jitter:
-        description:
-          - Health check jitter in seconds.
-          - Range: 0 to 60.
-          - Default: 5.
+        description: "Health check jitter in seconds. Range: 0 to 60."
         type: int
         default: 5
       hc_fails:
-        description:
-          - Number of failed health checks before taking an upstream out of service.
-          - Must be at least 1.
-          - Default: 3.
+        description: Number of failed health checks before taking an upstream out of service. Must be at least 1.
         type: int
         default: 3
       hc_passes:
-        description:
-          - Number of successful health checks to reinstate an upstream.
-          - Must be at least 1.
-          - Default: 3.
+        description: Number of successful health checks to reinstate an upstream. Must be at least 1.
         type: int
         default: 3
       hc_domain:
-        description:
-          - Domain for health check.
+        description: Domain for health check.
         type: str
       hc_path:
-        description:
-          - Health check path.
-          - Must be up to 255 characters.
-          - Default: "/".
+        description: Health check path. Must be up to 255 characters.
         type: str
         default: "/"
       hc_method:
-        description:
-          - Health check HTTP method.
-          - Enum: "GET", "HEAD".
-          - Default: "GET".
+        description: Health check HTTP method.
         type: str
         default: "GET"
+        choices: ["GET", "HEAD"]
       hc_mandatory:
-        description:
-          - Enable mandatory health check for new upstream servers.
+        description: Enable mandatory health check for new upstream servers.
         type: bool
         default: false
       hc_status:
-        description:
-          - Expected health check status.
-          - Must be up to 255 characters.
-          - Default: "200-399".
+        description: Expected health check status. Must be up to 255 characters.
         type: str
         default: "200-399"
       tls_preset:
-        description:
-          - TLS preset to use.
-          - Enum: "TLSv1.3", "TLSv1.2".
-          - Default: "TLSv1.3".
+        description: TLS preset to use.
         type: str
         default: "TLSv1.3"
+        choices: ["TLSv1.3", "TLSv1.2"]
       grpc:
-        description:
-          - Enable gRPC.
+        description: Enable gRPC.
         type: bool
         default: false
       hc_grpc_service:
-        description:
-          - Optional name of the gRPC service.
-          - Must be up to 64 characters.
+        description: Optional name of the gRPC service. Must be up to 64 characters.
         type: str
       hc_grpc_status:
-        description:
-          - gRPC health check status code.
-          - Range: 0 to 16.
-          - Default: 0.
+        description: "gRPC health check status code. Range: 0 to 16."
         type: int
         default: 0
       upstreams:
-        description:
-          - List of upstream servers participating in load balancing.
+        description: List of upstream server objects.
         type: list
         elements: dict
         suboptions:
           ip:
-            description:
-              - IP address of the upstream server.
+            description: IP address of the upstream server.
             required: true
             type: str
           port:
-            description:
-              - Port number of the upstream server.
+            description: Port number of the upstream server.
             required: true
             type: int
           weight:
-            description:
-              - Weight for traffic distribution.
+            description: Weight for traffic distribution.
             type: int
             default: 1
           max_conns:
-            description:
-              - Maximum number of connections for the upstream.
+            description: Maximum number of connections for the upstream.
             type: int
             default: 63000
           max_fails:
-            description:
-              - Maximum number of allowed fails before marking the upstream as unhealthy.
+            description: Maximum number of allowed fails before marking as unhealthy.
             type: int
             default: 0
           fail_timeout:
-            description:
-              - Timeout in seconds after which a failed upstream is reconsidered.
+            description: Timeout in seconds after which a failed upstream is reconsidered.
             type: int
             default: 30
   labels:
-    description:
-      - Dictionary of labels to attach to the resource.
+    description: Dictionary of labels to attach to the resource.
     type: dict
   new_external_ips_count:
-    description:
-      - Number of new external IP addresses to assign (update only).
+    description: Number of new external IP addresses to assign (update only).
     type: int
   delete_external_ips:
-    description:
-      - List of external IP addresses to delete (update only).
+    description: List of external IP addresses to delete (update only).
     type: list
     elements: str
   shared_cluster:
-    description:
-      - Whether to use a shared cluster for the balancer.
-      - When true, the balancer will be moved to a shared cluster.
+    description: Whether to use a shared cluster for the balancer. When true, the balancer will be moved to a shared cluster.
     type: bool
     default: true
   wait:
-    description:
-      - Timeout in seconds to wait for the operation to complete.
+    description: Timeout in seconds to wait for the operation to complete.
     type: int
     default: 600
   update_interval:
-    description:
-      - Interval in seconds between status checks during the operation.
+    description: Interval in seconds between status checks.
     type: int
     default: 5
 """
 
 RETURN = """
 ---
-# When state is "present" (create) or "update"), the module returns a dictionary with the following keys:
 id:
-  description: "Load Balancer instance ID."
+  description: Load balancer instance ID.
   returned: always
   type: str
 type:
-  description: "Type of load balancer instance. Always 'l7'."
+  description: Load balancer instance type (always "l7").
   returned: always
   type: str
 name:
-  description: "Human-readable name of the load balancer."
+  description: Human-readable name of the load balancer.
   returned: always
   type: str
 domains:
-  description: "List of domains the load balancer distributes traffic for."
+  description: List of domains.
   returned: always
   type: list
   elements: str
 location_id:
-  description: "Location ID of the load balancer."
+  description: Location ID.
   returned: always
   type: int
 cluster_id:
-  description: "Dedicated cluster ID if applicable; null when on a shared cluster."
+  description: Dedicated cluster ID (or null if on a shared cluster).
   returned: always
   type: str
 shared_cluster:
-  description: "Boolean indicating if the load balancer is hosted on a shared cluster."
+  description: Indicates if the balancer is on a shared cluster.
   returned: always
   type: bool
 geoip:
-  description: "Indicator whether GeoIP is enabled."
+  description: GeoIP enabled flag.
   returned: always
   type: bool
 store_logs:
-  description: "Indicator whether log storage is enabled."
+  description: Log storage enabled flag.
   returned: always
   type: bool
 store_logs_region_id:
-  description: "Cloud region ID for log storage."
+  description: Cloud region ID for log storage.
   returned: always
   type: int
 external_addresses:
-  description: "List of external IPv4 addresses assigned to the load balancer."
+  description: List of external IPv4 addresses.
   returned: always
   type: list
   elements: str
 labels:
-  description: "Labels attached to the load balancer."
+  description: Labels attached to the load balancer.
   returned: always
   type: dict
 created_at:
-  description: "Timestamp when the load balancer was created."
+  description: Timestamp when the load balancer was created.
   returned: always
   type: str
 updated_at:
-  description: "Timestamp when the load balancer was last updated."
+  description: Timestamp when the load balancer was last updated.
   returned: always
   type: str
 status:
-  description: "Current status of the load balancer instance."
+  description: Current status of the load balancer instance.
   returned: always
   type: str
-  sample: "active"
 vhost_zones:
-  description: "List of vhost zone objects defining forwarding rules."
+  description: List of vhost zones.
   returned: always
   type: list
   elements: dict
-  suboptions:
+  contains:
     id:
       description: "Unique identifier of the vhost zone."
       returned: always
@@ -456,7 +348,7 @@ vhost_zones:
       returned: always
       type: list
       elements: dict
-      suboptions:
+      contains:
         name:
           description: "Header name."
           returned: always
@@ -465,48 +357,12 @@ vhost_zones:
           description: "Header value."
           returned: always
           type: str
-location_zones:
-  description: "List of location zone objects defining URI rewrite rules."
-  returned: always
-  type: list
-  elements: dict
-  suboptions:
-    location:
-      description: "Path to be rewritten."
-      returned: always
-      type: str
-    upstream_id:
-      description: "Unique identifier of the associated upstream zone."
-      returned: always
-      type: str
-    upstream_path:
-      description: "Replacement path. Defaults to '/'."
-      returned: always
-      type: str
-    redirect:
-      description: "Indicates if a redirect is enabled."
-      returned: always
-      type: bool
-real_ip_header:
-  description: "Object specifying the HTTP header for passing a real IP address."
-  returned: always
-  type: dict
-  suboptions:
-    name:
-      description: "Header type; either 'real_ip' or 'forwarded_for'."
-      returned: always
-      type: str
-    networks:
-      description: "List of trusted networks to accept real IP addresses."
-      returned: always
-      type: list
-      elements: str
 upstream_zones:
-  description: "List of upstream zone objects grouping upstream servers."
+  description: List of upstream zones.
   returned: always
   type: list
   elements: dict
-  suboptions:
+  contains:
     id:
       description: "Unique identifier of the upstream zone."
       returned: always
@@ -574,7 +430,7 @@ upstream_zones:
       returned: always
       type: list
       elements: dict
-      suboptions:
+      contains:
         ip:
           description: "IPv4 address of the upstream server."
           returned: always
@@ -604,15 +460,15 @@ upstream_zones:
           returned: always
           type: str
           sample: "online"
-
-# When state is "absent", no return value is provided.
 """
 
 EXAMPLES = """
+---
 # Create or update an L7 load balancer instance
 - name: Create L7 load balancer instance
-  serverscom.sc_api.sc_load_balancer_instance_l7:
+  sc_load_balancer_instance_l7:
     token: "your-api-token"
+    endpoint: "https://api.servers.com/v1"
     state: present
     name: "my-l7-load-balancer"
     location_id: 1
@@ -633,7 +489,6 @@ EXAMPLES = """
           - location: "/app"
             upstream_id: "upstream-zone1"
             upstream_path: "/"
-            redirect: false
         real_ip_header:
           name: "real_ip"
           networks: ["192.168.1.0/24"]
@@ -662,18 +517,17 @@ EXAMPLES = """
             fail_timeout: 30
     labels:
       environment: production
-  register: lb_create
 
 # Delete an L7 load balancer instance by name
 - name: Delete L7 load balancer instance by name
-  serverscom.sc_api.sc_load_balancer_instance_l7:
+  sc_load_balancer_instance_l7:
     token: "your-api-token"
     state: absent
     name: "my-l7-load-balancer"
 
 # Delete an L7 load balancer instance by id
 - name: Delete L7 load balancer instance by id
-  serverscom.sc_api.sc_load_balancer_instance_l7:
+  sc_load_balancer_instance_l7:
     token: "your-api-token"
     state: absent
     id: "lb-instance-id"
@@ -695,7 +549,7 @@ def main():
     module = AnsibleModule(
         argument_spec={
             "token": {"no_log": True, "required": True, "type": "str"},
-            "endpoint": {"default": DEFAULT_API_ENDPOINT, "type": "str"},
+            "endpoint": {"default": DEFAULT_API_ENDPOINT},
             "state": {
                 "type": "str",
                 "choices": ["present", "absent"],
