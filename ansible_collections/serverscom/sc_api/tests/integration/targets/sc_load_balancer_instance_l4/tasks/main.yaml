@@ -1,0 +1,182 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
+  when: not sc_endpoint or not sc_token
+
+- name: Test invalid token
+  serverscom.sc_api.sc_load_balancer_instance_l4:
+    token: invalid
+    state: absent
+    name: "test-lb-l4-instance-module"
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 401
+
+- name: Make sure L4 LB 'test-lb-l4-instance-module' doesn't exist
+  serverscom.sc_api.sc_load_balancer_instance_l4:
+    token: "{{ sc_token }}"
+    state: absent
+    name: "test-lb-l4-instance-module"
+
+- name: Create L4 load balancer instance
+  serverscom.sc_api.sc_load_balancer_instance_l4:
+    token: "{{ sc_token }}"
+    state: present
+    name: "test-lb-l4-instance-module"
+    location_id: 32
+    vhost_zones:
+      - id: "vhost-zone1"
+        ports: [80, 443]
+        udp: false
+        proxy_protocol: false
+        upstream_id: "upstream-zone1"
+        description: "Test vhost zone"
+    upstream_zones:
+      - id: "upstream-zone1"
+        method: "random.least_conn"
+        udp: false
+        hc_interval: 5
+        hc_jitter: 5
+        upstreams:
+          - ip: 10.33.190.228
+            port: 3000
+            weight: 1
+            max_conns: 63000
+            max_fails: 0
+            fail_timeout: 30
+    labels:
+      environment: staging
+  register: test2
+
+- name: Check Test2
+  assert:
+    that:
+      - test2 is changed
+      - not test2.failed
+      - not test2.cluster_id
+      - test2.external_addresses | length > 0
+      - test2.id
+      - test2.location_id == 32
+      - test2.name == "test-lb-l4-instance-module"
+      - test2.status == "active"
+      - test2.type == "l4"
+      - test2.vhost_zones | length == 1
+      - test2.vhost_zones[0].id == "vhost-zone1"
+      - test2.labels["environment"] == "staging"
+      - test2.created_at
+      - test2.updated_at
+      - test2.proxy_protocol_enabled == false
+      - test2.shared_cluster == true
+      - test2.upstream_zones | length == 1
+      - test2.upstream_zones[0].id == "upstream-zone1"
+      - test2.upstream_zones[0].upstreams | length == 1
+
+- name: Idempotency check (nothing changed)
+  serverscom.sc_api.sc_load_balancer_instance_l4:
+    token: "{{ sc_token }}"
+    state: present
+    name: "test-lb-l4-instance-module"
+    location_id: 32
+    vhost_zones:
+      - id: "vhost-zone1"
+        ports: [80, 443]
+        udp: false
+        proxy_protocol: false
+        upstream_id: "upstream-zone1"
+        description: "Test vhost zone"
+    upstream_zones:
+      - id: "upstream-zone1"
+        method: "random.least_conn"
+        udp: false
+        hc_interval: 5
+        hc_jitter: 5
+        upstreams:
+          - ip: 10.33.190.228
+            port: 3000
+            weight: 1
+            max_conns: 63000
+            max_fails: 0
+            fail_timeout: 30
+    labels:
+      environment: staging
+  register: test3
+
+- name: Check Test3
+  assert:
+    that:
+      - test3 is not changed
+
+- name: Update L4 load balancer instance by id (add additional upstream)
+  serverscom.sc_api.sc_load_balancer_instance_l4:
+    token: "{{ sc_token }}"
+    state: present
+    id: "{{ test2.id }}"
+    upstream_zones:
+      - id: "upstream-zone1"
+        method: "random.least_conn"
+        udp: false
+        hc_interval: 5
+        hc_jitter: 5
+        upstreams:
+          - ip: 10.33.190.228
+            port: 3000
+            weight: 1
+            max_conns: 63000
+            max_fails: 0
+            fail_timeout: 30
+          - ip: 10.33.189.124
+            port: 3000
+            weight: 1
+            max_conns: 63000
+            max_fails: 0
+            fail_timeout: 30
+  register: test4
+
+- name: Check Test4
+  assert:
+    that:
+      - test4 is changed
+      - test4.upstream_zones[0].upstreams | length == 2
+
+- name: Update L4 load balancer instance by name (remove additional upstream)
+  serverscom.sc_api.sc_load_balancer_instance_l4:
+    token: "{{ sc_token }}"
+    state: present
+    name: "test-lb-l4-instance-module"
+    upstream_zones:
+      - id: "upstream-zone1"
+        method: "random.least_conn"
+        udp: false
+        hc_interval: 5
+        hc_jitter: 5
+        upstreams:
+          - ip: 10.33.189.124
+            port: 3000
+            weight: 1
+            max_conns: 63000
+            max_fails: 0
+            fail_timeout: 30
+  register: test5
+
+- name: Check Test5
+  assert:
+    that:
+      - test5 is changed
+      - test5.upstream_zones[0].upstreams | length == 1
+
+- name: Remove L4 LB 'test-lb-l4-instance-module' by id
+  serverscom.sc_api.sc_load_balancer_instance_l4:
+    token: "{{ sc_token }}"
+    state: absent
+    id: "{{ test2.id }}"
+  register: test6
+
+- name: Check Test6
+  assert:
+    that:
+      - test6 is changed
+      - test6.status == "absent"

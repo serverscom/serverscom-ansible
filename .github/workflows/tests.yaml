@@ -158,6 +158,41 @@ jobs:
           sync
           sync
 
+  integration_tests_lb_instances:
+    runs-on: ubuntu-20.04
+    needs: integration_tests_l2
+    concurrency: API
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Configure integration tests
+        run: |
+          envsubst < integration_config.yml.template > ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
+        env:
+          SC_TOKEN: "${{ secrets.SC_TOKEN }}"
+      - name: Integration tests
+        run: ansible-test integration --requirements --python 3.13
+          sc_load_balancer_instance_info
+          sc_load_balancer_instance_l4
+          sc_load_balancer_instance_l7
+          sc_load_balancer_instances_list
+
+        working-directory: ansible_collections/serverscom/sc_api
+      - name: Cleanup secrets
+        if: always()
+        run: |
+          dd if=/dev/zero bs=4k count=4 of=ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
+          sync
+          sync
+
   build:
     runs-on: ubuntu-20.04
     needs: integration_tests_l2

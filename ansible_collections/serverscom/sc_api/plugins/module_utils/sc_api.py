@@ -53,6 +53,10 @@ class DecodeError(APIError):
 
 
 # special classes for well-known (and, may be, expected) HTTP/API errors
+class APIError400(APIError):
+    pass
+
+
 class APIError401(APIError):
     pass
 
@@ -98,6 +102,13 @@ class ApiHelper:
         self.request.headers["User-Agent"] = "ansible-module/sc_api/0.1"
         prep_request = self.request.prepare()
         response = self.session.send(prep_request)
+        if response.status_code == 400:
+            raise APIError400(
+                status_code=response.status_code,
+                api_url=prep_request.url,
+                msg="400 Bad request. Check the object ID.",
+            )
+
         if response.status_code == 401:
             raise APIError(
                 status_code=response.status_code,
@@ -189,8 +200,7 @@ class ScApiToolbox:
             if key["name"] == ssh_key_name:
                 return key["fingerprint"]
         if must:
-            raise ToolboxError(
-                f"Unable to find registered ssh key {ssh_key_name}")
+            raise ToolboxError(f"Unable to find registered ssh key {ssh_key_name}")
 
     def find_cloud_image_id_by_name_regexp(self, regexp, region_id=None, must=False):
         for image in self.api.list_images(region_id):
@@ -242,11 +252,9 @@ class ScApiToolbox:
         same name.
         """
         if instance_id and instance_name:
-            raise ToolboxError(
-                "Both instance_id and instance_name are specified.")
+            raise ToolboxError("Both instance_id and instance_name are specified.")
         if not instance_id and not instance_name:
-            raise ToolboxError(
-                "Neither instance_id nor instance_name specified.")
+            raise ToolboxError("Neither instance_id nor instance_name specified.")
         if instance_id:
             try:
                 return self.api.get_instances(instance_id)
@@ -562,8 +570,7 @@ class ScApi:
 
     def get_l2_segment_or_none(self, l2_segment_id):
         try:
-            seg = self.api_helper.make_get_request(
-                path=f"/l2_segments/{l2_segment_id}")
+            seg = self.api_helper.make_get_request(path=f"/l2_segments/{l2_segment_id}")
         except APIError404:
             seg = {"id": None}
         return seg
@@ -597,4 +604,178 @@ class ScApi:
             body=body,
             query_parameters=None,
             good_codes=[200, 202],
+        )
+
+    def list_load_balancer_instances(self):
+        return self.api_helper.make_multipage_request(path="/load_balancers")
+
+    def get_lb_instance(self, instance_id, lb_instance_type):
+        return self.api_helper.make_get_request(
+            path=f"/load_balancers/{lb_instance_type}/{instance_id}"
+        )
+
+    def delete_lb_instance(self, instance_id, lb_instance_type):
+        return self.api_helper.make_delete_request(
+            path=f"/load_balancers/{lb_instance_type}/{instance_id}",
+            query_parameters=None,
+            body=None,
+            good_codes=[204],
+        )
+
+    def lb_instance_l4_create(
+        self,
+        name,
+        location_id,
+        cluster_id,
+        store_logs,
+        store_logs_region_id,
+        vhost_zones,
+        upstream_zones,
+        labels,
+    ):
+        body = {
+            "name": name,
+            "location_id": location_id,
+            "vhost_zones": vhost_zones,
+            "upstream_zones": upstream_zones,
+        }
+        if cluster_id is not None:
+            body["cluster_id"] = cluster_id
+        if store_logs:
+            body["store_logs"] = True
+        if store_logs_region_id is not None:
+            body["store_logs_region_id"] = store_logs_region_id
+        if labels:
+            body["labels"] = labels
+
+        return self.api_helper.make_post_request(
+            path="/load_balancers/l4",
+            body=body,
+            query_parameters=None,
+            good_codes=[202],
+        )
+
+    def lb_instance_l4_update(
+        self,
+        lb_id,
+        name,
+        store_logs,
+        store_logs_region_id,
+        new_external_ips_count,
+        delete_external_ips,
+        cluster_id,
+        shared_cluster,
+        vhost_zones,
+        upstream_zones,
+        labels,
+    ):
+        body = {}
+        if name is not None:
+            body["name"] = name
+        if store_logs is not None:
+            body["store_logs"] = store_logs
+        if store_logs_region_id is not None:
+            body["store_logs_region_id"] = store_logs_region_id
+        if new_external_ips_count is not None:
+            body["new_external_ips_count"] = new_external_ips_count
+        if delete_external_ips is not None:
+            body["delete_external_ips"] = delete_external_ips
+        if cluster_id is not None:
+            body["cluster_id"] = cluster_id
+        if shared_cluster is not None:
+            body["shared_cluster"] = shared_cluster
+        if vhost_zones is not None:
+            body["vhost_zones"] = vhost_zones
+        if upstream_zones is not None:
+            body["upstream_zones"] = upstream_zones
+        if labels is not None:
+            body["labels"] = labels
+
+        return self.api_helper.make_put_request(
+            path=f"/load_balancers/l4/{lb_id}",
+            body=body,
+            query_parameters=None,
+            good_codes=[202],
+        )
+
+    def lb_instance_l7_create(
+        self,
+        name,
+        location_id,
+        cluster_id,
+        store_logs,
+        store_logs_region_id,
+        geoip,
+        vhost_zones,
+        upstream_zones,
+        labels,
+    ):
+        body = {
+            "name": name,
+            "location_id": location_id,
+            "vhost_zones": vhost_zones,
+            "upstream_zones": upstream_zones,
+        }
+        if cluster_id is not None:
+            body["cluster_id"] = cluster_id
+        if store_logs:
+            body["store_logs"] = True
+        if store_logs_region_id is not None:
+            body["store_logs_region_id"] = store_logs_region_id
+        if geoip is not None:
+            body["geoip"] = geoip
+        if labels:
+            body["labels"] = labels
+
+        return self.api_helper.make_post_request(
+            path="/load_balancers/l7",
+            body=body,
+            query_parameters=None,
+            good_codes=[202],
+        )
+
+    def lb_instance_l7_update(
+        self,
+        lb_id,
+        name,
+        store_logs,
+        store_logs_region_id,
+        geoip,
+        new_external_ips_count,
+        delete_external_ips,
+        cluster_id,
+        shared_cluster,
+        vhost_zones,
+        upstream_zones,
+        labels,
+    ):
+        body = {}
+        if name is not None:
+            body["name"] = name
+        if store_logs is not None:
+            body["store_logs"] = store_logs
+        if store_logs_region_id is not None:
+            body["store_logs_region_id"] = store_logs_region_id
+        if geoip is not None:
+            body["geoip"] = geoip
+        if new_external_ips_count is not None:
+            body["new_external_ips_count"] = new_external_ips_count
+        if delete_external_ips is not None:
+            body["delete_external_ips"] = delete_external_ips
+        if cluster_id is not None:
+            body["cluster_id"] = cluster_id
+        if shared_cluster is not None:
+            body["shared_cluster"] = shared_cluster
+        if vhost_zones is not None:
+            body["vhost_zones"] = vhost_zones
+        if upstream_zones is not None:
+            body["upstream_zones"] = upstream_zones
+        if labels is not None:
+            body["labels"] = labels
+
+        return self.api_helper.make_put_request(
+            path=f"/load_balancers/l7/{lb_id}",
+            body=body,
+            query_parameters=None,
+            good_codes=[202],
         )

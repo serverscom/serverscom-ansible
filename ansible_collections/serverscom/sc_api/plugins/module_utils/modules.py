@@ -5,6 +5,7 @@ import base64
 import time
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
     SCBaseError,
+    APIError400,
     APIError404,
     APIError409,
     DEFAULT_API_ENDPOINT,
@@ -1394,3 +1395,640 @@ class ScL2SegmentAliases:
             if self.count is None:
                 raise ModuleError("Count must not be None")
             return self.set_count()
+
+
+class ScLoadBalancerInstancesList:
+    def __init__(self, endpoint, token, name=None, type=None):
+        self.api = ScApi(token, endpoint)
+        self.name = name
+        self.type = type
+
+    def run(self):
+        lb_instances = list(self.api.list_load_balancer_instances())
+        if self.name:
+            lb_instances = [
+                inst for inst in lb_instances if inst.get("name") == self.name
+            ]
+        if self.type:
+            lb_instances = [
+                inst for inst in lb_instances if inst.get("type") == self.type
+            ]
+        return {
+            "changed": False,
+            "load_balancer_instances": lb_instances,
+        }
+
+
+class ScLoadBalancerInstanceInfo(object):
+    def __init__(
+        self, endpoint, token, lb_instance_id, lb_instance_name, fail_on_absent
+    ):
+        self.api = ScApi(token, endpoint)
+        self.fail_on_absent = fail_on_absent
+        if lb_instance_id and lb_instance_name:
+            raise ValueError("Only one of 'id' or 'name' should be provided")
+        self.lb_instance_id = lb_instance_id
+        self.lb_instance_name = lb_instance_name
+
+    def run(self):
+        lb_instances = self.api.list_load_balancer_instances()
+        target_instance = None
+
+        if self.lb_instance_id:
+            target_instance = next(
+                (
+                    inst
+                    for inst in lb_instances
+                    if inst.get("id") == self.lb_instance_id
+                ),
+                None,
+            )
+        elif self.lb_instance_name:
+            matched_instances = [
+                inst
+                for inst in lb_instances
+                if inst.get("name") == self.lb_instance_name
+            ]
+            if len(matched_instances) > 1:
+                instance_ids = ", ".join(inst.get("id") for inst in matched_instances)
+                raise ModuleError(
+                    msg=f"There are more than one instance with the specified name: {instance_ids}. Such configuration doesn't support by the module."
+                )
+            elif matched_instances:
+                target_instance = matched_instances[0]
+
+        if not target_instance:
+            if self.fail_on_absent:
+                raise ModuleError(msg="Load balancer instance not found")
+            return {"changed": False, "status": "absent"}
+
+        lb_id = target_instance.get("id")
+        lb_type = target_instance.get("type")
+
+        try:
+            lb_instance_info = self.api.get_lb_instance(lb_id, lb_type)
+        except (APIError404, APIError400) as e:
+            if self.fail_on_absent:
+                raise e
+            return {"changed": False, "status": "absent"}
+
+        lb_instance_info["changed"] = False
+        return lb_instance_info
+
+
+class ScLbInstanceDelete:
+    def __init__(
+        self,
+        endpoint,
+        token,
+        lb_type,
+        lb_id=None,
+        lb_name=None,
+        wait=600,
+        update_interval=5,
+        checkmode=False,
+    ):
+        if lb_id and lb_name:
+            raise ValueError("Only one of 'id' or 'name' should be provided")
+        if not lb_id and not lb_name:
+            raise ValueError("Either 'id' or 'name' must be provided")
+        self.checkmode = checkmode
+        self.api = ScApi(token, endpoint)
+        self.lb_instance_id = lb_id
+        self.lb_instance_name = lb_name
+        self.lb_instance_type = lb_type
+        self.wait = wait
+        self.update_interval = update_interval
+
+    def wait_for_disappearance(self):
+        start_time = time.time()
+        while True:
+            instances = self.api.list_load_balancer_instances()
+            exists = any(
+                inst.get("id") == self.lb_instance_id
+                for inst in instances
+                if inst.get("type") == self.lb_instance_type
+            )
+            if not exists:
+                break
+            elapsed = time.time() - start_time
+            if elapsed > self.wait:
+                raise WaitError(
+                    msg=f"Timeout waiting for lb instance {self.lb_instance_id} to disappear after {elapsed:.2f} seconds.",
+                    timeout=elapsed,
+                )
+            time.sleep(self.update_interval)
+
+    def run(self):
+        lb_instances = self.api.list_load_balancer_instances()
+
+        if self.lb_instance_id:
+            matched_instances = [
+                inst
+                for inst in lb_instances
+                if inst.get("id") == self.lb_instance_id
+                and inst.get("type") == self.lb_instance_type
+            ]
+        elif self.lb_instance_name:
+            matched_instances = [
+                inst
+                for inst in lb_instances
+                if inst.get("name") == self.lb_instance_name
+                and inst.get("type") == self.lb_instance_type
+            ]
+
+        if len(matched_instances) > 1:
+            instance_ids = ", ".join(inst.get("id") for inst in matched_instances)
+            raise ModuleError(
+                msg=f"There are more than one instance with the specified name: {instance_ids}. Such configuration is not supported by the module."
+            )
+        elif matched_instances:
+            instance = matched_instances[0]
+            self.lb_instance_id = instance.get("id")
+        else:
+            instance = None
+
+        if not instance:
+            return {
+                "changed": False,
+                "status": "absent",
+                "identifier": self.lb_instance_name or self.lb_instance_id,
+            }
+
+        if not self.checkmode:
+            self.api.delete_lb_instance(self.lb_instance_id, self.lb_instance_type)
+            self.wait_for_disappearance()
+
+        instance["changed"] = True
+        instance["status"] = "absent"
+        return instance
+
+
+class ScLbInstanceL4CreateUpdate:
+    def __init__(
+        self,
+        endpoint,
+        token,
+        lb_id,
+        name,
+        location_id,
+        cluster_id,
+        store_logs,
+        store_logs_region_id,
+        new_external_ips_count,
+        delete_external_ips,
+        shared_cluster,
+        vhost_zones,
+        upstream_zones,
+        labels,
+        wait,
+        update_interval,
+        checkmode,
+    ):
+        self.api = ScApi(token, endpoint)
+        self.lb_instance_id = lb_id
+        self.name = name
+        self.location_id = location_id
+        self.cluster_id = cluster_id
+        self.store_logs = store_logs
+        self.store_logs_region_id = store_logs_region_id
+        self.new_external_ips_count = new_external_ips_count
+        self.delete_external_ips = delete_external_ips
+        self.shared_cluster = shared_cluster
+        self.vhost_zones = vhost_zones
+        self.upstream_zones = upstream_zones
+        self.labels = labels
+        self.wait = wait
+        self.update_interval = update_interval
+        self.checkmode = checkmode
+        self.lb_instance_type = "l4"
+
+    def get_matching_lb_instances(self):
+        lb_instances = self.api.list_load_balancer_instances()
+        return [
+            inst
+            for inst in lb_instances
+            if inst.get("type") == self.lb_instance_type
+            and inst.get("name") == self.name
+        ]
+
+    def upstreams_different(self, current_upstreams, desired_upstreams):
+        def key(u):
+            return (u["ip"], u["port"])
+
+        current_keys = {key(u) for u in current_upstreams}
+        desired_keys = {key(u) for u in desired_upstreams}
+        if current_keys != desired_keys:
+            return True
+        current_dict = {key(u): u for u in current_upstreams}
+        for d in desired_upstreams:
+            k = key(d)
+            current_u = current_dict[k]
+            for field, val in d.items():
+                if current_u.get(field) != val:
+                    return True
+        return False
+
+    def vhost_zones_different(self, current_zones, desired_zones):
+        current_ids = {zone["id"] for zone in current_zones}
+        desired_ids = {zone["id"] for zone in desired_zones}
+        if current_ids != desired_ids:
+            return True
+        current_dict = {zone["id"]: zone for zone in current_zones}
+        for desired_zone in desired_zones:
+            zone_id = desired_zone["id"]
+            current_zone = current_dict[zone_id]
+            for field, val in desired_zone.items():
+                if field == "ports":
+                    if set(current_zone.get(field, [])) != set(val):
+                        return True
+                else:
+                    if current_zone.get(field) != val:
+                        return True
+        return False
+
+    def upstream_zones_different(self, current_zones, desired_zones):
+        current_ids = {zone["id"] for zone in current_zones}
+        desired_ids = {zone["id"] for zone in desired_zones}
+        if current_ids != desired_ids:
+            return True
+        current_dict = {zone["id"]: zone for zone in current_zones}
+        for desired_zone in desired_zones:
+            zone_id = desired_zone["id"]
+            current_zone = current_dict[zone_id]
+            for field, val in desired_zone.items():
+                if field == "upstreams":
+                    if self.upstreams_different(current_zone.get(field, []), val):
+                        return True
+                elif field == "ports":
+                    if set(current_zone.get(field, [])) != set(val):
+                        return True
+                else:
+                    if current_zone.get(field) != val:
+                        return True
+        return False
+
+    def config_different(self, current_state, desired_state):
+        for key, desired_value in desired_state.items():
+            if desired_value:
+                if key == "vhost_zones":
+                    if self.vhost_zones_different(
+                        current_state.get(key, []), desired_value
+                    ):
+                        return True
+                elif key == "upstream_zones":
+                    if self.upstream_zones_different(
+                        current_state.get(key, []), desired_value
+                    ):
+                        return True
+                else:
+                    if current_state.get(key) != desired_value:
+                        return True
+        return False
+
+    def update_instance(self):
+        return self.api.lb_instance_l4_update(
+            lb_id=self.lb_instance_id,
+            name=self.name,
+            store_logs=self.store_logs,
+            store_logs_region_id=self.store_logs_region_id,
+            new_external_ips_count=self.new_external_ips_count,
+            delete_external_ips=self.delete_external_ips,
+            cluster_id=self.cluster_id,
+            shared_cluster=self.shared_cluster,
+            vhost_zones=self.vhost_zones,
+            upstream_zones=self.upstream_zones,
+            labels=self.labels,
+        )
+
+    def create_instance(self):
+        return self.api.lb_instance_l4_create(
+            name=self.name,
+            location_id=self.location_id,
+            cluster_id=self.cluster_id,
+            store_logs=self.store_logs,
+            store_logs_region_id=self.store_logs_region_id,
+            vhost_zones=self.vhost_zones,
+            upstream_zones=self.upstream_zones,
+            labels=self.labels,
+        )
+
+    def wait_for_active(self):
+        start_time = time.time()
+        while True:
+            instance = self.api.get_lb_instance(
+                self.lb_instance_id, self.lb_instance_type
+            )
+            if instance["status"] == "active":
+                return instance
+            elapsed = time.time() - start_time
+            if elapsed > self.wait:
+                raise WaitError(
+                    msg=f"Timeout waiting for lb instance {self.lb_instance_id} to become active after {elapsed:.2f} seconds.",
+                    timeout=elapsed,
+                )
+            time.sleep(self.update_interval)
+
+    def run(self):
+        desired_config = {
+            "name": self.name,
+            "store_logs": self.store_logs,
+            "store_logs_region_id": self.store_logs_region_id,
+            "cluster_id": self.cluster_id,
+            "shared_cluster": self.shared_cluster,
+            "vhost_zones": self.vhost_zones,
+            "upstream_zones": self.upstream_zones,
+            "labels": self.labels,
+        }
+
+        if self.lb_instance_id:
+            current = self.api.get_lb_instance(
+                self.lb_instance_id, self.lb_instance_type
+            )
+
+            if not current:
+                raise ModuleError(
+                    msg=f"Load balancer instance with id '{self.lb_instance_id}' not found."
+                )
+            desired_config["name"] = current["name"]
+            if self.config_different(current, desired_config):
+                if not self.checkmode:
+                    self.update_instance()
+                    updated = self.wait_for_active()
+                    updated["changed"] = True
+                    return updated
+                else:
+                    current["changed"] = False
+                    return current
+            else:
+                current["changed"] = False
+                return current
+
+        matching = self.get_matching_lb_instances()
+        if len(matching) > 1:
+            instance_ids = [inst["id"] for inst in matching]
+            raise ModuleError(
+                msg=f"Ambiguous configuration: More than one L4 load balancer instance with the name '{self.name}' exists. Found IDs: {', '.join(instance_ids)}"
+            )
+        elif len(matching) == 1:
+            self.lb_instance_id = matching[0].get("id")
+            current = self.api.get_lb_instance(
+                self.lb_instance_id, self.lb_instance_type
+            )
+            if self.config_different(current, desired_config):
+                if not self.checkmode:
+                    self.update_instance()
+                    updated = self.wait_for_active()
+                    updated["changed"] = True
+                    return updated
+                else:
+                    current["changed"] = False
+                    return current
+            else:
+                current["changed"] = False
+                return current
+        else:
+            if not self.checkmode:
+                response = self.create_instance()
+                self.lb_instance_id = response.get("id")
+                new_instance = self.wait_for_active()
+                new_instance["changed"] = True
+                return new_instance
+            else:
+                return {"changed": False}
+
+
+class ScLbInstanceL7CreateUpdate:
+    def __init__(
+        self,
+        endpoint,
+        token,
+        lb_id,
+        name,
+        location_id,
+        cluster_id,
+        store_logs,
+        store_logs_region_id,
+        geoip,
+        vhost_zones,
+        upstream_zones,
+        labels,
+        new_external_ips_count,
+        delete_external_ips,
+        shared_cluster,
+        wait,
+        update_interval,
+        checkmode,
+    ):
+        self.api = ScApi(token, endpoint)
+        self.lb_instance_id = lb_id
+        self.name = name
+        self.location_id = location_id
+        self.cluster_id = cluster_id
+        self.store_logs = store_logs
+        self.store_logs_region_id = store_logs_region_id
+        self.geoip = geoip
+        self.vhost_zones = vhost_zones
+        self.upstream_zones = upstream_zones
+        self.labels = labels
+        self.new_external_ips_count = new_external_ips_count
+        self.delete_external_ips = delete_external_ips
+        self.shared_cluster = shared_cluster
+        self.wait = wait
+        self.update_interval = update_interval
+        self.checkmode = checkmode
+        self.lb_instance_type = "l7"
+
+    def get_matching_lb_instances(self):
+        lb_instances = self.api.list_load_balancer_instances()
+        return [
+            inst
+            for inst in lb_instances
+            if inst.get("type") == self.lb_instance_type
+            and inst.get("name") == self.name
+        ]
+
+    def upstreams_different(self, current_upstreams, desired_upstreams):
+        def key(u):
+            return (u["ip"], u["port"])
+
+        current_keys = {key(u) for u in current_upstreams}
+        desired_keys = {key(u) for u in desired_upstreams}
+        if current_keys != desired_keys:
+            return True
+        current_dict = {key(u): u for u in current_upstreams}
+        for d in desired_upstreams:
+            k = key(d)
+            current_u = current_dict.get(k)
+            for field, val in d.items():
+                if current_u.get(field) != val:
+                    return True
+        return False
+
+    def vhost_zones_different(self, current_zones, desired_zones):
+        current_ids = {zone["id"] for zone in current_zones}
+        desired_ids = {zone["id"] for zone in desired_zones}
+        if current_ids != desired_ids:
+            return True
+        current_dict = {zone["id"]: zone for zone in current_zones}
+        for desired_zone in desired_zones:
+            zone_id = desired_zone["id"]
+            current_zone = current_dict.get(zone_id)
+            for field, val in desired_zone.items():
+                if field == "ports":
+                    if set(current_zone.get(field, [])) != set(val):
+                        return True
+                else:
+                    if current_zone.get(field) != val:
+                        return True
+        return False
+
+    def upstream_zones_different(self, current_zones, desired_zones):
+        current_ids = {zone["id"] for zone in current_zones}
+        desired_ids = {zone["id"] for zone in desired_zones}
+        if current_ids != desired_ids:
+            return True
+        current_dict = {zone["id"]: zone for zone in current_zones}
+        for desired_zone in desired_zones:
+            zone_id = desired_zone["id"]
+            current_zone = current_dict.get(zone_id)
+            for field, val in desired_zone.items():
+                if field == "upstreams":
+                    if self.upstreams_different(current_zone.get(field, []), val):
+                        return True
+                else:
+                    if current_zone.get(field) != val:
+                        return True
+        return False
+
+    def config_different(self, current_state, desired_state):
+        for key, desired_value in desired_state.items():
+            if desired_value:
+                if key == "vhost_zones":
+                    if self.vhost_zones_different(
+                        current_state.get(key, []), desired_value
+                    ):
+                        return True
+                elif key == "upstream_zones":
+                    if self.upstream_zones_different(
+                        current_state.get(key, []), desired_value
+                    ):
+                        return True
+                else:
+                    if current_state.get(key) != desired_value:
+                        return True
+        return False
+
+    def update_instance(self):
+        return self.api.lb_instance_l7_update(
+            lb_id=self.lb_instance_id,
+            name=self.name,
+            store_logs=self.store_logs,
+            store_logs_region_id=self.store_logs_region_id,
+            new_external_ips_count=self.new_external_ips_count,
+            delete_external_ips=self.delete_external_ips,
+            cluster_id=self.cluster_id,
+            shared_cluster=self.shared_cluster,
+            geoip=self.geoip,
+            vhost_zones=self.vhost_zones,
+            upstream_zones=self.upstream_zones,
+            labels=self.labels,
+        )
+
+    def create_instance(self):
+        return self.api.lb_instance_l7_create(
+            name=self.name,
+            location_id=self.location_id,
+            cluster_id=self.cluster_id,
+            store_logs=self.store_logs,
+            store_logs_region_id=self.store_logs_region_id,
+            geoip=self.geoip,
+            vhost_zones=self.vhost_zones,
+            upstream_zones=self.upstream_zones,
+            labels=self.labels,
+        )
+
+    def wait_for_active(self):
+        start_time = time.time()
+        while True:
+            instance = self.api.get_lb_instance(
+                self.lb_instance_id, self.lb_instance_type
+            )
+            if instance["status"] == "active":
+                return instance
+            elapsed = time.time() - start_time
+            if elapsed > self.wait:
+                raise WaitError(
+                    msg=f"Timeout waiting for lb instance {self.lb_instance_id} to become active after {elapsed:.2f} seconds.",
+                    timeout=elapsed,
+                )
+            time.sleep(self.update_interval)
+
+    def run(self):
+        desired_config = {
+            "name": self.name,
+            "store_logs": self.store_logs,
+            "store_logs_region_id": self.store_logs_region_id,
+            "cluster_id": self.cluster_id,
+            "shared_cluster": self.shared_cluster,
+            "geoip": self.geoip,
+            "vhost_zones": self.vhost_zones,
+            "upstream_zones": self.upstream_zones,
+            "labels": self.labels,
+        }
+
+        if self.lb_instance_id:
+            current = self.api.get_lb_instance(
+                self.lb_instance_id, self.lb_instance_type
+            )
+            if not current:
+                raise ModuleError(
+                    msg=f"Load balancer instance with id '{self.lb_instance_id}' not found."
+                )
+            # Preserve current name if already set
+            desired_config["name"] = current["name"]
+            if self.config_different(current, desired_config):
+                if not self.checkmode:
+                    self.update_instance()
+                    updated = self.wait_for_active()
+                    updated["changed"] = True
+                    return updated
+                else:
+                    current["changed"] = False
+                    return current
+            else:
+                current["changed"] = False
+                return current
+
+        matching = self.get_matching_lb_instances()
+        if len(matching) > 1:
+            instance_ids = [inst["id"] for inst in matching]
+            raise ModuleError(
+                msg=f"Ambiguous configuration: More than one L7 load balancer instance with the name '{self.name}' exists. Found IDs: {', '.join(instance_ids)}"
+            )
+        elif len(matching) == 1:
+            self.lb_instance_id = matching[0].get("id")
+            current = self.api.get_lb_instance(
+                self.lb_instance_id, self.lb_instance_type
+            )
+            if self.config_different(current, desired_config):
+                if not self.checkmode:
+                    self.update_instance()
+                    updated = self.wait_for_active()
+                    updated["changed"] = True
+                    return updated
+                else:
+                    current["changed"] = False
+                    return current
+            else:
+                current["changed"] = False
+                return current
+        else:
+            if not self.checkmode:
+                response = self.create_instance()
+                self.lb_instance_id = response.get("id")
+                new_instance = self.wait_for_active()
+                new_instance["changed"] = True
+                return new_instance
+            else:
+                return {"changed": False}
