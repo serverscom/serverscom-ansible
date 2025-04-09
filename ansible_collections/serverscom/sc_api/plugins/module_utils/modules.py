@@ -1612,80 +1612,6 @@ class ScLbInstanceL4CreateUpdate:
             and inst.get("name") == self.name
         ]
 
-    def upstreams_different(self, current_upstreams, desired_upstreams):
-        def key(u):
-            return (u["ip"], u["port"])
-
-        current_keys = {key(u) for u in current_upstreams}
-        desired_keys = {key(u) for u in desired_upstreams}
-        if current_keys != desired_keys:
-            return True
-        current_dict = {key(u): u for u in current_upstreams}
-        for d in desired_upstreams:
-            k = key(d)
-            current_u = current_dict[k]
-            for field, val in d.items():
-                if current_u.get(field) != val:
-                    return True
-        return False
-
-    def vhost_zones_different(self, current_zones, desired_zones):
-        current_ids = {zone["id"] for zone in current_zones}
-        desired_ids = {zone["id"] for zone in desired_zones}
-        if current_ids != desired_ids:
-            return True
-        current_dict = {zone["id"]: zone for zone in current_zones}
-        for desired_zone in desired_zones:
-            zone_id = desired_zone["id"]
-            current_zone = current_dict[zone_id]
-            for field, val in desired_zone.items():
-                if field == "ports":
-                    if set(current_zone.get(field, [])) != set(val):
-                        return True
-                else:
-                    if current_zone.get(field) != val:
-                        return True
-        return False
-
-    def upstream_zones_different(self, current_zones, desired_zones):
-        current_ids = {zone["id"] for zone in current_zones}
-        desired_ids = {zone["id"] for zone in desired_zones}
-        if current_ids != desired_ids:
-            return True
-        current_dict = {zone["id"]: zone for zone in current_zones}
-        for desired_zone in desired_zones:
-            zone_id = desired_zone["id"]
-            current_zone = current_dict[zone_id]
-            for field, val in desired_zone.items():
-                if field == "upstreams":
-                    if self.upstreams_different(current_zone.get(field, []), val):
-                        return True
-                elif field == "ports":
-                    if set(current_zone.get(field, [])) != set(val):
-                        return True
-                else:
-                    if current_zone.get(field) != val:
-                        return True
-        return False
-
-    def config_different(self, current_state, desired_state):
-        for key, desired_value in desired_state.items():
-            if desired_value:
-                if key == "vhost_zones":
-                    if self.vhost_zones_different(
-                        current_state.get(key, []), desired_value
-                    ):
-                        return True
-                elif key == "upstream_zones":
-                    if self.upstream_zones_different(
-                        current_state.get(key, []), desired_value
-                    ):
-                        return True
-                else:
-                    if current_state.get(key) != desired_value:
-                        return True
-        return False
-
     def update_instance(self):
         return self.api.lb_instance_l4_update(
             lb_id=self.lb_instance_id,
@@ -1729,18 +1655,21 @@ class ScLbInstanceL4CreateUpdate:
                 )
             time.sleep(self.update_interval)
 
-    def run(self):
-        desired_config = {
-            "name": self.name,
-            "store_logs": self.store_logs,
-            "store_logs_region_id": self.store_logs_region_id,
-            "cluster_id": self.cluster_id,
-            "shared_cluster": self.shared_cluster,
-            "vhost_zones": self.vhost_zones,
-            "upstream_zones": self.upstream_zones,
-            "labels": self.labels,
-        }
+    def check_update_result(self, current):
+        if not self.checkmode:
+            status_code, _ = self.update_instance()
+            updated = self.wait_for_active()
+            if status_code == 200:
+                updated["changed"] = False
+                return updated
+            elif status_code == 202:
+                updated["changed"] = True
+                return updated
+        else:
+            current["changed"] = False
+            return current
 
+    def run(self):
         if self.lb_instance_id:
             current = self.api.get_lb_instance(
                 self.lb_instance_id, self.lb_instance_type
@@ -1750,19 +1679,7 @@ class ScLbInstanceL4CreateUpdate:
                 raise ModuleError(
                     msg=f"Load balancer instance with id '{self.lb_instance_id}' not found."
                 )
-            desired_config["name"] = current["name"]
-            if self.config_different(current, desired_config):
-                if not self.checkmode:
-                    self.update_instance()
-                    updated = self.wait_for_active()
-                    updated["changed"] = True
-                    return updated
-                else:
-                    current["changed"] = False
-                    return current
-            else:
-                current["changed"] = False
-                return current
+            return self.check_update_result(current)
 
         matching = self.get_matching_lb_instances()
         if len(matching) > 1:
@@ -1775,18 +1692,7 @@ class ScLbInstanceL4CreateUpdate:
             current = self.api.get_lb_instance(
                 self.lb_instance_id, self.lb_instance_type
             )
-            if self.config_different(current, desired_config):
-                if not self.checkmode:
-                    self.update_instance()
-                    updated = self.wait_for_active()
-                    updated["changed"] = True
-                    return updated
-                else:
-                    current["changed"] = False
-                    return current
-            else:
-                current["changed"] = False
-                return current
+            return self.check_update_result(current)
         else:
             if not self.checkmode:
                 response = self.create_instance()
@@ -1848,77 +1754,6 @@ class ScLbInstanceL7CreateUpdate:
             and inst.get("name") == self.name
         ]
 
-    def upstreams_different(self, current_upstreams, desired_upstreams):
-        def key(u):
-            return (u["ip"], u["port"])
-
-        current_keys = {key(u) for u in current_upstreams}
-        desired_keys = {key(u) for u in desired_upstreams}
-        if current_keys != desired_keys:
-            return True
-        current_dict = {key(u): u for u in current_upstreams}
-        for d in desired_upstreams:
-            k = key(d)
-            current_u = current_dict.get(k)
-            for field, val in d.items():
-                if current_u.get(field) != val:
-                    return True
-        return False
-
-    def vhost_zones_different(self, current_zones, desired_zones):
-        current_ids = {zone["id"] for zone in current_zones}
-        desired_ids = {zone["id"] for zone in desired_zones}
-        if current_ids != desired_ids:
-            return True
-        current_dict = {zone["id"]: zone for zone in current_zones}
-        for desired_zone in desired_zones:
-            zone_id = desired_zone["id"]
-            current_zone = current_dict.get(zone_id)
-            for field, val in desired_zone.items():
-                if field == "ports":
-                    if set(current_zone.get(field, [])) != set(val):
-                        return True
-                else:
-                    if current_zone.get(field) != val:
-                        return True
-        return False
-
-    def upstream_zones_different(self, current_zones, desired_zones):
-        current_ids = {zone["id"] for zone in current_zones}
-        desired_ids = {zone["id"] for zone in desired_zones}
-        if current_ids != desired_ids:
-            return True
-        current_dict = {zone["id"]: zone for zone in current_zones}
-        for desired_zone in desired_zones:
-            zone_id = desired_zone["id"]
-            current_zone = current_dict.get(zone_id)
-            for field, val in desired_zone.items():
-                if field == "upstreams":
-                    if self.upstreams_different(current_zone.get(field, []), val):
-                        return True
-                else:
-                    if current_zone.get(field) != val:
-                        return True
-        return False
-
-    def config_different(self, current_state, desired_state):
-        for key, desired_value in desired_state.items():
-            if desired_value:
-                if key == "vhost_zones":
-                    if self.vhost_zones_different(
-                        current_state.get(key, []), desired_value
-                    ):
-                        return True
-                elif key == "upstream_zones":
-                    if self.upstream_zones_different(
-                        current_state.get(key, []), desired_value
-                    ):
-                        return True
-                else:
-                    if current_state.get(key) != desired_value:
-                        return True
-        return False
-
     def update_instance(self):
         return self.api.lb_instance_l7_update(
             lb_id=self.lb_instance_id,
@@ -1964,19 +1799,21 @@ class ScLbInstanceL7CreateUpdate:
                 )
             time.sleep(self.update_interval)
 
-    def run(self):
-        desired_config = {
-            "name": self.name,
-            "store_logs": self.store_logs,
-            "store_logs_region_id": self.store_logs_region_id,
-            "cluster_id": self.cluster_id,
-            "shared_cluster": self.shared_cluster,
-            "geoip": self.geoip,
-            "vhost_zones": self.vhost_zones,
-            "upstream_zones": self.upstream_zones,
-            "labels": self.labels,
-        }
+    def check_update_result(self, current):
+        if not self.checkmode:
+            status_code, _ = self.update_instance()
+            updated = self.wait_for_active()
+            if status_code == 200:
+                updated["changed"] = False
+                return updated
+            elif status_code == 202:
+                updated["changed"] = True
+                return updated
+        else:
+            current["changed"] = False
+            return current
 
+    def run(self):
         if self.lb_instance_id:
             current = self.api.get_lb_instance(
                 self.lb_instance_id, self.lb_instance_type
@@ -1985,20 +1822,8 @@ class ScLbInstanceL7CreateUpdate:
                 raise ModuleError(
                     msg=f"Load balancer instance with id '{self.lb_instance_id}' not found."
                 )
-            # Preserve current name if already set
-            desired_config["name"] = current["name"]
-            if self.config_different(current, desired_config):
-                if not self.checkmode:
-                    self.update_instance()
-                    updated = self.wait_for_active()
-                    updated["changed"] = True
-                    return updated
-                else:
-                    current["changed"] = False
-                    return current
-            else:
-                current["changed"] = False
-                return current
+            return self.check_update_result(current)
+
 
         matching = self.get_matching_lb_instances()
         if len(matching) > 1:
@@ -2011,18 +1836,7 @@ class ScLbInstanceL7CreateUpdate:
             current = self.api.get_lb_instance(
                 self.lb_instance_id, self.lb_instance_type
             )
-            if self.config_different(current, desired_config):
-                if not self.checkmode:
-                    self.update_instance()
-                    updated = self.wait_for_active()
-                    updated["changed"] = True
-                    return updated
-                else:
-                    current["changed"] = False
-                    return current
-            else:
-                current["changed"] = False
-                return current
+            return self.check_update_result(current)
         else:
             if not self.checkmode:
                 response = self.create_instance()

@@ -166,7 +166,8 @@ class ApiHelper:
     def make_put_request(self, path, body, query_parameters, good_codes):
         self.start_request("PUT", path, query_parameters)
         self.request.json = body
-        return self.decode(self.send_request(good_codes))
+        response = self.send_request(good_codes)
+        return response.status_code, self.decode(response)
 
     def is_next(self):
         if self.request:
@@ -558,12 +559,14 @@ class ScApi:
     def put_l2_segment_networks(self, l2_segment_id, create, delete):
         '''create: object: mask (int), distribution_method: must be "route"'''
         body = {"create": create, "delete": delete}
-        return self.api_helper.make_put_request(
+        _, response = self.api_helper.make_put_request(
             path=f"/l2_segments/{l2_segment_id}/networks",
             query_parameters=None,
             body=body,
             good_codes=[200, 202],
         )
+        return response
+
 
     def get_l2_segment(self, l2_segment_id):
         return self.api_helper.make_get_request(path=f"/l2_segments/{l2_segment_id}")
@@ -599,12 +602,13 @@ class ScApi:
 
     def put_l2_segment_update(self, l2_segment_id, members):
         body = {"members": members}
-        return self.api_helper.make_put_request(
+        _, response = self.api_helper.make_put_request(
             path=f"/l2_segments/{l2_segment_id}",
             body=body,
             query_parameters=None,
             good_codes=[200, 202],
         )
+        return response
 
     def list_load_balancer_instances(self):
         return self.api_helper.make_multipage_request(path="/load_balancers")
@@ -695,7 +699,7 @@ class ScApi:
             path=f"/load_balancers/l4/{lb_id}",
             body=body,
             query_parameters=None,
-            good_codes=[202],
+            good_codes=[200, 202],
         )
 
     def lb_instance_l7_create(
@@ -777,5 +781,5 @@ class ScApi:
             path=f"/load_balancers/l7/{lb_id}",
             body=body,
             query_parameters=None,
-            good_codes=[202],
+            good_codes=[200, 202],
         )
