@@ -559,14 +559,13 @@ class ScApi:
     def put_l2_segment_networks(self, l2_segment_id, create, delete):
         '''create: object: mask (int), distribution_method: must be "route"'''
         body = {"create": create, "delete": delete}
-        _, response = self.api_helper.make_put_request(
+        response = self.api_helper.make_put_request(
             path=f"/l2_segments/{l2_segment_id}/networks",
             query_parameters=None,
             body=body,
             good_codes=[200, 202],
-        )
+        )[1]
         return response
-
 
     def get_l2_segment(self, l2_segment_id):
         return self.api_helper.make_get_request(path=f"/l2_segments/{l2_segment_id}")
@@ -602,12 +601,12 @@ class ScApi:
 
     def put_l2_segment_update(self, l2_segment_id, members):
         body = {"members": members}
-        _, response = self.api_helper.make_put_request(
+        response = self.api_helper.make_put_request(
             path=f"/l2_segments/{l2_segment_id}",
             body=body,
             query_parameters=None,
             good_codes=[200, 202],
-        )
+        )[1]
         return response
 
     def list_load_balancer_instances(self):

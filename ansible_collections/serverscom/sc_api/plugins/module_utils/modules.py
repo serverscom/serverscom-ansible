@@ -1657,7 +1657,7 @@ class ScLbInstanceL4CreateUpdate:
 
     def check_update_result(self, current):
         if not self.checkmode:
-            status_code, _ = self.update_instance()
+            status_code = self.update_instance()[0]
             updated = self.wait_for_active()
             if status_code == 200:
                 updated["changed"] = False
@@ -1801,7 +1801,7 @@ class ScLbInstanceL7CreateUpdate:
 
     def check_update_result(self, current):
         if not self.checkmode:
-            status_code, _ = self.update_instance()
+            status_code = self.update_instance()[0]
             updated = self.wait_for_active()
             if status_code == 200:
                 updated["changed"] = False
@@ -1823,7 +1823,6 @@ class ScLbInstanceL7CreateUpdate:
                     msg=f"Load balancer instance with id '{self.lb_instance_id}' not found."
                 )
             return self.check_update_result(current)
-
 
         matching = self.get_matching_lb_instances()
         if len(matching) > 1:
