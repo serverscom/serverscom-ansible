@@ -236,64 +236,64 @@ upstream_zones:
       type: str
       sample: "upstream-zone-456"
     hc_interval:
-      description: Interval for health checks in seconds (default value is 5).
+      description: Interval for health checks in seconds.
       type: int
       sample: 5
     hc_jitter:
-      description: Jitter value in seconds for health checks (default value is 5).
+      description: Jitter value in seconds for health checks.
       type: int
       sample: 5
 
     # L4-specific fields
     hc_fails:
-      description: Number of failed checks to remove an upstream server. (L4 only, default value is 1)
+      description: Number of failed checks to remove an upstream server (L4 only).
       type: int
       sample: 1
     hc_passes:
-      description: Number of successful checks to reintegrate an upstream server. (L4 only, default value is 3)
+      description: Number of successful checks to reintegrate an upstream server (L4 only).
       type: int
       sample: 3
     udp:
-      description: Indicates whether UDP traffic balancing is enabled. (L4 only, default value is False)
+      description: Indicates whether UDP traffic balancing is enabled (L4 only).
       type: bool
       sample: false
 
     # L7-specific fields
     ssl:
-      description: Indicates if SSL termination is enabled. (L7 only, default value is False)
+      description: Indicates if SSL termination is enabled (L7 only).
       type: bool
       sample: false
     hc_domain:
-      description: Health check domain. (L7 only)
+      description: Health check domain (L7 only).
       type: str
       sample: "health.example.com"
     hc_path:
-      description: Health check URL path. (L7 only)
+      description: Health check URL path (L7 only).
       type: str
       sample: "/status"
     hc_method:
-      description: HTTP method for health checks. (L7 only, default value is GET)
+      description: HTTP method for health checks (L7 only).
       type: str
       choices: ["GET", "HEAD"]
       sample: "GET"
     hc_mandatory:
-      description: If enabled, new upstreams must pass health checks before being used. (L7 only, default value is False)
+      description: If enabled, new upstreams must pass health checks before being used (L7 only).
       type: bool
       sample: false
     sticky:
-      description: Indicates whether a sticky cookie is enabled. (L7 only, default value is True)
+      description: Indicates whether a sticky cookie is enabled (L7 only).
       type: bool
       sample: true
     grpc:
-      description: Indicates if gRPC is enabled. (L7 only) (default value is False)
+      description: Indicates if gRPC is enabled (L7 only).
       type: bool
       sample: false
     hc_grpc_service:
-      description: gRPC service name for health checks. (L7 only)
+      description: gRPC service name for health checks (L7 only).
       type: str
       sample: "grpc-health-service"
     hc_grpc_status:
-      description: Expected gRPC status code for a healthy upstream. (L7 only) (default value is 0)
+      description: Expected gRPC status code for a healthy upstream (L7 only).
       type: int
       sample: 0
 
@@ -311,19 +311,19 @@ upstream_zones:
           type: int
           sample: 8080
         weight:
-          description: Traffic weight assigned to the upstream (default value is 1).
+          description: Traffic weight assigned to the upstream.
           type: int
           sample: 1
         max_fails:
-          description: Maximum number of failures before marking upstream as unhealthy (default value is 0).
+          description: Maximum number of failures before marking upstream as unhealthy.
           type: int
           sample: 0
         fail_timeout:
-          description: Timeout period before marking an upstream as failed (default value is 30).
+          description: Timeout period before marking an upstream as failed.
           type: int
           sample: 30
         max_conns:
-          description: Maximum number of connections allowed per upstream (default value is 63000).
+          description: Maximum number of connections allowed per upstream.
           type: int
           sample: 63000
         status:

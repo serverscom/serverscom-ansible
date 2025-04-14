@@ -58,29 +58,27 @@ options:
       - |
         Maximum time in seconds to wait for the load balancer instance to reach
         the desired state after an action (e.g. deletion)."
-      - "Default value is 600 seconds."
     required: false
     type: int
     default: 600
   update_interval:
     description:
       - "Interval in seconds between consecutive status checks during state transitions."
-      - "Default value is 5 seconds."
     required: false
     type: int
     default: 5
   id:
     description:
       - "Unique identifier of the load balancer."
-      - "For state 'present' (update), provide either 'id' or 'name' but not both."
-      - "For state 'absent', provide exactly one of 'id' or 'name'."
+      - "I(state)=Q(present), either I(id) or I(name)."
+      - "For state 'absent', provide exactly one of I(id) or I(name)."
     required: false
     type: str
   name:
     description:
       - "Name for the load balancer."
-      - "For creation (state 'present' without an 'id'), required."
-      - "For update, provide either 'id' or 'name' (but not both)."
+      - "For creation (I(state)=Q(present) without an I(id)), required."
+      - "For update, provide either I(id) or I(name) (but not both)."
     required: false
     type: str
   location_id:
@@ -131,7 +129,7 @@ options:
         type: list
         elements: int
       udp:
-        description: "Enable UDP traffic balancing."
+        description: "Enable UDP traffic balancing. If the UDP isn't enabled, TCP will be used."
         required: false
         type: bool
         default: false
@@ -145,7 +143,7 @@ options:
         required: true
         type: str
       description:
-        description: "Optional comment (max 255 characters)."
+        description: "Comment (max 255 characters)."
         required: false
         type: str
   upstream_zones:
@@ -164,7 +162,7 @@ options:
         choices: ["random.least_conn", "round-robin", "least_conn"]
         default: "random.least_conn"
       udp:
-        description: "Enable UDP traffic balancing."
+        description: "Enable UDP traffic balancing. If the UDP isn't enabled, TCP will be used."
         required: false
         type: bool
         default: false

@@ -163,7 +163,10 @@ options:
         type: bool
         default: false
       hc_status:
-        description: Expected health check status. Must be up to 255 characters.
+        description: |
+          Expected health check status. Must be up to 255 characters.
+          You may use Nginx expressions for specifying the status codes.
+          See U(https://nginx.org/en/docs/http/ngx_http_upstream_hc_module.html#match) for more information.
         type: str
         default: "200-399"
       tls_preset:
