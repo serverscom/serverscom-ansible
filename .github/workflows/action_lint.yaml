@@ -11,7 +11,7 @@ jobs:
     name: Workflow Linting
     runs-on: ubuntu-24.04
     container:
-      image: rhysd/actionlint:1.6.15
+      image: rhysd/actionlint:1.7.7
       options: --user=0 --entrypoint=/bin/sh
     steps:
       - name: checkout
