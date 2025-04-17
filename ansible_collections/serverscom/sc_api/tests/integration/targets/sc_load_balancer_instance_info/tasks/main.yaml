@@ -1,0 +1,78 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
+  when: not sc_endpoint or not sc_token
+
+- name: Test invalid token
+  sc_load_balancer_instance_info:
+    token: invalid
+    endpoint: "{{ sc_endpoint }}"
+    id: V13vaNd8
+    type: l4
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 401
+
+- name: Test2, Invalid ID
+  sc_load_balancer_instance_info:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    id: QQQQ
+    type: l4
+  register: test2
+  failed_when:
+    - test2 is success
+    - sc_endpoint not in test2.api_url
+    - test2.msg != "Load balancer instance not found"
+
+- name: Test3, Invalid Type
+  sc_load_balancer_instance_info:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    id: V13vaNd8
+    type: l8
+  register: test3
+  failed_when:
+    - test3 is success
+    - sc_endpoint not in test3.api_url
+    - test3.msg != "Load balancer instance not found"
+
+- name: Test4, Invalid ID, fail_on_absent==false
+  sc_load_balancer_instance_info:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    id: QQQQ
+    type: l4
+    fail_on_absent: false
+  register: test4
+  failed_when:
+    - test4.failed != false
+    - test4.status != "absent"
+
+- name: Test5, Get LB instance by id
+  sc_load_balancer_instance_info:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    id: V13vaNd8
+    type: l7
+  register: test5
+
+- name: Check Test5
+  assert:
+    that:
+      - test5 is not changed
+      - test5.created_at
+      - test5.updated_at
+      - test5.external_addresses | length > 0
+      - test5.domains | length > 0
+      - test5.upstream_zones | length > 0
+      - test5.vhost_zones | length > 0
+      - test5.id
+      - test5.location_id
+      - test5.name
+      - test5.status
+      - test5.type

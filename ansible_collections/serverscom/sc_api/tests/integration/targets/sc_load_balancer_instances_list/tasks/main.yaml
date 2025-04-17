@@ -1,0 +1,79 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
+  when: not sc_endpoint or not sc_token
+
+- name: Test invalid token
+  sc_load_balancer_instances_list:
+    token: invalid
+    endpoint: "{{ sc_endpoint }}"
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 401
+
+- name: Test2, Get Load Balancer instances list
+  sc_load_balancer_instances_list:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+  register: test2
+
+- name: Check Test2
+  assert:
+    that:
+      - test2 is not changed
+      - test2.load_balancer_instances | length > 0
+      - test2.load_balancer_instances[0].created_at
+      - test2.load_balancer_instances[0].updated_at
+      - test2.load_balancer_instances[0].external_addresses | length > 0
+      - test2.load_balancer_instances[0].id
+      - test2.load_balancer_instances[0].location_id
+      - test2.load_balancer_instances[0].name
+      - test2.load_balancer_instances[0].status
+      - test2.load_balancer_instances[0].type
+
+
+- name: Test3, Get Load Balancer instances by name
+  sc_load_balancer_instances_list:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    name: test1
+  register: test3
+
+- name: Check Test3
+  assert:
+    that:
+      - test3 is not changed
+      - test3.load_balancer_instances | length > 0
+      - test3.load_balancer_instances[0].created_at
+      - test3.load_balancer_instances[0].updated_at
+      - test3.load_balancer_instances[0].external_addresses | length > 0
+      - test3.load_balancer_instances[0].id
+      - test3.load_balancer_instances[0].location_id
+      - test3.load_balancer_instances[0].name
+      - test3.load_balancer_instances[0].status
+      - test3.load_balancer_instances[0].type
+
+- name: Test4, Get Load Balancer instances by type
+  sc_load_balancer_instances_list:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    type: l4
+  register: test4
+
+- name: Check Test4
+  assert:
+    that:
+      - test4 is not changed
+      - test4.load_balancer_instances | length > 0
+      - test4.load_balancer_instances[0].created_at
+      - test4.load_balancer_instances[0].updated_at
+      - test4.load_balancer_instances[0].external_addresses | length > 0
+      - test4.load_balancer_instances[0].id
+      - test4.load_balancer_instances[0].location_id
+      - test4.load_balancer_instances[0].name
+      - test4.load_balancer_instances[0].status
+      - test4.load_balancer_instances[0].type
