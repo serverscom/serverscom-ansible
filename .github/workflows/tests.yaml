@@ -194,7 +194,7 @@ jobs:
         working-directory: ansible_collections/serverscom/sc_api
       - name: Save artifact
         if: ${{ endsWith(github.ref, steps.version.outputs.version) }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: sc_api
           path: ansible_collections/serverscom/sc_api/serverscom-sc_api-${{ steps.version.outputs.version }}.tar.gz
@@ -205,7 +205,7 @@ jobs:
     if: ${{ endsWith(github.ref, needs.build.outputs.version) }}
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: sc_api
       - name: Debug output
