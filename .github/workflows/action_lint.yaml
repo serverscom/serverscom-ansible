@@ -9,7 +9,7 @@ name: Lint workflows
 jobs:
   workflow-linting:
     name: Workflow Linting
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     container:
       image: rhysd/actionlint:1.6.15
       options: --user=0 --entrypoint=/bin/sh
