@@ -9,26 +9,26 @@ name: Test and build
 
 jobs:
   lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Install yamllint
         run: sudo apt install yamllint
       - name: Lint
         run: yamllint .
 
   quick_tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python_version:
           - "3.13"
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python_version }}
       - name: Install dependencies
@@ -46,14 +46,14 @@ jobs:
         working-directory: ansible_collections/serverscom/sc_api
 
   integration_tests_cloud:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: quick_tests
     concurrency: API
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: "3.13"
       - name: Install dependencies
@@ -88,14 +88,14 @@ jobs:
           sync
 
   integration_tests_bm:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: integration_tests_cloud
     concurrency: API
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: "3.13"
       - name: Install dependencies
@@ -125,14 +125,14 @@ jobs:
           sync
 
   integration_tests_l2:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: integration_tests_bm
     concurrency: API
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: "3.13"
       - name: Install dependencies
@@ -194,15 +194,15 @@ jobs:
           sync
 
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: integration_tests_l2
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: "3.13"
       - name: Install dependencies
@@ -219,7 +219,7 @@ jobs:
         id: version
         run: |
           version=$(grep ^version galaxy.yml|awk '{print $2}')
-          echo "::set-output name=version::$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
         working-directory: ansible_collections/serverscom/sc_api
       - name: Print artifact info
         run: |
@@ -229,18 +229,18 @@ jobs:
         working-directory: ansible_collections/serverscom/sc_api
       - name: Save artifact
         if: ${{ endsWith(github.ref, steps.version.outputs.version) }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: sc_api
           path: ansible_collections/serverscom/sc_api/serverscom-sc_api-${{ steps.version.outputs.version }}.tar.gz
 
   publish:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     needs: build
     if: ${{ endsWith(github.ref, needs.build.outputs.version) }}
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: sc_api
       - name: Debug output
