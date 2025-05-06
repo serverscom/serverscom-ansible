@@ -204,11 +204,219 @@ options:
 """
 
 RETURN = """
+id:
+  type: str
+  description:
+    - Unique identifier of the server.
+  returned: on success
 
+title:
+  type: str
+  description:
+    - Display name of the server.
+  returned: on success
+
+type:
+  type: str
+  description:
+    - Always 'dedicated_server'.
+  returned: on success
+
+rack_id:
+  type: str
+  description:
+    - Identifier of the rack where the server is deployed.
+    - Null during provisioning.
+  returned: on success
+
+status:
+  type: str
+  description:
+    - "init: ordered but not provisioned;"
+    - "pending: running operation;"
+    - "active: ready to use."
+  returned: on success
+
+operational_status:
+  type: str
+  description:
+    - "Detailed operation state."
+    - "normal: there are no operations on a server, but
+      this status doesn't guarantee accessibility by SSH."
+    - "maintenance: server in maintanence mode."
+    - "provisioning: a server is being activated after an order."
+    - "installation: this status is displayed while OS reinstalling."
+    - "entering_rescue_mode, rescue_mode, exiting_rescue_mode: these
+      statuses show rescue mode progress."
+  returned: on success
+
+power_status:
+  type: str
+  description:
+    - "unknown: this status is displayed while the server's provisioning
+      or in a case when something went wrong;"
+    - "powering_on: transitional status between power off and on;"
+    - "powered_on: power is on;"
+    - "powering_off: transitional status between power on and off;"
+    - "powered_off: power is off;"
+    - "power_cycling: power reboot."
+  returned: on success
+
+configuration:
+  type: str
+  description:
+    - Chassis model, RAM and disk info.
+  returned: on success
+
+location_id:
+  type: int
+  description:
+    - Identifier of the server location.
+  returned: on success
+
+location_code:
+  type: str
+  description:
+    - Technical code of the location.
+  returned: on success
+
+private_ipv4_address:
+  type: str
+  description:
+    - Private-network IPv4.
+    - May be null.
+  returned: on success
+
+public_ipv4_address:
+  type: str
+  description:
+    - Public-network IPv4.
+    - May be null.
+  returned: on success
+
+oob_ipv4_address:
+  type: str
+  description:
+    - Out-of-band IPv4 when enabled.
+    - May be null.
+  returned: on success
+
+lease_start_at:
+  type: str
+  description:
+    - Lease start date.
+    - May be null.
+  returned: on success
+
+scheduled_release_at:
+  type: str
+  description:
+    - Scheduled release date-time.
+    - May be null.
+  returned: on success
+
+configuration_details:
+  type: complex
+  description:
+    - Structured server configuration.
+  contains:
+    ram_size:
+      type: int
+      description:
+        - RAM size in MB.
+        - May be null.
+    server_model_id:
+      type: int
+      description:
+        - Identifier of the server model.
+        - May be null.
+    server_model_name:
+      type: str
+      description:
+        - Human-readable server model name.
+        - May be null.
+    bandwidth_id:
+      type: int
+      description:
+        - Identifier of bandwidth option.
+        - May be null.
+    bandwidth_name:
+      type: str
+      description:
+        - Name of bandwidth option.
+        - May be null.
+    private_uplink_id:
+      type: int
+      description:
+        - Identifier of private uplink.
+        - May be null.
+    private_uplink_name:
+      type: str
+      description:
+        - Name of private uplink.
+        - May be null.
+    public_uplink_id:
+      type: int
+      description:
+        - Identifier of public uplink.
+        - May be null.
+    public_uplink_name:
+      type: str
+      description:
+        - Name of public uplink.
+        - May be null.
+    operating_system_id:
+      type: int
+      description:
+        - Identifier of installed OS.
+        - May be null.
+    operating_system_full_name:
+      type: str
+      description:
+        - Full name of installed OS.
+        - May be null.
+  returned: on success
+
+labels:
+  type: dict
+  description:
+    - Labels attached to the server.
+  returned: on success
+
+created_at:
+  type: str
+  description:
+    - Creation timestamp.
+  returned: on success
+
+updated_at:
+  type: str
+  description:
+    - Last update timestamp.
+  returned: on success
+
+found:
+  type: bool
+  description:
+    - True if server exists; false if absent and can_be_absent is true.
+  returned: on success
+
+ready:
+  type: bool
+  description:
+    - True when status='active', power_status='powered_on', operational_status='normal'.
+  returned: on success
 """
 
 EXAMPLES = """
-
+- name: Server reinstallation
+  sc_dedicated_server_reinstall:
+    token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MzgxMjEsInR5cGUiOiJVc2VyIiwiYWNjZXNzX2dyYW50X2lkIjoyNjgwNywiZXhwIjoyMjI2OTk3NjMwfQ.rO4nGXNgXggjNmMJBLXovOh1coNrDWl4dGrGFupYXJE'
+    id: 'lxyeQG8Q'
+    drives_layout_template: raid1-simple
+    operating_system_id: 49
+    hostname: reinstall
+    wait: 0
 """  # noqa
 
 

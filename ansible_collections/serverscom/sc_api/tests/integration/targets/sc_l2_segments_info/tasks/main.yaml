@@ -26,3 +26,42 @@
     that:
       - test2 is not changed
       - ("l2_segments" in test2)
+
+- name: Create test segment
+  sc_l2_segment:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    name: sc-l2-segments-info-test
+    state: present
+    type: private
+    members:
+      - id: '{{ existing_server1_id }}'
+        mode: native
+      - id: '{{ existing_server2_id }}'
+        mode: native
+      - id: '{{ existing_server3_id }}'
+        mode: native
+    labels:
+      test_label: "test_value"
+
+- name: Test3, Get L2 segments list by label
+  sc_l2_segments_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    label_selector: "test_label==test_value"
+  register: test3
+
+- name: Check Test3
+  assert:
+    that:
+      - ("l2_segments" in test3)
+      - (test3.l2_segments|length == 1)
+      - (test3.l2_segments[0].name == "sc-l2-segments-info-test")
+      - (test3.l2_segments[0].labels.test_label == "test_value")
+
+- name: Destroy test segment
+  sc_l2_segment:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    name: sc-l2-segments-info-test
+    state: absent

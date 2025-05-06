@@ -41,64 +41,72 @@ options:
         - Token to use.
         - You can create token for you account in https://portal.servers.com
           in Profile -> Public API section.
+
+    label_selector:
+        type: str
+        description:
+            - Search for bare metal servers with specific labels.
+            - More info at https://developers.servers.com/api-documentation/v1/#section/Labels/Labels-selector
 """
 
 RETURN = """
 l2_segments:
-    description:
-        - List L2 segments
-    returned: on success
-    type: complex
-    contains:
-        id:
-            type: str
-            description:
-                - ID of the L2 segement
-        name:
-            type: str
-            description:
-                - Name of the L2 segement
-
-        type:
-            type: str
-            description:
-                - Type of the segement. Either C(public) or C(private)
-        status:
-            type: str
-            description:
-                - Status of the segment. C(active) means segment is ready
-                  to be used.
-
-        location_group_id:
-            type: int
-            description:
-                - Id of the location group where L2 segment was created
-
-        location_group_code:
-            type: str
-            description:
-                - Textual name of the location group
-
-        updated_at:
-            type: str
-            description:
-                - Last update date and time
-
-        created_at:
-            type: str
-            description:
-                - Creation date and time
-
+  type: list
+  elements: dict
+  returned: on success
+  description:
+    - List of L2 segments.
+  contains:
+    id:
+      type: str
+      description:
+        - Unique identifier of the L2 segment.
+    name:
+      type: str
+      description:
+        - Name of the L2 segment.
+    type:
+      type: str
+      description:
+        - "Segment type: 'public' or 'private'."
+    status:
+      type: str
+      description:
+        - "'pending' – creating;"
+        - "'active' – ready to use;"
+        - "'removing' – deleting."
+    location_group_id:
+      type: int
+      description:
+        - Identifier of the location group.
+    location_group_code:
+      type: str
+      description:
+        - Technical code of the location group.
+    labels:
+      type: dict
+      description:
+        - Labels attached to the segment.
+    created_at:
+      type: str
+      description:
+        - Creation timestamp.
+    updated_at:
+      type: str
+      description:
+        - Last update timestamp; null if never updated.
 
 api_url:
-    description: URL for the failed request
-    returned: on failure
-    type: str
+  type: str
+  returned: on failure
+  description:
+    - URL of the failed request.
 
 status_code:
-    description: Status code for the request
-    returned: always
-    type: int
+  type: int
+  returned: always
+  description:
+    - HTTP status code of the response.
 """
 
 EXAMPLES = """
@@ -129,6 +137,7 @@ def main():
         argument_spec={
             "token": {"type": "str", "no_log": True, "required": True},
             "endpoint": {"default": DEFAULT_API_ENDPOINT},
+            "label_selector": {"type": "str"},
         },
         supports_check_mode=True,
     )
@@ -136,6 +145,7 @@ def main():
         sc_info = ScL2SegmentsInfo(
             endpoint=module.params["endpoint"],
             token=module.params["token"],
+            label_selector=module.params.get("label_selector"),
         )
         module.exit_json(**sc_info.run())
     except SCBaseError as e:

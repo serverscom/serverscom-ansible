@@ -70,6 +70,7 @@
           - test4 is changed
           - test4.results[0].location_group_id == test4.results[1].location_group_id
           - test4.results[0].location_group_id > 0
+
 - block:
     - name: Test5, Create public segment for real
       sc_l2_segment:
@@ -85,6 +86,8 @@
             mode: native
           - id: '{{ existing_server3_id }}'
             mode: native
+        labels:
+          test_label: "test_value"
       register: test5
       tags: create
 
@@ -96,6 +99,7 @@
           - test5.id
           - test5.type == 'private'
           - test5.status == 'active'
+          - test5.labels.test_label == 'test_value'
 
     - name: Test5a, Create public segment for real second time (idempotence)
       sc_l2_segment:
@@ -111,6 +115,8 @@
             mode: native
           - id: '{{ existing_server3_id }}'
             mode: native
+        labels:
+          test_label: "test_value"
       register: test5a
 
     - name: Check Test5a
@@ -121,6 +127,7 @@
           - test5a.id == test5.id
           - test5a.type == 'private'
           - test5a.status == 'active'
+          - test5.labels.test_label == 'test_value'
 
     - name: Test6, Delete public segment in check mode
       sc_l2_segment:

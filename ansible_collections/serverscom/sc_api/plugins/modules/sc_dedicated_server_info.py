@@ -63,195 +63,209 @@ RETURN = """
 id:
   type: str
   description:
-    - ID of the server
+    - Unique identifier of the server.
   returned: on success
 
 title:
   type: str
   description:
-    - title of server (used as hostname).
+    - Displayed name of the server.
   returned: on success
 
 type:
   type: str
   description:
-    - always 'dedicated_server'
+    - Always 'dedicated_server'.
   returned: on success
 
 rack_id:
   type: str
   description:
-    - ID of rack where server is installed.
-    - May be null if not supported.
+    - Unique identifier of the rack where the server is deployed.
+    - May be null on provisioning stage.
   returned: on success
 
 status:
   type: str
   description:
-    - Status of server.
-    - Values "init" and "pending" are transient.
-    - Value "active" is a normal status for a server.
+    - "State of the server."
+    - "init, pending: transitional."
+    - "active: ready-to-use."
   returned: on success
 
 operational_status:
   type: str
   description:
-    - Maintanance operations for the server.
-    - Value 'normal' is used for the server without any operations.
-    - Value 'provisioning' is used for the server under provisioning.
-    - Value 'installation' is used for reinstalled/installed server
-      during OS installation process.
-    - Value 'entering_rescue_mode' is used during reconfiguration of the server
-      for the rescue mode.
-    - Value 'exiting_rescue_mode' is used during reconfiguration of the server
-      from rescue mode to normal.
-    - Value 'rescue_mode' is used for server in rescue mode.
+    - Maintenance operation status.
+    - "normal: no operations (doesn't guarantee SSH access)."
+    - "maintenance: scheduled maintenance."
+    - "provisioning: activation after order."
+    - "installation: OS reinstall in progress."
+    - "entering_rescue_mode: switching to rescue mode."
+    - "rescue_mode: in rescue mode."
+    - "exiting_rescue_mode: restoring to normal."
   returned: on success
 
 power_status:
-    type: str
-    description:
-      - Power state of the server.
-      - Possible values are unknown, powering_on, powering_off, powered_off,
-        powered_on (normal mode for working server), power_cycling (sequence of
-        off on operations).
-    returned: on success
+  type: str
+  description:
+    - "unknown: during provisioning or on error."
+    - "powering_on/powering_off: transitional."
+    - "powered_on: on."
+    - "powered_off: off."
+    - "power_cycling: reboot sequence."
+  returned: on success
 
 configuration:
   type: str
   description:
-      - Server configuration
+    - Information about chassis model, RAM, and disk drives.
   returned: on success
 
 location_id:
   type: str
   description:
-    - ID of the location of the server.
+    - Unique identifier of the server's location.
   returned: on success
 
 location_code:
   type: str
   description:
-    - Code for location of the server.
+    - Technical code of the server's location.
   returned: on success
 
 private_ipv4_address:
   type: str
   description:
-     - IPv4 address of the server on the private network.
-     - May be absent.
+    - IPv4 address on the private network.
+    - May be null.
   returned: on success
 
 public_ipv4_address:
   type: str
   description:
-     - IPv4 address of the server on the public (internet) network.
-     - May be absent.
+    - IPv4 address on the public network.
+    - May be null.
+  returned: on success
+
+oob_ipv4_address:
+  type: str
+  description:
+    - Out-of-band IPv4 address when OOB access is enabled.
+    - May be null.
   returned: on success
 
 lease_start_at:
   type: str
   description:
-     - Date when server lease started.
-     - May be absent.
+    - Date when server lease started.
+    - May be null.
   returned: on success
 
 scheduled_release_at:
-   type: str
-   description:
-      - Date when server lease is planned for termination.
-      - May be absent.
-   returned: on success
+  type: str
+  description:
+    - Scheduled date and time for server release.
+    - May be null.
+  returned: on success
 
 configuration_details:
-   type: complex
-   description:
-     - Structured server configuration
-   contains:
-     ram_size:
-       type: int
-       description:
-         - server RAM.
-         - May be absent.
-     server_model_id:
-       type: str
-       description:
-         - Internal ID of the server model.
-         - May be absent.
-     bandwidth_id:
-       type: str
-       description:
-         - ID of the bandwidth accounting item associated with server.
-         - May be absent.
-     bandwidth_name:
-       type: str
-       description:
-          - Name of the bandwidth accounting item associated with server.
-          - May be absent.
-     private_uplink_id:
-       type: str
-       description:
-         - ID of the server uplink in the private network.
-         - May be absent.
-     private_uplink_name:
-       type: str
-       description:
-         - Name of the server uplink in the private network.
-         - May be absent.
-     public_uplink_id:
-       type: str
-       description:
-         - ID of the server uplink in the public network.
-         - May be absent.
-     public_uplink_name:
-       type: str
-       description:
-         - Name of the server uplink in the public network.
-         - May be absent.
-     operating_system_id:
-       type: str
-       description:
-         - ID of the installed OS on the server.
-         - May be absent.
-     operating_system_full_name:
-       type: str
-       description:
-         - Name of the installed OS on the server.
-         - May be absent.
-   returned: on success
+  type: complex
+  description:
+    - Structured server configuration.
+  contains:
+    ram_size:
+      type: int
+      description:
+        - RAM size.
+        - May be absent.
+    server_model_id:
+      type: int
+      description:
+        - Unique identifier of the server model.
+        - May be absent.
+    server_model_name:
+      type: str
+      description:
+        - Human-readable name of the server model.
+        - May be absent.
+    bandwidth_id:
+      type: int
+      description:
+        - Unique identifier of the bandwidth option.
+        - May be absent.
+    bandwidth_name:
+      type: str
+      description:
+        - Human-readable name of the bandwidth option.
+        - May be absent.
+    private_uplink_id:
+      type: int
+      description:
+        - Unique identifier of the private uplink option.
+        - May be absent.
+    private_uplink_name:
+      type: str
+      description:
+        - Human-readable name of the private uplink option.
+        - May be absent.
+    public_uplink_id:
+      type: int
+      description:
+        - Unique identifier of the public uplink option.
+        - May be absent.
+    public_uplink_name:
+      type: str
+      description:
+        - Human-readable name of the public uplink option.
+        - May be absent.
+    operating_system_id:
+      type: int
+      description:
+        - Unique identifier of the installed OS.
+        - May be absent.
+    operating_system_full_name:
+      type: str
+      description:
+        - Human-readable name of the installed OS.
+        - May be absent.
+  returned: on success
+
+labels:
+  type: dict
+  description:
+    - Labels associated with the server.
+  returned: on success
 
 created_at:
   type: str
   description:
-    - Date the server object was created in database.
+    - Date and time when the server was created.
   returned: on success
 
 updated_at:
   type: str
   description:
-    - Last date when the server object was updated.
+    - Date and time of the server's last update.
   returned: on success
 
 found:
   type: bool
   description:
-    - Set to true if server is found.
-    - Set to false if server is not found and I(can_be_absent)=C(true)
+    - True if server exists; false if absent and can_be_absent is true.
   returned: on success
 
 ready:
   type: bool
   description:
-    - Synthetic attribute, created by module.
-    - Set to true if server is in status=active, power_status=powered_on,
-      operational_status=normal.
+    - "Synthetic: true if I(status)=Q(active), I(power_status)=Q(powered_on), I(operational_status)=Q(normal)."
   returned: on success
-"""
+"""  # noqa
 
 EXAMPLES = """
 - name: Get server info
   serverscom.sc_api.sc_dedicated_server_info:
-    token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MzgxMjEsInR5cGUiOiJVc2VyIiwiYWNjZXNzX2dyYW50X2lkIjoyNjgwNywiZXhwIjoyMjI2OTk3NjMwfQ.rO4nGXNgXggjNmMJBLXovOh1coNrDWl4dGrGFupYXJE'
+    token: "<your_token>"
     id: '0m592Zmn'
   register: srv
 - name: Report server information
@@ -260,14 +274,13 @@ EXAMPLES = """
 
 - name: Wait until server is ready
   serverscom.sc_api.sc_dedicated_server_info:
-    token: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6MzgxMjEsInR5cGUiOiJVc2VyIiwiYWNjZXNzX2dyYW50X2lkIjoyNjgwNywiZXhwIjoyMjI2OTk3NjMwfQ.rO4nGXNgXggjNmMJBLXovOh1coNrDWl4dGrGFupYXJE'
+    token: "<your_token>"
     id: '0m592Zmn'
   register: srv
   until: srv.ready
   delay: 30
   retries: 300
-"""  # noqa
-
+"""
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (

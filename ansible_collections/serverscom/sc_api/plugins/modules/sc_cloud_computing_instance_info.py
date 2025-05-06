@@ -23,97 +23,94 @@ module: sc_cloud_computing_instance_info
 version_added: "1.0.0"
 author: "George Shuklin (@amarao)"
 short_description: Information about cloud computing instance
-description: >
-    Return information about cloud computing instance.
+description: Return detailed information about specific cloud computing instance.
 
 options:
-    endpoint:
-      type: str
-      default: https://api.servers.com/v1
-      description:
-        - Endpoint to use to connect to API.
-        - Do not change until specifically asked to do otherwise.
+  endpoint:
+    type: str
+    default: https://api.servers.com/v1
+    description:
+      - Endpoint to use to connect to API.
+      - Do not change until specifically asked to do otherwise.
 
-    token:
-      type: str
-      required: true
-      description:
-        - Token to use.
-        - You can create token for you account in https://portal.servers.com
-          in Profile -> Public API section.
+  token:
+    type: str
+    required: true
+    description:
+      - Token to use.
+      - You can create token for you account in https://portal.servers.com
+        in Profile -> Public API section.
 
-    instance_id:
-      type: str
-      description:
-        - Id of the instance.
-        - Mutually exclusive with I(name)
-        - Either I(instance_id) or I(name) is required.
+  instance_id:
+    type: str
+    description:
+      - Id of the instance.
+      - Mutually exclusive with I(name).
+      - Either I(instance_id) or I(name) is required.
 
-    name:
-      type: str
-      aliases: [instance_name]
-      description:
-        - Id of the instance.
-        - Mutually exclusive with I(instance_id)
-        - Either I(instance_id) or I(name) is required.
-        - Module will fail if more than one instance found.
+  name:
+    type: str
+    aliases: [instance_name]
+    description:
+      - Id of the instance.
+      - Mutually exclusive with I(instance_id).
+      - Either I(instance_id) or I(name) is required.
+      - Module will fail if more than one instance found.
 
-    region_id:
-      type: int
-      description:
-        - Region ID to search instance by name.
-        - Used only for I(name).
-
+  region_id:
+    type: int
+    description:
+      - Region ID to search instance by name.
+      - Used only for I(name).
 """
 
 RETURN = """
 id:
   type: str
   description:
-    - Id of the instance.
+    - A unique identifier of a cloud instance.
   returned: on success
 region_id:
   type: int
   description:
-    - Id of the region.
-    - Same as in I(region_id).
+    - A unique identifier of the cloud region where an instance is deployed.
   returned: on success
 region_code:
   type: str
   description:
-    - Human-readable code for region.
+    - A technical identifier of a cloud region.
   returned: on success
 flavor_id:
   type: str
   description:
-    - Id of the instance's flavor.
+    - A unique identifier of a cloud flavor this instance belongs to.
   returned: on success
 flavor_name:
   type: str
   description:
-    - Human-readable name of the instance's flavor.
+    - A name of a cloud flavor.
   returned: on success
 image_id:
   type: str
   description:
-    - Id of the image or snapshot used for instance build/rebuild.
+    - A unique identifier of a cloud image.
   returned: on success
 image_name:
   type: str
   description:
-    - Name of the image.
-    - May be absent if image was removed.
+    - A name of a cloud image.
+    - May be absent if the image was removed.
   returned: on success
 name:
   type: str
   description:
-    - Name of the instance.
+    - A name given to the cloud instance.
   returned: on success
 openstack_uuid:
   type: str
   description:
-    - UUID of the instance in the Openstack API.
-    - May be missing at some stages of lifecycle.
+    - A unique identifier of the instance in the OpenStack API.
+    - May be null if the instance is not yet created.
   returned: on success
 status:
   type: str
@@ -140,54 +137,88 @@ status:
 public_ipv4_address:
   type: str
   description:
-    - IPv4 address for instance.
-    - May be missing if public inteface was detached via Openstack API.
+    - An external IPv4 address assigned for a public network.
+    - May be null if the public interface was detached.
   returned: on success
 public_ipv6_address:
   type: str
   description:
-    - IPv5 address for instance.
-    - May be missing if no IPv6 address was ordered or public inteface
-     was detached via Openstack API.
+    - An IPv6 address assigned for a public network.
+    - May be null if no IPv6 was ordered or interface was detached.
   returned: on success
 private_ipv4_address:
   type: str
   description:
-    - IPv4 address for instance.
-    - May be missing if no private network is connected to the instance.
+    - An internal IPv4 address for a private network.
+    - May be null if no private network is connected.
+  returned: on success
+local_ipv4_address:
+  type: str
+  description:
+    - A local IPv4 used for private-server connection within a region.
+    - May be null if no private network is connected.
   returned: on success
 ipv6_enabled:
   type: bool
   description:
-    - Flag if IPv6 was enabled for instance.
+    - Whether the IPv6 option is enabled.
   returned: on success
 gpn_enabled:
   type: bool
   description:
-    - Flag is Global Private Network was enabled for instance.
-    - Flag may not prepresent private_ipv4_address if private interface
-      was detached via Openstack API.
+    - Whether Global Private Network is enabled.
+  returned: on success
+vpn2gpn_instance:
+  type: dict
+  description:
+    - Details of the VPN-to-GPN instance, or null if none.
+  contains:
+    id:
+      type: int
+      description:
+        - VPN2GPN instance ID.
+      returned: on success
+    name:
+      type: str
+      description:
+        - VPN2GPN instance name.
+      returned: on success
+  returned: on success
+backup_copies:
+  type: int
+  description:
+    - Number of backup copies for the instance.
+  returned: on success
+public_port_blocked:
+  type: bool
+  description:
+    - Whether the public port of the instance is blocked.
+  returned: on success
+labels:
+  type: dict
+  description:
+    - Labels associated with the resource.
   returned: on success
 created_at:
   type: str
   description:
-    - Date of creation of the instance.
+    - A date and time when the instance was created.
   returned: on success
 updated_at:
   type: str
   description:
-    - Date of last update for the instance.
+    - A date and time of the instance's last update.
   returned: on success
-
 api_url:
-    description: URL for the failed request
-    type: str
-    returned: on failure
-
+  type: str
+  description:
+    - URL for the failed request.
+  returned: on failure
 status_code:
-    description: Status code for the request
-    type: int
-    returned: on failure
+  type: int
+  description:
+    - HTTP status code of the failed request.
+  returned: on failure
 """
 
 EXAMPLES = """
