@@ -69,11 +69,19 @@ class ScDedicatedServerInfo(object):
 
 
 class ScBaremetalServersInfo:
-    def __init__(self, endpoint, token):
+    def __init__(self, search_pattern, label_selector, type, endpoint, token):
+        self.type = type
+        self.search_pattern = search_pattern
+        self.label_selector = label_selector
         self.api = ScApi(token, endpoint)
 
     def run(self):
-        return {"changed": False, "baremetal_servers": list(self.api.list_hosts())}
+        return {
+            "changed": False,
+            "baremetal_servers": list(
+                self.api.list_hosts(self.type, self.search_pattern, self.label_selector)
+            ),
+        }
 
 
 class ScBaremetalLocationsInfo(object):
@@ -150,7 +158,16 @@ class ScCloudComputingRegionsInfo(object):
 
 class ScSshKey(object):
     def __init__(
-        self, endpoint, token, state, name, fingerprint, public_key, replace, checkmode
+        self,
+        endpoint,
+        token,
+        state,
+        name,
+        fingerprint,
+        public_key,
+        labels,
+        replace,
+        checkmode,
     ):
         self.partial_match = []
         self.full_match = []
@@ -162,6 +179,7 @@ class ScSshKey(object):
         self.key_name = name
         self.public_key = public_key
         self.fingerprint = fingerprint
+        self.labels = labels
         if public_key:
             self.fingerprint = self.extract_fingerprint(public_key)
             if fingerprint and self.fingerprint != fingerprint:
@@ -205,7 +223,7 @@ class ScSshKey(object):
     def add_key(self):
         if not self.checkmode:
             return self.api.post_ssh_keys(
-                name=self.key_name, public_key=self.public_key
+                name=self.key_name, public_key=self.public_key, labels=self.labels
             )
 
     def delete_keys(self, key_list):
@@ -252,11 +270,15 @@ class ScSshKey(object):
 
 
 class ScSshKeysInfo:
-    def __init__(self, endpoint, token):
+    def __init__(self, endpoint, token, label_selector):
         self.api = ScApi(token, endpoint)
+        self.label_selector = label_selector
 
     def run(self):
-        return {"changed": False, "ssh_keys": list(self.api.list_ssh_keys())}
+        return {
+            "changed": False,
+            "ssh_keys": list(self.api.list_ssh_keys(self.label_selector)),
+        }
 
 
 class ScDedicatedServerReinstall(object):
@@ -412,14 +434,17 @@ class ScCloudComputingImagesInfo:
 
 
 class ScCloudComputingInstancesInfo:
-    def __init__(self, endpoint, token, region_id):
+    def __init__(self, endpoint, token, region_id, label_selector):
         self.api = ScApi(token, endpoint)
         self.region_id = region_id
+        self.label_selector = label_selector
 
     def run(self):
         return {
             "changed": False,
-            "cloud_instances": list(self.api.list_instances(self.region_id)),
+            "cloud_instances": list(
+                self.api.list_instances(self.region_id, self.label_selector)
+            ),
         }
 
 
@@ -465,6 +490,7 @@ class ScCloudComputingInstanceCreate:
         ssh_key_name,
         backup_copies,
         user_data,
+        labels,
         wait,
         update_interval,
         checkmode,
@@ -490,6 +516,7 @@ class ScCloudComputingInstanceCreate:
         )
         self.backup_copies = backup_copies
         self.user_data = user_data
+        self.labels = labels
         self.wait = wait
         self.update_interval = update_interval
         self.checkmode = checkmode
@@ -527,6 +554,7 @@ class ScCloudComputingInstanceCreate:
             ssh_key_fingerprint=self.ssh_key_fingerprint,
             backup_copies=self.backup_copies,
             user_data=self.user_data,
+            labels=self.labels,
         )
         return instance
 
@@ -981,11 +1009,15 @@ class ScCloudComputingInstanceUpgrade:
 
 
 class ScL2SegmentsInfo:
-    def __init__(self, endpoint, token):
+    def __init__(self, endpoint, token, label_selector):
         self.api = ScApi(token, endpoint)
+        self.label_selector = label_selector
 
     def run(self):
-        return {"changed": False, "l2_segments": list(self.api.list_l2_segments())}
+        return {
+            "changed": False,
+            "l2_segments": list(self.api.list_l2_segments(self.label_selector)),
+        }
 
 
 class ScL2SegmentInfo:
@@ -1027,6 +1059,7 @@ class ScL2Segment:
         members_present,
         members_absent,
         location_group_id,
+        labels,
         wait,
         update_interval,
         checkmode,
@@ -1040,6 +1073,7 @@ class ScL2Segment:
         self.members_present = members_present
         self.members_absent = members_absent
         self.location_group_id = location_group_id
+        self.labels = labels
         self.wait = wait
         self.update_interval = update_interval
         self.checkmode = checkmode
@@ -1134,7 +1168,7 @@ class ScL2Segment:
             raise ModuleError("Creation of L2 segment required type")
         if self.checkmode:
             return {"changed": True, "location_group_id": lg}
-        res = self.api.post_l2_segment(self.name, self.type, lg, members)
+        res = self.api.post_l2_segment(self.name, self.type, lg, members, self.labels)
         self.wait_for_active_segment(res["id"])
         res = self.api.get_l2_segment(res["id"])
         res["members_added"] = members
@@ -1175,9 +1209,9 @@ class ScL2Segment:
             changed = True
             if not self.checkmode:
                 if keep_members != existing_members:
-                    self.api.put_l2_segment_update(segment_id, keep_list)
+                    self.api.put_l2_segment_update(segment_id, keep_list, self.labels)
                     self.wait_for_active_segment(segment_id)
-                self.api.put_l2_segment_update(segment_id, self.members)
+                self.api.put_l2_segment_update(segment_id, self.members, self.labels)
                 self.wait_for_active_segment(segment_id)
         res = self.api.get_l2_segment(segment_id)
         res["members_added"] = list(add_list)
@@ -1234,9 +1268,11 @@ class ScL2Segment:
                 # If member is already with one type and is in members_present with
                 # different type we need to remove it first (API requirement)
                 if del_list and add_list:
-                    self.api.put_l2_segment_update(segment_id, reduced_list)
+                    self.api.put_l2_segment_update(
+                        segment_id, reduced_list, self.labels
+                    )
                     self.wait_for_active_segment(segment_id)
-                self.api.put_l2_segment_update(segment_id, send_list)
+                self.api.put_l2_segment_update(segment_id, send_list, self.labels)
                 self.wait_for_active_segment(segment_id)
         res = self.api.get_l2_segment(segment_id)
         res["members_added"] = list(add_list)
@@ -1398,13 +1434,14 @@ class ScL2SegmentAliases:
 
 
 class ScLoadBalancerInstancesList:
-    def __init__(self, endpoint, token, name=None, type=None):
+    def __init__(self, endpoint, token, name=None, type=None, label_selector=None):
         self.api = ScApi(token, endpoint)
         self.name = name
         self.type = type
+        self.label_selector = label_selector
 
     def run(self):
-        lb_instances = list(self.api.list_load_balancer_instances())
+        lb_instances = list(self.api.list_load_balancer_instances(self.label_selector))
         if self.name:
             lb_instances = [
                 inst for inst in lb_instances if inst.get("name") == self.name

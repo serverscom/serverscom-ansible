@@ -321,8 +321,18 @@ class ScApi:
             path=f"/hosts/dedicated_servers/{server_id}"
         )
 
-    def list_hosts(self):
-        return self.api_helper.make_multipage_request(path="/hosts")
+    def list_hosts(self, type=None, search_pattern=None, label_selector=None):
+        query = {}
+        if type:
+            query["type"] = type
+        if search_pattern:
+            query["search_pattern"] = search_pattern
+        if label_selector:
+            query["label_selector"] = label_selector
+
+        return self.api_helper.make_multipage_request(
+            path="/hosts", query_parameters=query
+        )
 
     def post_dedicated_server_reinstall(
         self,
@@ -348,14 +358,26 @@ class ScApi:
             good_codes=[202],
         )
 
-    def list_ssh_keys(self):
-        return self.api_helper.make_multipage_request("/ssh_keys")
+    def list_ssh_keys(self, label_selector=None):
+        query = {}
+        if label_selector:
+            query["label_selector"] = label_selector
+        return self.api_helper.make_multipage_request(
+            "/ssh_keys", query_parameters=query
+        )
 
-    def post_ssh_keys(self, name, public_key):
+    def post_ssh_keys(self, name, public_key, labels=None):
+        body = {
+            "name": name,
+            "public_key": public_key,
+        }
+        if labels:
+            body["labels"] = labels
         return self.api_helper.make_post_request(
             path="/ssh_keys",
-            body=None,
-            query_parameters={"name": name, "public_key": public_key},
+            body=body,
+            query_parameters=None,
+            # query_parameters={"name": name, "public_key": public_key},
             good_codes=[201],
         )
 
@@ -387,12 +409,15 @@ class ScApi:
             path=f"/cloud_computing/regions/{region_id}/images"
         )
 
-    def list_instances(self, region_id=None):
-        region_query = {}
-        if region_id is not None:
-            region_query["region_id"] = region_id
+    def list_instances(self, region_id=None, label_selector=None):
+        query = {}
+        if region_id:
+            query["region_id"] = region_id
+        if label_selector:
+            query["label_selector"] = label_selector
+
         return self.api_helper.make_multipage_request(
-            path="/cloud_computing/instances", query_parameters=region_query
+            path="/cloud_computing/instances", query_parameters=query
         )
 
     def post_instances_reinstall(self, instance_id, image_id):
@@ -415,6 +440,7 @@ class ScApi:
         ssh_key_fingerprint,
         backup_copies,
         user_data,
+        labels,
     ):
         body = {
             "region_id": region_id,
@@ -434,6 +460,8 @@ class ScApi:
             body["backup_copies"] = backup_copies
         if user_data:
             body["user_data"] = user_data
+        if labels:
+            body["labels"] = labels
         return self.api_helper.make_post_request(
             path="/cloud_computing/instances",
             body=body,
@@ -538,8 +566,13 @@ class ScApi:
             good_codes=[201],
         )
 
-    def list_l2_segments(self):
-        return self.api_helper.make_multipage_request(path="/l2_segments")
+    def list_l2_segments(self, label_selector=None):
+        query = {}
+        if label_selector:
+            query["label_selector"] = label_selector
+        return self.api_helper.make_multipage_request(
+            path="/l2_segments", query_parameters=query
+        )
 
     def list_l2_location_groups(self):
         return self.api_helper.make_multipage_request(
@@ -585,13 +618,16 @@ class ScApi:
             good_codes=[202, 204],
         )
 
-    def post_l2_segment(self, name, type, location_group_id, members):
+    def post_l2_segment(self, name, type, location_group_id, members, labels=None):
         body = {
             "name": name,
             "members": members,
             "type": type,
             "location_group_id": location_group_id,
         }
+        if labels:
+            body["labels"] = labels
+
         return self.api_helper.make_post_request(
             path="/l2_segments/",
             body=body,
@@ -599,8 +635,11 @@ class ScApi:
             good_codes=[200, 202],
         )
 
-    def put_l2_segment_update(self, l2_segment_id, members):
+    def put_l2_segment_update(self, l2_segment_id, members, labels=None):
         body = {"members": members}
+        if labels:
+            body["labels"] = labels
+
         response = self.api_helper.make_put_request(
             path=f"/l2_segments/{l2_segment_id}",
             body=body,
@@ -609,8 +648,13 @@ class ScApi:
         )[1]
         return response
 
-    def list_load_balancer_instances(self):
-        return self.api_helper.make_multipage_request(path="/load_balancers")
+    def list_load_balancer_instances(self, label_selector=None):
+        query = {}
+        if label_selector:
+            query["label_selector"] = label_selector
+        return self.api_helper.make_multipage_request(
+            path="/load_balancers", query_parameters=query
+        )
 
     def get_lb_instance(self, instance_id, lb_instance_type):
         return self.api_helper.make_get_request(

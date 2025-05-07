@@ -53,6 +53,12 @@ options:
     description: Load Balancer instance type.
     required: false
     choices: ["l4", "l7"]
+
+  label_selector:
+    type: str
+    description:
+      - Search for bare metal servers with specific labels.
+      - More info at https://developers.servers.com/api-documentation/v1/#section/Labels/Labels-selector
 """
 
 RETURN = """
@@ -148,6 +154,7 @@ def main():
             "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT},
             "name": {"type": "str", "required": False},
             "type": {"type": "str", "required": False, "choices": ["l4", "l7"]},
+            "label_selector": {"type": "str"},
         },
         supports_check_mode=True,
     )
@@ -157,6 +164,7 @@ def main():
             token=module.params["token"],
             name=module.params.get("name"),
             type=module.params.get("type"),
+            label_selector=module.params.get("label_selector"),
         )
         module.exit_json(**sc_load_balancer_instances_list.run())
     except SCBaseError as e:

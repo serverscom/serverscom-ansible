@@ -159,14 +159,14 @@ jobs:
           sync
 
   integration_tests_lb_instances:
-    runs-on: ubuntu-20.04
-    needs: integration_tests_l2
+    runs-on: ubuntu-24.04
+    needs: integration_tests_bm
     concurrency: API
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: "3.13"
       - name: Install dependencies
@@ -195,7 +195,9 @@ jobs:
 
   build:
     runs-on: ubuntu-24.04
-    needs: integration_tests_l2
+    needs:
+      - integration_tests_l2
+      - integration_tests_lb_instances
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:

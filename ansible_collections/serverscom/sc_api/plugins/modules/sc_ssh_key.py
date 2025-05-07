@@ -64,22 +64,30 @@ options:
         - Used for I(state)=C(absent) to remove keys by name.
 
     public_key:
-        type: str
-        required: false
-        description:
-          - public key in base64 (with type prefix, f.e. ssh-rss).
-          - Used to calculate I(fingerprint).
-          - Required for I(state)=C(present).
+      type: str
+      required: false
+      description:
+        - public key in base64 (with type prefix, f.e. ssh-rss).
+        - Used to calculate I(fingerprint).
+        - Required for I(state)=C(present).
 
     fingerprint:
-        type: str
-        required: false
-        description:
-          - Fingerprint of the key.
-          - Used for I(state)=C(absent).
-          - If both I(fingerprint) and I(public_keys) are given,
-            module returns error if they are from different keys.
-          - Derived automatically from I(public_key) if needed.
+      type: str
+      required: false
+      description:
+        - Fingerprint of the key.
+        - Used for I(state)=C(absent).
+        - If both I(fingerprint) and I(public_keys) are given,
+          module returns error if they are from different keys.
+        - Derived automatically from I(public_key) if needed.
+
+    labels:
+      type: dict
+      required: false
+      description:
+        - Labels to attach to the key.
+        - Used for I(state)=C(present).
+        - If not specified, no labels will be attached.
 
     replace:
       type: bool
@@ -92,7 +100,32 @@ options:
 """
 
 RETURN = """
-"""  # noqa
+name:
+  type: str
+  description:
+    - Name of the SSH key.
+  returned: on success
+fingerprint:
+  type: str
+  description:
+    - Fingerprint of the public key.
+  returned: on success
+labels:
+  type: dict
+  description:
+    - Labels attached to the key.
+  returned: on success
+created_at:
+  type: str
+  description:
+    - Timestamp when the key was added.
+  returned: on success
+updated_at:
+  type: str
+  description:
+    - Timestamp of the key's last update.
+  returned: on success
+"""
 
 EXAMPLES = """
     - name: Add ssh key
@@ -136,9 +169,10 @@ def main():
                 "choices": ["present", "absent"],
                 "required": True,
             },
-            "name": {},
-            "public_key": {},
-            "fingerprint": {},
+            "name": {"type": "str"},
+            "public_key": {"type": "str"},
+            "fingerprint": {"type": "str"},
+            "labels": {"type": "dict"},
             "replace": {"type": "bool", "default": False},
         },
         supports_check_mode=True,
@@ -151,6 +185,7 @@ def main():
             state=module.params["state"],
             public_key=module.params["public_key"],
             fingerprint=module.params["fingerprint"],
+            labels=module.params.get("labels"),
             replace=module.params["replace"],
             checkmode=module.check_mode,
         )

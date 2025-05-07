@@ -77,3 +77,62 @@
       - test4.load_balancer_instances[0].name
       - test4.load_balancer_instances[0].status
       - test4.load_balancer_instances[0].type
+
+
+- name: Create L4 load balancer instance
+  serverscom.sc_api.sc_load_balancer_instance_l4:
+    token: "{{ sc_token }}"
+    state: present
+    name: "test-lb-l4-instances-list-module"
+    location_id: 32
+    vhost_zones:
+      - id: "vhost-zone1"
+        ports: [80, 443]
+        udp: false
+        proxy_protocol: false
+        upstream_id: "upstream-zone1"
+        description: "Test vhost zone"
+    upstream_zones:
+      - id: "upstream-zone1"
+        method: "random.least_conn"
+        udp: false
+        hc_interval: 5
+        hc_jitter: 5
+        upstreams:
+          - ip: 10.33.190.228
+            port: 3000
+            weight: 1
+            max_conns: 63000
+            max_fails: 0
+            fail_timeout: 30
+    labels:
+      test_label: "test_value"
+  register: test_lb_instance
+
+- name: Test5, Get Load Balancer instances by label
+  sc_load_balancer_instances_list:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    label_selector: "test_label==test_value"
+  register: test5
+
+- name: Check Test5
+  assert:
+    that:
+      - test5 is not changed
+      - test5.load_balancer_instances | length > 0
+      - test5.load_balancer_instances[0].created_at
+      - test5.load_balancer_instances[0].updated_at
+      - test5.load_balancer_instances[0].external_addresses | length > 0
+      - test5.load_balancer_instances[0].id
+      - test5.load_balancer_instances[0].location_id
+      - test5.load_balancer_instances[0].name
+      - test5.load_balancer_instances[0].status
+      - test5.load_balancer_instances[0].type
+      - test5.load_balancer_instances[0].labels.test_label == "test_value"
+
+- name: Destroy test load balancer instance
+  serverscom.sc_api.sc_load_balancer_instance_l4:
+    token: "{{ sc_token }}"
+    state: absent
+    name: "test-lb-l4-instances-list-module"

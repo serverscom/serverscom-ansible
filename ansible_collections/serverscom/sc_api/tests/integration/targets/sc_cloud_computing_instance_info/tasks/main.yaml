@@ -31,22 +31,60 @@
       - "'v1/cloud_computing/instances/M7e5Ba2v' in test2.api_url"
       - test2.status_code != 200
 
-- name: Test3, Get all instances
-  sc_cloud_computing_instances_info:
-    token: '{{ sc_token }}'
+- name: Get Debian 12 image ID
+  sc_cloud_computing_images_info:
+    token: "{{ sc_token }}"
+    region_id: 2
+  register: images_info
+
+- name: Store Debian 12 image ID
+  set_fact:
+    debian_12_image_id: "{{ images_info.cloud_images | selectattr('name','equalto','Debian 12 (64 bit)') | map(attribute='id') | first }}"
+
+- name: Create test instance
+  sc_cloud_computing_instance:
+    token: "{{ sc_token }}"
     endpoint: '{{ sc_endpoint }}'
-  register: instances
+    state: present
+    region_id: 2   # Luxembourg
+    flavor_id: "33227-1"   # RND.2-1024-10
+    image_id: "{{ debian_12_image_id }}"
+    name: "sc-cloud-computing-instance-info-test"
+    ssh_key_fingerprint: "9b:08:4d:a5:6d:45:26:72:2c:e0:9a:ee:bf:7d:03:a6"
+    labels:
+      test_label: "test_value"
+    backup_copies: 0
+    gpn: true
+    ipv6: false
+    ipv4: false
+  register: test_instance
 
 - name: Test3, Get instance info
   sc_cloud_computing_instance_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    instance_id: '{{ instances.cloud_instances[0].id }}'
+    instance_id: '{{ test_instance.id }}'
   register: test3
 
 - name: Check Test3
   assert:
     that:
       - test3 is not changed
-      - instances.cloud_instances[0].name == test3.name
-      - instances.cloud_instances[0].id == test3.id
+      - test3.name == "sc-cloud-computing-instance-info-test"
+      - test3.status == "ACTIVE"
+      - test3.region_id == 2
+      - test3.flavor_id == "33227-1"
+      - test3.image_id == debian_12_image_id
+      - test3.labels.test_label == "test_value"
+      - test3.backup_copies == 0
+      - test3.gpn_enabled == true
+      - test3.ipv6_enabled == false
+      - test3.id == test_instance.id
+      - test3.private_ipv4_address == test_instance.private_ipv4_address
+      - test3.local_ipv4_address == test_instance.local_ipv4_address
+
+- name: Destroy test instance
+  serverscom.sc_api.sc_cloud_computing_instance:
+    token: '{{ sc_token }}'
+    instance_id: '{{ test_instance.id }}'
+    state: absent

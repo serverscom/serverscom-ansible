@@ -43,6 +43,45 @@
     that:
       - test2 is not changed
 
+
+# Clean L2 segments with test servers as members
+- name: Get all L2 segments list
+  serverscom.sc_api.sc_l2_segments_info:
+    token: "{{ sc_token }}"
+    endpoint: '{{ sc_endpoint }}'
+  register: all_l2_segments
+
+- name: Get full info of all the L2 segments
+  serverscom.sc_api.sc_l2_segment_info:
+    token: "{{ sc_token }}"
+    id: "{{ item.id }}"
+  loop: "{{ all_l2_segments.l2_segments }}"
+  register: sc_l2_segments_full_info
+
+- name: Initialize matched list
+  set_fact:
+    matched_segments: []
+
+- name: Collect segments with test members
+  set_fact:
+    matched_segments: "{{ matched_segments + [item] }}"
+  loop: "{{ sc_l2_segments_full_info.results }}"
+  when: item.l2_segment.members
+        | selectattr('id', 'in', [existing_server1_id, existing_server2_id, existing_server3_id])
+        | list
+        | length > 0
+
+- name: Remove segments with test members
+  sc_l2_segment:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    name: "{{ item.l2_segment.name }}"
+    state: absent
+    type: private
+  loop: "{{ matched_segments }}"
+  loop_control:
+    label: "{{ item.l2_segment.name }}"
+
 - block:
     - name: Test4, Create segment in check mode
       sc_l2_segment:
@@ -70,6 +109,7 @@
           - test4 is changed
           - test4.results[0].location_group_id == test4.results[1].location_group_id
           - test4.results[0].location_group_id > 0
+
 - block:
     - name: Test5, Create public segment for real
       sc_l2_segment:
@@ -85,6 +125,8 @@
             mode: native
           - id: '{{ existing_server3_id }}'
             mode: native
+        labels:
+          test_label: "test_value"
       register: test5
       tags: create
 
@@ -96,6 +138,7 @@
           - test5.id
           - test5.type == 'private'
           - test5.status == 'active'
+          - test5.labels.test_label == 'test_value'
 
     - name: Test5a, Create public segment for real second time (idempotence)
       sc_l2_segment:
@@ -111,6 +154,8 @@
             mode: native
           - id: '{{ existing_server3_id }}'
             mode: native
+        labels:
+          test_label: "test_value"
       register: test5a
 
     - name: Check Test5a
@@ -121,6 +166,7 @@
           - test5a.id == test5.id
           - test5a.type == 'private'
           - test5a.status == 'active'
+          - test5.labels.test_label == 'test_value'
 
     - name: Test6, Delete public segment in check mode
       sc_l2_segment:
