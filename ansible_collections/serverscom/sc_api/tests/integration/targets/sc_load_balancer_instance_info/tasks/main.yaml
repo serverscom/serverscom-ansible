@@ -67,7 +67,7 @@
         http2: true
         http_to_https_redirect: false
         http2_push_preload: false
-        domains: ["lb-bench2.r.servers.im"]
+        domains: ["demo.test"]
         location_zones:
           - location: "/"
             upstream_id: "upstream-zone1"
@@ -83,7 +83,7 @@
         method: "round-robin"
         ssl: false
         sticky: false
-        hc_domain: "lb-bench2.r.servers.im"
+        hc_domain: "demo.test"
         hc_path: "/"
         hc_method: "GET"
         hc_fails: 1

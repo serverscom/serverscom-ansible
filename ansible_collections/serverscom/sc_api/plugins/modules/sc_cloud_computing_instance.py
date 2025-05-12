@@ -201,7 +201,7 @@ options:
     labels:
         type: dict
         description:
-          - Labels to attach to the instance. Created if not present.
+          - Labels to attach to the instance. If labels do not exist they will be created.
           - Key-value pairs.
           - More info at https://developers.servers.com/api-documentation/v1/#section/Labels.
 
