@@ -35,46 +35,46 @@
       - test2.baremetal_servers[0].type
 
 - block:
-  - name: PUT test label
-    uri:
-      url: "{{ sc_endpoint }}/hosts/dedicated_servers/{{ item }}"
-      method: PUT
-      headers:
-        Authorization: "Bearer {{ sc_token }}"
-        Content-Type: "application/json"
-      body:
-        labels:
-          test_label: "test_value"
-      body_format: json
-      status_code: 200
-    loop:
-      - "{{ existing_server1_id }}"
-      - "{{ existing_server2_id }}"
-      - "{{ existing_server3_id }}"
+    - name: PUT test label
+      uri:
+        url: "{{ sc_endpoint }}/hosts/dedicated_servers/{{ item }}"
+        method: PUT
+        headers:
+          Authorization: "Bearer {{ sc_token }}"
+          Content-Type: "application/json"
+        body:
+          labels:
+            test_label: "test_value"
+        body_format: json
+        status_code: 200
+      loop:
+        - "{{ existing_server1_id }}"
+        - "{{ existing_server2_id }}"
+        - "{{ existing_server3_id }}"
 
 
-  - name: Test3, Retrive list of servers by label
-    sc_baremetal_servers_info:
-      token: '{{ sc_token }}'
-      endpoint: '{{ sc_endpoint }}'
-      label_selector: "test_label==test_value"
-    register: test3
+    - name: Test3, Retrive list of servers by label
+      sc_baremetal_servers_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        label_selector: "test_label==test_value"
+      register: test3
 
-  - name: Check Test3
-    assert:
-      that:
-        - test3 is not changed
-        - test3.baremetal_servers|length > 0
-        - test3.baremetal_servers[0].configuration
-        - test3.baremetal_servers[0].id
-        - test3.baremetal_servers[0].location_code
-        - test3.baremetal_servers[0].location_id
-        - test3.baremetal_servers[0].operational_status
-        - test3.baremetal_servers[0].private_ipv4_address
-        - test3.baremetal_servers[0].public_ipv4_address
-        - test3.baremetal_servers[0].title
-        - test3.baremetal_servers[0].type
-      fail_msg: "Test server not found by label"
+    - name: Check Test3
+      assert:
+        that:
+          - test3 is not changed
+          - test3.baremetal_servers|length > 0
+          - test3.baremetal_servers[0].configuration
+          - test3.baremetal_servers[0].id
+          - test3.baremetal_servers[0].location_code
+          - test3.baremetal_servers[0].location_id
+          - test3.baremetal_servers[0].operational_status
+          - test3.baremetal_servers[0].private_ipv4_address
+          - test3.baremetal_servers[0].public_ipv4_address
+          - test3.baremetal_servers[0].title
+          - test3.baremetal_servers[0].type
+        fail_msg: "Test server not found by label"
 
   always:
     - name: Remove test label
