@@ -1,0 +1,78 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
+  when: not sc_endpoint or not sc_token
+
+- name: Test invalid token
+  serverscom.sc_api.sc_dedicated_server_power:
+    token: invalid
+    state: off
+    server_id: "0m592Zmn"
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 404
+
+- name: Make sure that test server is powered on
+  serverscom.sc_api.sc_dedicated_server_power:
+    token: "{{ sc_token }}"
+    state: on
+    server_id: "{{ existing_server1_id }}"
+  register: server_power_on
+  failed_when:
+    - server_power_on.power_status != "powered_on"
+
+- name: Power off server
+  serverscom.sc_api.sc_dedicated_server_power:
+    token: "{{ sc_token }}"
+    state: off
+    server_id: "{{ existing_server1_id }}"
+  register: test2
+
+- name: Check Test2
+  assert:
+    that:
+      - test2 is changed
+      - test2.power_status == "powered_off"
+
+- name: Power off server (idempotency test)
+  serverscom.sc_api.sc_dedicated_server_power:
+    token: "{{ sc_token }}"
+    state: off
+    server_id: "{{ existing_server1_id }}"
+  register: test3
+
+- name: Check Test3
+  assert:
+    that:
+      - test3 is not changed
+      - test3.power_status == "powered_off"
+
+- name: Power on server
+  serverscom.sc_api.sc_dedicated_server_power:
+    token: "{{ sc_token }}"
+    state: on
+    server_id: "{{ existing_server1_id }}"
+  register: test4
+
+- name: Check Test4
+  assert:
+    that:
+      - test4 is changed
+      - test4.power_status == "powered_on"
+
+- name: Power on server (idempotency test)
+  serverscom.sc_api.sc_dedicated_server_power:
+    token: "{{ sc_token }}"
+    state: on
+    server_id: "{{ existing_server1_id }}"
+  register: test5
+
+- name: Check Test5
+  assert:
+    that:
+      - test5 is not changed
+      - test5.power_status == "powered_on"

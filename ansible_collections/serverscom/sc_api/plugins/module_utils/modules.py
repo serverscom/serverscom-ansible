@@ -1882,3 +1882,91 @@ class ScLbInstanceL7CreateUpdate:
                 return new_instance
             else:
                 return {"changed": False}
+
+
+class ScDedicatedServerPower:
+    def __init__(self, endpoint, token, server_id, state, fail_on_absent, timeout, checkmode):
+        self.api = ScApi(token, endpoint)
+        self.server_id = server_id
+        self.state = state
+        self.fail_on_absent = fail_on_absent
+        self.timeout = timeout
+        self.checkmode = checkmode
+        self.interval = 5
+
+    def wait_for_status(self, target_status):
+        start = time.time()
+        while True:
+            server = self.api.get_dedicated_servers(self.server_id)
+            status = server["power_status"]
+            if status == target_status:
+                return server
+            # only these are transitional
+            if status not in ("powering_on", "powering_off", "power_cycling"):
+                raise ModuleError(f"Unexpected power_status={status}, expected {target_status}")
+            if time.time() - start > self.timeout:
+                raise ModuleError(f"Timeout waiting for power_status={target_status}, last={status}")
+            time.sleep(self.interval)
+
+    def power_on(self):
+        try:
+            server = self.api.get_dedicated_servers(self.server_id)
+        except APIError404:
+            if self.fail_on_absent:
+                raise
+            raise ModuleError(f"Server {self.server_id} not found.")
+        if server["power_status"] == "powered_on":
+            server["changed"] = False
+            return server
+        if self.checkmode:
+            server["changed"] = True
+            return server
+        self.api.post_dedicated_server_power_on(self.server_id)
+        server = self.wait_for_status("powered_on")
+        server["changed"] = True
+        return server
+
+    def power_off(self):
+        try:
+            server = self.api.get_dedicated_servers(self.server_id)
+        except APIError404:
+            if self.fail_on_absent:
+                raise
+            raise ModuleError(f"Server {self.server_id} not found.")
+        if server["power_status"] == "powered_off":
+            server["changed"] = False
+            return server
+        if self.checkmode:
+            server["changed"] = True
+            return server
+        self.api.post_dedicated_server_power_off(self.server_id)
+        server = self.wait_for_status("powered_off")
+        server["changed"] = True
+        return server
+
+    def power_cycle(self):
+        try:
+            server = self.api.get_dedicated_servers(self.server_id)
+        except APIError404:
+            if self.fail_on_absent:
+                raise
+            raise ModuleError(f"Server {self.server_id} not found.")
+        if self.checkmode:
+            server["changed"] = True
+            return server
+        self.api.post_dedicated_server_power_off(self.server_id)
+        self.wait_for_status("powered_off")
+        self.api.post_dedicated_server_power_on(self.server_id)
+        server = self.wait_for_status("powered_on")
+        server["changed"] = True
+        return server
+
+    def run(self):
+        if self.state == "on":
+            return self.power_on()
+        elif self.state == "off":
+            return self.power_off()
+        elif self.state == "cycle":
+            return self.power_cycle()
+        else:
+            raise ModuleError(f"Unknown state: {self.state}")
