@@ -76,3 +76,16 @@
     that:
       - test5 is not changed
       - test5.power_status == "powered_on"
+
+- name: Power cycle server
+  serverscom.sc_api.sc_dedicated_server_power:
+    token: "{{ sc_token }}"
+    state: cycle
+    server_id: "{{ existing_server1_id }}"
+  register: test6
+
+- name: Check Test6
+  assert:
+    that:
+      - test6 is changed
+      - test6.power_status == "powered_on"

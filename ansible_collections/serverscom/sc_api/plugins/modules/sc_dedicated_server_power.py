@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# (c) 2020, Servers.com
+# (c) 2025, Servers.com
 # GNU General Public License v3.0
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -56,17 +56,11 @@ options:
       - Desired power state.
       - "I(on): power on outlet."
       - "I(off): power off outlet."
-      - "I(cycle): power cycle outlet."
+      - "I(cycle): power cycle outlet. Within this action the power will be
+        turned off and then on again. This is equivalent to unplugging the
+        power cord and plugging it back in."
 
-  fail_on_absent:
-    type: bool
-    default: true
-    description:
-      - Raise error if server is not found.
-      - If set to false, absent (not found) server will have
-        found=false in server info.
-
-  timeout:
+  wait:
     description:
       - |
         Maximum time in seconds to wait for the server to reach the desired state."
@@ -173,23 +167,39 @@ oob_ipv4_address:
 """
 
 EXAMPLES = """
-- name: Power on server
-  sc_dedicated_server_power:
-    token: "{{ api_token }}"
-    server_id: "0m592Zmn"
-    state: on
-
 - name: Power off server
   sc_dedicated_server_power:
     token: "{{ api_token }}"
     server_id: "0m592Zmn"
     state: off
 
+- name: Power on server
+  sc_dedicated_server_power:
+    token: "{{ api_token }}"
+    server_id: "0m592Zmn"
+    state: on
+
+# power cycle server (disable and enable power)
 - name: Cycle power on server
   sc_dedicated_server_power:
     token: "{{ api_token }}"
     server_id: "0m592Zmn"
     state: cycle
+
+- name: Wait until server is powered off
+  wait_for:
+    host: "{{ hostvars[inventory_hostname].ansible_host }}"
+    port: 22
+    state: drained
+    timeout: 30
+
+- name: Wait for SSH login
+  wait_for_connection:
+    connect_timeout: 5
+    timeout: 600
+
+- name: Re-gather facts after reboot
+  setup:
 """
 
 
@@ -214,8 +224,7 @@ def main():
                 "choices": ["on", "off", "cycle"],
                 "required": True,
             },
-            "fail_on_absent": {"type": "bool", "default": True},
-            "timeout": {"type": "int", "default": 60},
+            "wait": {"type": "int", "default": 60},
         },
         supports_check_mode=True,
     )
@@ -226,8 +235,7 @@ def main():
             token=module.params["token"],
             server_id=module.params["server_id"],
             state=module.params["state"],
-            fail_on_absent=module.params["fail_on_absent"],
-            timeout=module.params["timeout"],
+            wait=module.params["wait"],
             checkmode=module.check_mode,
         )
         module.exit_json(**power.run())

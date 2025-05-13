@@ -5,6 +5,7 @@ version: 0.2.0
 readme: README.md
 authors:
   - George Shuklin <george.shuklin@gmail.com>
+  - Volodymyr Rudniev <rudnev.vv@gmail.com>
 description: Collection of modules to work with Servers.com API
 license:
   - GPL-3.0-or-later

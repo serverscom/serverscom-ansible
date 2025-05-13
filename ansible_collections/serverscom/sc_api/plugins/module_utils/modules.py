@@ -1885,12 +1885,11 @@ class ScLbInstanceL7CreateUpdate:
 
 
 class ScDedicatedServerPower:
-    def __init__(self, endpoint, token, server_id, state, fail_on_absent, timeout, checkmode):
+    def __init__(self, endpoint, token, server_id, state, wait, checkmode):
         self.api = ScApi(token, endpoint)
         self.server_id = server_id
         self.state = state
-        self.fail_on_absent = fail_on_absent
-        self.timeout = timeout
+        self.wait = wait
         self.checkmode = checkmode
         self.interval = 5
 
@@ -1904,7 +1903,7 @@ class ScDedicatedServerPower:
             # only these are transitional
             if status not in ("powering_on", "powering_off", "power_cycling"):
                 raise ModuleError(f"Unexpected power_status={status}, expected {target_status}")
-            if time.time() - start > self.timeout:
+            if time.time() - start > self.wait:
                 raise ModuleError(f"Timeout waiting for power_status={target_status}, last={status}")
             time.sleep(self.interval)
 
@@ -1912,8 +1911,6 @@ class ScDedicatedServerPower:
         try:
             server = self.api.get_dedicated_servers(self.server_id)
         except APIError404:
-            if self.fail_on_absent:
-                raise
             raise ModuleError(f"Server {self.server_id} not found.")
         if server["power_status"] == "powered_on":
             server["changed"] = False
@@ -1930,8 +1927,6 @@ class ScDedicatedServerPower:
         try:
             server = self.api.get_dedicated_servers(self.server_id)
         except APIError404:
-            if self.fail_on_absent:
-                raise
             raise ModuleError(f"Server {self.server_id} not found.")
         if server["power_status"] == "powered_off":
             server["changed"] = False
@@ -1948,8 +1943,6 @@ class ScDedicatedServerPower:
         try:
             server = self.api.get_dedicated_servers(self.server_id)
         except APIError404:
-            if self.fail_on_absent:
-                raise
             raise ModuleError(f"Server {self.server_id} not found.")
         if self.checkmode:
             server["changed"] = True
