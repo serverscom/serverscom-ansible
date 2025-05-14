@@ -33,7 +33,6 @@ options:
       description:
         - Endpoint to use to connect to API.
         - Do not change until specifically asked to do otherwise.
-
     token:
       type: str
       required: true
@@ -49,13 +48,18 @@ options:
           to retrive list of available regions.
         - Module returns instances for all regions if I(region_id) is not
           specified.
+    label_selector:
+        type: str
+        description:
+            - Search for bare metal servers with specific labels.
+            - More info at https://developers.servers.com/api-documentation/v1/#section/Labels/Labels-selector
 """
 
 RETURN = """
 cloud_instances:
-  type: complex
-  description:
-    - List of available flavors for region.
+  description: List of available flavors for region.
+  type: list
+  elements: dict
   contains:
     id:
       type: str
@@ -134,6 +138,12 @@ cloud_instances:
       description:
         - IPv4 address for instance.
         - May be missing if no private network is connected to the instance.
+    local_ipv4_address:
+      type: str
+      description:
+        - Local IP.
+        - May be null if no local network is connected to the instance.
+      returned: on success
     ipv6_enabled:
       type: bool
       description:
@@ -144,6 +154,37 @@ cloud_instances:
         - Flag is Global Private Network was enabled for instance.
         - Flag may not prepresent private_ipv4_address if private interface
           was detached via Openstack API.
+    vpn2gpn_instance:
+      type: dict
+      description:
+        - VPN-to-GPN instance details or null.
+      contains:
+        id:
+          type: int
+          description:
+            - VPN2GPN instance ID.
+          returned: on success
+        name:
+          type: str
+          description:
+            - VPN2GPN instance name.
+          returned: on success
+      returned: on success
+    backup_copies:
+      type: int
+      description:
+        - Number of backup copies.
+      returned: on success
+    public_port_blocked:
+      type: bool
+      description:
+        - Whether the public port of the instance is blocked.
+      returned: on success
+    labels:
+      type: dict
+      description:
+        - Labels associated with the instance.
+      returned: on success
     created_at:
       type: str
       description:
@@ -170,6 +211,7 @@ EXAMPLES = """
       sc_cloud_computing_instances_info:
         token: '{{ sc_token }}'
         region_id: 0
+        label_selector: "environment==staging"
       register: flavors
 
     - name: List all instances in the region
@@ -193,6 +235,7 @@ def main():
             "token": {"type": "str", "no_log": True, "required": True},
             "endpoint": {"default": DEFAULT_API_ENDPOINT},
             "region_id": {"type": "int"},
+            "label_selector": {"type": "str"},
         },
         supports_check_mode=True,
     )
@@ -201,6 +244,7 @@ def main():
             endpoint=module.params["endpoint"],
             token=module.params["token"],
             region_id=module.params["region_id"],
+            label_selector=module.params.get("label_selector"),
         )
         module.exit_json(**instances.run())
     except SCBaseError as e:

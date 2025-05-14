@@ -55,9 +55,9 @@ options:
           I(Image_regexp) are used, if not specified, old image
           is used. It's impossible to change ssh key by reinstalling.
         - C(reinstalled) is not idempotent, use 'when' for idempotency.
-        - C(upgraded) performs upgrade (change of the flavor),
-          if flavor of the current instance
-          is different from existing flavor. It does not create a new instance.
+        - C(upgraded) performs upgrade (change of the flavor), if flavor of the
+          current instance is different from existing flavor. It does not
+          create a new instance.
         - C(present) requires additional information for creation.
         - C(absent) requires either C(id) or C(name).
         - If I(state)=C(absent), C(reinstalled) or C(upgraded)
@@ -198,6 +198,13 @@ options:
             possible formats
           - Is used only for for I(state)=C(present).
 
+    labels:
+        type: dict
+        description:
+          - Labels to attach to the instance. If labels do not exist they will be created.
+          - Key-value pairs.
+          - More info at https://developers.servers.com/api-documentation/v1/#section/Labels.
+
     wait:
       type: int
       required: false
@@ -251,127 +258,170 @@ options:
 #  delete multiple?
 
 RETURN = """
+---
 id:
   type: str
   description:
-    - Id of the instance.
+    - Unique identifier of the cloud instance.
   returned: on success
+
 region_id:
   type: int
   description:
-    - Id of the region.
-    - Same as in I(region_id).
+    - Identifier of the region (same as the region_id parameter).
   returned: on success
+
 region_code:
   type: str
   description:
-    - Human-readable code for region.
+    - Technical identifier of the region.
   returned: on success
+
 flavor_id:
   type: str
   description:
-    - Id of the instance's flavor.
+    - Identifier of the instance's flavor.
   returned: on success
+
 flavor_name:
   type: str
   description:
-    - Human-readable name of the instance's flavor.
+    - Name of the instance's flavor.
   returned: on success
+
 image_id:
   type: str
   description:
-    - Id of the image or snapshot used for instance build/rebuild.
+    - Identifier of the image or snapshot used for build/rebuild.
   returned: on success
+
 image_name:
   type: str
   description:
-    - Name of the image.
-    - May be absent if image was removed.
+    - Name of the image; may be null if removed.
   returned: on success
+
 name:
   type: str
   description:
     - Name of the instance.
   returned: on success
+
 openstack_uuid:
   type: str
   description:
-    - UUID of the instance in the Openstack API.
-    - May be missing at some stages of lifecycle.
+    - UUID in the OpenStack API; may be null during provisioning.
   returned: on success
+
 status:
   type: str
   description:
-    - Current status for the instance.
-    - ACTIVE - a normal, operational status of a cloud instance.
-    - SWITCHED_OFF, SWITCHING_OFF, SWITCHING_ON, REBOOTING - power states
-      for ACTIVE instance.
-    - PENDING - order for new instance is been processed.
-    - CREATING, BUILDING, REBUILDING, PROVISIONING, DELETING and DELETED
-      stages of lifecycle.
-    - AWAITING_UPGRADE_CONFIRM - instance is waiting for confirm
-      (instances are autoconfirm in 72hr.)
-    - UPGRADING, REVERTING_UPGRADE - stages of upgrade lifecycle.
-    - CREATING_SNAPSHOT - Instance snapshot is creating.
-    - BUSY - Instance is not available for API operations.
-    - ERROR - Instance was failed or wasn't created.
-    - KEYPAIR_NOT_FOUND - SSH key wasn't found, please check if you are
-      using a correct key.
-    - QUOTA_EXCEEDED - at creation time, chosen flavor exceeded quota.
-      Please contact support for raising quota.
-    - RESCUING, RESCUE - states for rescue operation for instance.
+    - ACTIVE - operational.
+    - SWITCHED_OFF, SWITCHING_OFF, SWITCHING_ON, REBOOTING – power states.
+    - PENDING, CREATING, BUILDING, REBUILDING, PROVISIONING – provisioning.
+    - DELETING, DELETED – removal.
+    - AWAITING_UPGRADE_CONFIRM – awaiting upgrade confirmation.
+    - UPGRADING, REVERTING_UPGRADE – upgrade process.
+    - CREATING_SNAPSHOT – snapshot creation.
+    - BUSY – unavailable.
+    - ERROR – error.
+    - KEYPAIR_NOT_FOUND – SSH key missing.
+    - QUOTA_EXCEEDED – flavor quota exceeded.
+    - RESCUING, RESCUE – rescue mode.
   returned: on success
+
 public_ipv4_address:
   type: str
   description:
-    - IPv4 address for instance.
-    - May be missing if public inteface was detached via Openstack API.
+    - Public IPv4 address; may be null if detached.
   returned: on success
+
 public_ipv6_address:
   type: str
   description:
-    - IPv6 address for instance.
-    - May be missing if no IPv6 address was ordered or public inteface
-     was detached via Openstack API.
+    - Public IPv6 address; may be null if none ordered or detached.
   returned: on success
+
 private_ipv4_address:
   type: str
   description:
-    - IPv4 address for instance.
-    - May be missing if no private network is connected to the instance.
+    - Private IPv4 address; may be null if no private network.
   returned: on success
-ipv6:
+
+local_ipv4_address:
+  type: str
+  description:
+    - Local IPv4 for intra-region GPN; may be null.
+  returned: on success
+
+ipv6_enabled:
   type: bool
   description:
-    - Flag if IPv6 was enabled for instance.
+    - True if IPv6 is enabled.
   returned: on success
-gpn:
+
+gpn_enabled:
   type: bool
   description:
-    - Flag is Global Private Network was enabled for instance.
-    - Flag may not prepresent private_ipv4_address if private interface
-      was detached via Openstack API.
+    - True if Global Private Network is enabled.
   returned: on success
+
+public_port_blocked:
+  type: bool
+  description:
+    - True if a public port is blocked.
+  returned: on success
+
+backup_copies:
+  type: int
+  description:
+    - Number of backup copies.
+  returned: on success
+
+labels:
+  type: dict
+  description:
+    - Labels attached to the instance.
+  returned: on success
+
+vpn2gpn_instance:
+  type: complex
+  description:
+    - VPN-to-GPN service instance details; null otherwise.
+  contains:
+    id:
+      type: str
+      description:
+        - Identifier of the VPN2GPN instance.
+    name:
+      type: str
+      description:
+        - Name of the VPN2GPN service.
+  returned: on success
+
 created_at:
   type: str
   description:
-    - Date of creation of the instance.
+    - Creation timestamp.
   returned: on success
+
 updated_at:
   type: str
   description:
-    - Date of last update for the instance.
+    - Last update timestamp.
   returned: on success
 
 api_url:
-    description: URL for the failed request
-    type: str
-    returned: on failure
+  type: str
+  description:
+    - URL of the failed request.
+  returned: on failure
 
 status_code:
-    description: Status code for the request
-    type: int
-    returned: on failure
+  type: int
+  description:
+    - HTTP status code of the response.
+  returned: on failure
 """
 
 EXAMPLES = """
@@ -432,6 +482,7 @@ def main():
             "ssh_key_name": {},
             "backup_copies": {"type": "int", "default": 5},
             "user_data": {"type": "str", "default": ""},
+            "labels": {"type": "dict"},
             "wait": {"type": "int", "default": 600},
             "update_interval": {"type": "int", "default": 5},
             "retry_on_conflicts": {"type": "bool", "default": True},
@@ -465,6 +516,7 @@ def main():
                 ssh_key_name=module.params["ssh_key_name"],
                 backup_copies=module.params["backup_copies"],
                 user_data=module.params["user_data"],
+                labels=module.params.get("labels"),
                 wait=module.params["wait"],
                 update_interval=module.params["update_interval"],
                 checkmode=module.check_mode,

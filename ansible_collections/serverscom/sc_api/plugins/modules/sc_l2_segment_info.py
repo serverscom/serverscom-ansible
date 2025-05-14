@@ -56,60 +56,59 @@ options:
 
 RETURN = """
 l2_segment:
-    description:
-        - Information about L2 segments
-    returned: on success
-    type: complex
-    contains:
-        id:
-            type: str
-            description:
-                - ID of the L2 segement
-        name:
-            type: str
-            description:
-                - Name of the L2 segement
-
-        type:
-            type: str
-            description:
-                - Type of the segement. Either C(public) or C(private)
-        status:
-            type: str
-            description:
-                - Status of the segment. C(active) means segment is ready
-                  to be used.
-
-        location_group_id:
-            type: int
-            description:
-                - Id of the location group where L2 segment was created
-
-        location_group_code:
-            type: str
-            description:
-                - Textual name of the location group
-
-        updated_at:
-            type: str
-            description:
-                - Last update date and time
-
-        created_at:
-            type: str
-            description:
-                - Creation date and time
-
+  type: complex
+  returned: on success
+  description:
+    - Information about a single L2 segment.
+  contains:
+    id:
+      type: str
+      description:
+        - Unique identifier of the L2 segment.
+    name:
+      type: str
+      description:
+        - Name of the L2 segment.
+    type:
+      type: str
+      description:
+        - "Segment type: 'public' or 'private'."
+    status:
+      type: str
+      description:
+        - "Segment state: 'pending' – creating; 'active' – ready to use; 'removing' – deleting."
+    location_group_id:
+      type: int
+      description:
+        - Identifier of the location group.
+    location_group_code:
+      type: str
+      description:
+        - Technical code of the location group.
+    labels:
+      type: dict
+      description:
+        - Labels attached to the segment.
+    created_at:
+      type: str
+      description:
+        - Creation timestamp.
+    updated_at:
+      type: str
+      description:
+        - Last update timestamp; null if never updated.
 
 api_url:
-    description: URL for the failed request
-    returned: on failure
-    type: str
+  type: str
+  returned: on failure
+  description:
+    - URL of the failed request.
 
 status_code:
-    description: Status code for the request
-    returned: always
-    type: int
+  type: int
+  returned: always
+  description:
+    - HTTP status code of the response.
 """
 
 EXAMPLES = """

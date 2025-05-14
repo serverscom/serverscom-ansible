@@ -193,6 +193,13 @@ options:
           - If members are in different location group than
             specified, module fails.
 
+    labels:
+        type: dict
+        description:
+          - Labels to attach to the instance. If labels do not exist they will be created.
+          - Key-value pairs.
+          - More info at https://developers.servers.com/api-documentation/v1/#section/Labels.
+
     wait:
       type: int
       default: 1800
@@ -393,6 +400,7 @@ def main():
                 },
             },
             "location_group_id": {},
+            "labels": {"type": "dict"},
             "wait": {"type": "int", "default": 1800},
             "update_interval": {"type": "int", "default": 30},
         },
@@ -426,6 +434,7 @@ def main():
             members_present=module.params["members_present"],
             members_absent=module.params["members_absent"],
             location_group_id=module.params["location_group_id"],
+            labels=module.params.get("labels"),
             wait=module.params["wait"],
             update_interval=module.params["update_interval"],
             checkmode=module.check_mode,

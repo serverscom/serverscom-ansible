@@ -46,19 +46,65 @@
     token: "{{ sc_token }}"
     endpoint: "{{ sc_endpoint }}"
     id: QQQQ
-    type: l4
     fail_on_absent: false
   register: test4
   failed_when:
     - test4.failed != false
     - test4.status != "absent"
 
+- name: Create test load balancer instance
+  serverscom.sc_api.sc_load_balancer_instance_l7:
+    token: "{{ sc_token }}"
+    state: present
+    name: "test-sc-load-balancer-instance-info-module"
+    location_id: 32
+    store_logs: false
+    geoip: false
+    vhost_zones:
+      - id: "zone1"
+        ports: [80]
+        ssl: false
+        http2: true
+        http_to_https_redirect: false
+        http2_push_preload: false
+        domains: ["demo.test"]
+        location_zones:
+          - location: "/"
+            upstream_id: "upstream-zone1"
+            upstream_path: "/"
+            redirect: false
+        real_ip_header:
+          name: "real_ip"
+          networks: ["192.168.1.0/24"]
+    upstream_zones:
+      - id: "upstream-zone1"
+        hc_interval: 5
+        hc_jitter: 0
+        method: "round-robin"
+        ssl: false
+        sticky: false
+        hc_domain: "demo.test"
+        hc_path: "/"
+        hc_method: "GET"
+        hc_fails: 1
+        hc_passes: 3
+        grpc: false
+        upstreams:
+          - ip: 10.33.190.228
+            port: 3000
+            weight: 1
+            max_conns: 63000
+            max_fails: 0
+            fail_timeout: 30
+    labels:
+      environment: staging
+  register: test_lb_instance
+
 - name: Test5, Get LB instance by id
   sc_load_balancer_instance_info:
     token: "{{ sc_token }}"
     endpoint: "{{ sc_endpoint }}"
-    id: V13vaNd8
-    type: l7
+    id: "{{ test_lb_instance.id }}"
   register: test5
 
 - name: Check Test5
@@ -76,3 +122,9 @@
       - test5.name
       - test5.status
       - test5.type
+
+- name: Remove test load balancer instance
+  serverscom.sc_api.sc_load_balancer_instance_l7:
+    token: "{{ sc_token }}"
+    state: absent
+    id: "{{ test_lb_instance.id }}"

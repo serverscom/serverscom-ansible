@@ -41,42 +41,55 @@ options:
         - Token to use.
         - You can create token for you account in https://portal.servers.com
           in Profile -> Public API section.
+
+    label_selector:
+        type: str
+        description:
+            - Search for bare metal servers with specific labels.
+            - More info at https://developers.servers.com/api-documentation/v1/#section/Labels/Labels-selector
 """
 
 RETURN = """
 ssh_keys:
-  type: complex
+  type: list
+  elements: dict
+  returned: on success
   description:
-    - List of registered ssh public keys
-    - Can be empty if no keys were registered.
+    - List of registered SSH public keys.
+    - Empty list if none registered.
   contains:
     name:
       type: str
       description:
-        - Name of the key
+        - Name of the key.
     fingerprint:
       type: str
       description:
         - Fingerprint of the public key.
+    labels:
+      type: dict
+      description:
+        - Labels attached to the key.
     created_at:
       type: str
       description:
-        - Date this key was registered.
+        - Timestamp when the key was added.
     updated_at:
       type: str
       description:
-        - Date this key was updated last time.
-  returned: on success
+        - Timestamp of the key last update.
 
 api_url:
-    description: URL for the failed request
-    returned: on failure
-    type: str
+  type: str
+  returned: on failure
+  description:
+    - URL of the failed request.
 
 status_code:
-    description: Status code for the request
-    returned: always
-    type: int
+  type: int
+  returned: always
+  description:
+    - HTTP status code of the response.
 """
 
 EXAMPLES = """
@@ -103,6 +116,7 @@ def main():
         argument_spec={
             "token": {"type": "str", "no_log": True, "required": True},
             "endpoint": {"default": DEFAULT_API_ENDPOINT},
+            "label_selector": {"type": "str"},
         },
         supports_check_mode=True,
     )
@@ -110,6 +124,7 @@ def main():
         sc_ssh_key = ScSshKeysInfo(
             endpoint=module.params["endpoint"],
             token=module.params["token"],
+            label_selector=module.params.get("label_selector"),
         )
         module.exit_json(**sc_ssh_key.run())
     except SCBaseError as e:

@@ -27,7 +27,7 @@ description: >
     Allow to control power state and rescue mode for instance.
     This module does not allow removal and creation of the instance,
     use M(serverscom.sc_api.sc_cloud_computing_instance)
-    with state=present/absent.
+    with I(state)=Q(present)/Q(absent).
 
 options:
     endpoint:
