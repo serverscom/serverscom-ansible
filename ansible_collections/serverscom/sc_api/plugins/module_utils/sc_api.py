@@ -826,3 +826,19 @@ class ScApi:
             query_parameters=None,
             good_codes=[200, 202],
         )
+
+    def post_dedicated_server_power_on(self, server_id):
+        return self.api_helper.make_post_request(
+            path=f"/hosts/dedicated_servers/{server_id}/power_on",
+            body=None,
+            query_parameters=None,
+            good_codes=[202],
+        )
+
+    def post_dedicated_server_power_off(self, server_id):
+        return self.api_helper.make_post_request(
+            path=f"/hosts/dedicated_servers/{server_id}/power_off",
+            body=None,
+            query_parameters=None,
+            good_codes=[202],
+        )
