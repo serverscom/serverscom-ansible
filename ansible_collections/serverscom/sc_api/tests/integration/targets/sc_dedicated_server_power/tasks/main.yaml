@@ -8,7 +8,7 @@
 - name: Test invalid token
   serverscom.sc_api.sc_dedicated_server_power:
     token: invalid
-    state: off
+    state: "off"
     server_id: "0m592Zmn"
   register: test1
   failed_when:
@@ -19,7 +19,7 @@
 - name: Make sure that test server is powered on
   serverscom.sc_api.sc_dedicated_server_power:
     token: "{{ sc_token }}"
-    state: on
+    state: "on"
     server_id: "{{ existing_server1_id }}"
   register: server_power_on
   failed_when:
@@ -28,7 +28,7 @@
 - name: Power off server
   serverscom.sc_api.sc_dedicated_server_power:
     token: "{{ sc_token }}"
-    state: off
+    state: "off"
     server_id: "{{ existing_server1_id }}"
   register: test2
 
@@ -41,7 +41,7 @@
 - name: Power off server (idempotency test)
   serverscom.sc_api.sc_dedicated_server_power:
     token: "{{ sc_token }}"
-    state: off
+    state: "off"
     server_id: "{{ existing_server1_id }}"
   register: test3
 
@@ -54,7 +54,7 @@
 - name: Power on server
   serverscom.sc_api.sc_dedicated_server_power:
     token: "{{ sc_token }}"
-    state: on
+    state: "on"
     server_id: "{{ existing_server1_id }}"
   register: test4
 
@@ -67,7 +67,7 @@
 - name: Power on server (idempotency test)
   serverscom.sc_api.sc_dedicated_server_power:
     token: "{{ sc_token }}"
-    state: on
+    state: "on"
     server_id: "{{ existing_server1_id }}"
   register: test5
 
