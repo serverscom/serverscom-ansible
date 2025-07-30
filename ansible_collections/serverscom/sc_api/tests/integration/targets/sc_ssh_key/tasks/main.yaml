@@ -148,6 +148,15 @@
           - test5_del2 is changed
           - test5_del3 is not changed
 
+    - name: Test5.5, Register the previous key again
+      sc_ssh_key:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        public_key: '{{ lookup("file", "key1.pub") }}'
+        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
+        state: present
+      register: test6
+
   always:
     - name: Cleanup key1
       sc_ssh_key:
