@@ -42,7 +42,7 @@
         hc_interval: 5
         hc_jitter: 5
         upstreams:
-          - ip: 10.33.190.228
+          - ip: 10.33.180.116
             port: 3000
             weight: 1
             max_conns: 63000
@@ -95,7 +95,7 @@
         hc_interval: 5
         hc_jitter: 5
         upstreams:
-          - ip: 10.33.190.228
+          - ip: 10.33.180.116
             port: 3000
             weight: 1
             max_conns: 63000
@@ -122,13 +122,13 @@
         hc_interval: 5
         hc_jitter: 5
         upstreams:
-          - ip: 10.33.190.228
+          - ip: 10.33.180.116
             port: 3000
             weight: 1
             max_conns: 63000
             max_fails: 0
             fail_timeout: 30
-          - ip: 10.33.189.124
+          - ip: 10.33.180.196
             port: 3000
             weight: 1
             max_conns: 63000
@@ -154,7 +154,7 @@
         hc_interval: 5
         hc_jitter: 5
         upstreams:
-          - ip: 10.33.189.124
+          - ip: 10.33.180.196
             port: 3000
             weight: 1
             max_conns: 63000
