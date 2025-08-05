@@ -1902,9 +1902,13 @@ class ScDedicatedServerPower:
                 return server
             # only these are transitional
             if status not in ("powering_on", "powering_off", "power_cycling"):
-                raise ModuleError(f"Unexpected power_status={status}, expected {target_status}")
+                raise ModuleError(
+                    f"Unexpected power_status={status}, expected {target_status}"
+                )
             if time.time() - start > self.wait:
-                raise ModuleError(f"Timeout waiting for power_status={target_status}, last={status}")
+                raise ModuleError(
+                    f"Timeout waiting for power_status={target_status}, last={status}"
+                )
             time.sleep(self.interval)
 
     def power_on(self):
@@ -1963,3 +1967,129 @@ class ScDedicatedServerPower:
             return self.power_cycle()
         else:
             raise ModuleError(f"Unknown state: {self.state}")
+
+
+class ScDedicatedOSList:
+    def __init__(
+        self,
+        endpoint,
+        token,
+        server_id,
+        location_id,
+        location_code,
+        server_model_id,
+        server_model_name,
+        sbm_flavor_model_id,
+        sbm_flavor_model_name,
+        os_name_regex,
+    ):
+        self.api = ScApi(token, endpoint)
+        self.server_id = server_id
+        self.location_id = location_id
+        self.location_code = location_code
+        self.server_model_id = server_model_id
+        self.server_model_name = server_model_name
+        self.sbm_flavor_model_id = sbm_flavor_model_id
+        self.sbm_flavor_model_name = sbm_flavor_model_name
+        self.os_name_regex = os_name_regex
+
+        if self.server_id:
+            try:
+                server = self.api.get_dedicated_servers(self.server_id)
+            except APIError404:
+                server = None
+            self.server_model_id = server["configuration_details"]["server_model_id"]
+
+            if not server:
+                try:
+                    server = self.api.get_sbm_servers(self.server_id)
+                except APIError404:
+                    raise ModuleError(f"Server with id '{self.server_id}' not found.")
+                self.sbm_flavor_model_id = server["configuration_details"][
+                    "sbm_flavor_model_id"
+                ]
+
+            self.location_id = server.get("location_id")
+
+        if not self.location_id and self.location_code:
+            self.location_code = self.location_code.upper()
+            locations = self.api.list_locations(search_pattern=self.location_code)
+
+            for location in locations:
+                if location.get("code") == self.location_code:
+                    self.location_id = location.get("id")
+                    break
+
+            if not self.location_id:
+                raise ModuleError(
+                    f"Location with code '{self.location_code}' not found."
+                )
+
+    def get_os_list_by_model_name(self):
+        if not self.server_model_name:
+            raise ModuleError(
+                "server_model_name is required to get OS list by model name"
+            )
+        models = self.api.list_server_models(
+            self.location_id, search_pattern=self.server_model_name
+        )
+        for model in models:
+            if model.get("name") == self.server_model_name:
+                return list(
+                    self.api.list_os_images_by_model_id(
+                        self.location_id, model.get("id")
+                    )
+                )
+        raise ModuleError(f"Server model {self.server_model_name} not found")
+
+    def get_os_list_by_sbm_flavor_model_name(self):
+        if not self.sbm_flavor_model_name:
+            raise ModuleError(
+                "sbm_flavor_model_name is required to get OS list by SBM flavor model name"
+            )
+        flavors = self.api.list_sbm_flavor_models(
+            self.location_id, search_pattern=self.sbm_flavor_model_name
+        )
+        for flavor in flavors:
+            if flavor.get("name") == self.sbm_flavor_model_name:
+                return list(
+                    self.api.list_os_images_by_sbm_flavor_id(
+                        self.location_id, flavor.get("id")
+                    )
+                )
+        raise ModuleError(f"SBM flavor model {self.sbm_flavor_model_name} not found")
+
+    def apply_os_name_filter(self, os_list):
+        if self.os_name_regex:
+            import re
+
+            pattern = re.compile(self.os_name_regex)
+            return [os for os in os_list if pattern.search(os.get("full_name", ""))]
+        return os_list
+
+    def run(self):
+        if self.server_model_name:
+            os_list = self.get_os_list_by_model_name()
+        elif self.sbm_flavor_model_name:
+            os_list = self.get_os_list_by_sbm_flavor_model_name()
+        elif self.server_model_id:
+            os_list = list(
+                self.api.list_os_images_by_model_id(
+                    self.location_id, self.server_model_id
+                )
+            )
+        elif self.sbm_flavor_model_id:
+            os_list = list(
+                self.api.list_os_images_by_sbm_flavor_id(
+                    self.location_id, self.sbm_flavor_model_id
+                )
+            )
+        else:
+            raise ModuleError(
+                "One of server_model_name, sbm_flavor_model_name, server_model_id or sbm_flavor_model_id must be provided"
+            )
+        os_list = self.apply_os_name_filter(os_list)
+        if not os_list:
+            raise ModuleError("No operating systems found matching the criteria")
+
+        return {"changed": False, "os_list": os_list}
