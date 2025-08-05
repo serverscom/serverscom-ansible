@@ -74,7 +74,7 @@
       - test5.os_list | length > 0
       - test5.os_list[0].name
 
-- name: Test3, No any OS options found
+- name: Test6, No any OS options found
   sc_baremetal_os_list:
     token: "{{ sc_token }}"
     server_id: "{{ existing_server1_id }}"
