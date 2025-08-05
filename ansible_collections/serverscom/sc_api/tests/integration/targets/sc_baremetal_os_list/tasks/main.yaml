@@ -8,7 +8,7 @@
 - name: Test invalid token
   sc_baremetal_os_list:
     token: invalid
-    server_id: "{{ existing_server1_id}}"
+    server_id: "{{ existing_server1_id }}"
   register: test1
   failed_when:
     - test1 is success
@@ -17,7 +17,7 @@
 - name: Test2, Get OS list for a specific server
   sc_baremetal_os_list:
     token: "{{ sc_token }}"
-    server_id: "{{ existing_server1_id}}"
+    server_id: "{{ existing_server1_id }}"
   register: test2
 
 - name: Check Test2
@@ -73,3 +73,18 @@
       - test5 is not changed
       - test5.os_list | length > 0
       - test5.os_list[0].name
+
+- name: Test3, No any OS options found
+  sc_baremetal_os_list:
+    token: "{{ sc_token }}"
+    server_id: "{{ existing_server1_id }}"
+    os_name_regex: "^Ubuntu 24.04-server arm64$"
+  register: test6
+  failed_when:
+    - test6 is success
+
+- name: Check Test6
+  assert:
+    that:
+      - test6 is not changed
+      - test6.msg == "No operating systems found matching the criteria"
