@@ -32,7 +32,6 @@ options:
     token:
       type: str
       required: true
-      no_log: true
       description:
         - API token.
     server_id:
@@ -148,38 +147,31 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
 
 
 def main():
-    argument_spec = dict(
-        token=dict(type="str", required=True, no_log=True),
-        endpoint=dict(type="str", default=DEFAULT_API_ENDPOINT),
-        server_id=dict(type="str"),
-        location_id=dict(type="str"),
-        location_code=dict(type="str"),
-        server_model_id=dict(type="str"),
-        server_model_name=dict(type="str"),
-        sbm_flavor_model_id=dict(type="str"),
-        sbm_flavor_model_name=dict(type="str"),
-        os_name_regex=dict(type="str"),
-    )
     module = AnsibleModule(
-        argument_spec=argument_spec,
+        argument_spec={
+            "token": {"type": "str", "no_log": True, "required": True},
+            "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT},
+            "server_id": {"type": "str"},
+            "location_id": {"type": "str"},
+            "location_code": {"type": "str"},
+            "server_model_id": {"type": "str"},
+            "server_model_name": {"type": "str"},
+            "sbm_flavor_model_id": {"type": "str"},
+            "sbm_flavor_model_name": {"type": "str"},
+            "os_name_regex": {"type": "str"},
+        },
         supports_check_mode=True,
-        required_one_of=[
-            ["location_id", "location_code", "server_id"],
-            [
-                "server_model_id",
-                "server_model_name",
-                "sbm_model_id",
-                "sbm_flavor_model_name",
-                "sbm_flavor_model_id",
-                "server_id",
-            ],
-        ],
-        mutually_exclusive=[
-            ["location_id", "location_code", "server_id"],
-            ["server_model_id", "server_model_name"],
-            ["sbm_flavor_model_id", "sbm_flavor_model_name"],
-        ],
     )
+    if not module.params['server_id']:
+        if not (module.params['location_id'] or module.params['location_code']):
+            module.fail_json(msg="Either location_id or location_code is required if server_id is not set.")
+        if not (
+            module.params['server_model_id']
+            or module.params['server_model_name']
+            or module.params['sbm_flavor_model_id']
+            or module.params['sbm_flavor_model_name']
+        ):
+            module.fail_json(msg="One of server_model_id, server_model_name, sbm_flavor_model_id or sbm_flavor_model_name must be set if server_id is not set.")
     try:
         sc_os = ScDedicatedOSList(
             endpoint=module.params["endpoint"],
