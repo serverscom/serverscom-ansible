@@ -112,6 +112,7 @@ jobs:
           sc_ssh_key
           sc_baremetal_locations_info
           sc_baremetal_servers_info
+          sc_baremetal_os_list
           sc_dedicated_server_info
           sc_dedicated_server_reinstall_quick
           sc_dedicated_server_reinstall_long

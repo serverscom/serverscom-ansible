@@ -48,6 +48,7 @@ List of modules
 * `sc_baremetal_locations_info` - List of available baremetal locations
 * `sc_cloud_computing_regions_info`- List of cloud computing regions
 * `sc_baremetal_servers_info` - List of baremetal servers
+* `sc_baremetal_os_list` - List of the available OS options for the specific region and server model or server ID
 * `sc_dedicated_server_info` - Information about one dedicated server
 * `sc_dedicated_server_reinstall` - Reinstallation of servers
 * `sc_ssh_key` - SSH key management

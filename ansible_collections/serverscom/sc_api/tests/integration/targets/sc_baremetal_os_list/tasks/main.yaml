@@ -1,0 +1,90 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
+  when: not sc_endpoint or not sc_token
+
+- name: Test invalid token
+  sc_baremetal_os_list:
+    token: invalid
+    server_id: "{{ existing_server1_id }}"
+  register: test1
+  failed_when:
+    - test1 is success
+    - test1.status_code != 401
+
+- name: Test2, Get OS list for a specific server
+  sc_baremetal_os_list:
+    token: "{{ sc_token }}"
+    server_id: "{{ existing_server1_id }}"
+  register: test2
+
+- name: Check Test2
+  assert:
+    that:
+      - test2 is not changed
+      - test2.os_list | length > 0
+      - test2.os_list[0].name
+      - test2.os_list[0].full_name
+      - test2.os_list[0].version
+      - test2.os_list[0].arch
+      - test2.os_list[0].id
+      - test2.os_list[0].filesystems | length > 0
+
+- name: Test3, Get OS list by name regex
+  sc_baremetal_os_list:
+    token: "{{ sc_token }}"
+    server_id: "{{ existing_server1_id }}"
+    os_name_regex: "^Ubuntu 24.04-server x86_64$"
+  register: test3
+
+- name: Check Test3
+  assert:
+    that:
+      - test3 is not changed
+      - test3.os_list | length == 1
+      - test3.os_list[0].name
+
+- name: Test4, Get OS list with location_id and server_model_id
+  sc_baremetal_os_list:
+    token: "{{ sc_token }}"
+    location_id: 34
+    server_model_id: 11940
+  register: test4
+
+- name: Check Test4
+  assert:
+    that:
+      - test4 is not changed
+      - test4.os_list | length > 0
+      - test4.os_list[0].name
+
+- name: Test5, Get OS list with location_code and server_model_name
+  sc_baremetal_os_list:
+    token: "{{ sc_token }}"
+    location_code: "ams1"
+    server_model_name: "Dell R730xd / 2xIntel Xeon E5-2680 v3 / 32 GB RAM / 4x600 GB SAS"
+  register: test5
+
+- name: Check Test5
+  assert:
+    that:
+      - test5 is not changed
+      - test5.os_list | length > 0
+      - test5.os_list[0].name
+
+- name: Test6, None OS options found
+  sc_baremetal_os_list:
+    token: "{{ sc_token }}"
+    server_id: "{{ existing_server1_id }}"
+    os_name_regex: "^Ubuntu 24.04-server arm64$"
+  register: test6
+  failed_when:
+    - test6 is success
+
+- name: Check Test6
+  assert:
+    that:
+      - test6 is not changed
+      - test6.msg == "No operating systems found matching the criteria"

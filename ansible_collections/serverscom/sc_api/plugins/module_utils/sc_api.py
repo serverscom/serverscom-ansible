@@ -321,6 +321,9 @@ class ScApi:
             path=f"/hosts/dedicated_servers/{server_id}"
         )
 
+    def get_sbm_servers(self, server_id):
+        return self.api_helper.make_get_request(path=f"/hosts/sbm_servers/{server_id}")
+
     def list_hosts(self, type=None, search_pattern=None, label_selector=None):
         query = {}
         if type:
@@ -841,4 +844,36 @@ class ScApi:
             body=None,
             query_parameters=None,
             good_codes=[202],
+        )
+
+    def list_server_models(self, location_id, search_pattern=None):
+        if search_pattern:
+            query = {"search_pattern": search_pattern}
+        else:
+            query = None
+        return self.api_helper.make_multipage_request(
+            path=f"/locations/{location_id}/order_options/server_models",
+            query_parameters=query,
+        )
+
+    def list_sbm_flavor_models(self, location_id, search_pattern=None):
+        if search_pattern:
+            query = {"search_pattern": search_pattern}
+        else:
+            query = None
+        return self.api_helper.make_multipage_request(
+            path=f"/locations/{location_id}/order_options/sbm_flavor_models",
+            query_parameters=query,
+        )
+
+    def list_os_images_by_model_id(self, location_id, model_id):
+        return self.api_helper.make_multipage_request(
+            path=f"/locations/{location_id}/order_options/server_models/{model_id}/operating_systems",
+            query_parameters=None,
+        )
+
+    def list_os_images_by_sbm_flavor_id(self, location_id, sbm_flavor_id):
+        return self.api_helper.make_multipage_request(
+            path=f"/locations/{location_id}/order_options/sbm_flavor_models/{sbm_flavor_id}/operating_systems",
+            query_parameters=None,
         )
