@@ -1,7 +1,3 @@
-import base64
-import hashlib
-import re
-import time
 from __future__ import absolute_import, division, print_function
 from textwrap import wrap
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
@@ -12,6 +8,11 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
     DEFAULT_API_ENDPOINT,
     ScApi,
 )
+import base64
+import hashlib
+import re
+import time
+
 
 __metaclass__ = type
 
