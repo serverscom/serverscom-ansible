@@ -87,23 +87,71 @@
   delay: 30
   retries: 180
 
-- name: Test4, reinstall with raid0_tempalte
+- name: Test4, reinstall with raid0_template and ambiguous OS regex
   sc_dedicated_server_reinstall:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     id: '{{ existing_server1_id }}'
     drives_layout_template: raid0-simple
-    operating_system_id: 49
+    operating_system_regex: "^debian (.*)x86_64$"
     hostname: raid0test
     ssh_key_name: amarao
     wait: 3600
     update_interval: 30
   register: test4
+  failed_when:
+    - test4 is success
 
 - name: Check Test4
   assert:
     that:
-      - test4 is changed
-      - test1.id == existing_server1_id
-      - test4.power_status == "powered_on"
-      - test4.title == "raid0test"
+      - test4 is not changed
+      - >-
+        test4.msg is match("(?s)^Multiple OS options match the
+        regex '\\^debian \\(.*\\)x86_64\\$': .*")
+
+- name: Test5, reinstall with raid0_template and non-existing OS regex
+  sc_dedicated_server_reinstall:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    id: '{{ existing_server1_id }}'
+    drives_layout_template: raid0-simple
+    operating_system_regex: "^Debian 6(.*)x86_64$"
+    hostname: raid0test
+    ssh_key_name: amarao
+    wait: 3600
+    update_interval: 30
+  register: test5
+  failed_when:
+    - test5 is success
+
+- name: Check Test5
+  assert:
+    that:
+      - test5 is not changed
+      - >-
+        test5.msg is match("(?s)^No OS options match the regex
+        '\\^Debian 6\\(.*\\)x86_64\\$' for server model 'Supermicro X11DPL-i /
+        2 x Intel Xeon Silver 4114 / 32 GB RAM / 1 x 480 GB SSD' in location 'WAS1'.*")
+
+
+- name: Test6, reinstall with raid0_template and OS name
+  sc_dedicated_server_reinstall:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    id: '{{ existing_server1_id }}'
+    drives_layout_template: raid0-simple
+    operating_system_regex: "^Debian 12 (.*)x86_64$"
+    hostname: raid0test
+    ssh_key_name: amarao
+    wait: 3600
+    update_interval: 30
+  register: test6
+
+- name: Check Test6
+  assert:
+    that:
+      - test6 is changed
+      - test6.id == existing_server1_id
+      - test6.power_status == "powered_on"
+      - test6.title == "raid0test"

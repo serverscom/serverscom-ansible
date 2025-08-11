@@ -1,8 +1,9 @@
-from __future__ import absolute_import, division, print_function
-import hashlib
-from textwrap import wrap
 import base64
+import hashlib
+import re
 import time
+from __future__ import absolute_import, division, print_function
+from textwrap import wrap
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
     SCBaseError,
     APIError400,
@@ -291,6 +292,7 @@ class ScDedicatedServerReinstall(object):
         drives_layout_template,
         drives_layout,
         operating_system_id,
+        operating_system_regex,
         ssh_keys,
         ssh_key_name,
         wait,
@@ -305,13 +307,16 @@ class ScDedicatedServerReinstall(object):
                     f"than wait time ({wait}"
                 )
         self.api = ScApi(token, endpoint)
-        self.old_server_data = None
+        self.server_data = None
         self.server_id = server_id
         self.hostname = self.get_hostname(hostname)
         self.drives_layout = self.get_drives_layout(
             drives_layout, drives_layout_template
         )
-        self.operating_system_id = self.get_operating_system_id(operating_system_id)
+        self.operating_system_regex = operating_system_regex
+        self.operating_system_id = self.get_operating_system_id(
+            operating_system_id, operating_system_regex
+        )
         self.ssh_keys = self.get_ssh_keys(ssh_keys, ssh_key_name)
         self.wait = wait
         self.update_interval = update_interval
@@ -319,31 +324,81 @@ class ScDedicatedServerReinstall(object):
         self.checkmode = checkmode
 
     def get_server_data(self):
-        if not self.old_server_data:
-            self.old_server_data = self.api.get_dedicated_servers(self.server_id)
+        if not self.server_data:
+            self.server_data = self.api.get_dedicated_servers(self.server_id)
 
     def get_hostname(self, hostname):
         if hostname:
             return hostname
         self.get_server_data()
-        if "title" not in self.old_server_data:
+        if "title" not in self.server_data:
             raise ModuleError(
                 "Unable to retrive old title for the server. "
                 "use hostname option to specify the hostname for reinstall."
             )
-        return self.old_server_data["title"]
+        return self.server_data["title"]
 
-    def get_operating_system_id(self, operating_system_id):
-        if operating_system_id:
-            return operating_system_id
-        self.get_server_data()
-        cfg = self.old_server_data.get("configuration_details")
-        if not cfg or "operating_system_id" not in cfg:
+    def get_os_id_by_regex(self):
+        self.get_server_data()  # ensure populated
+
+        cfg = self.server_data.get("configuration_details") or {}
+        server_model_id = cfg.get("server_model_id")
+        server_model_name = cfg.get("server_model_name")
+        server_location_id = self.server_data.get("location_id")
+        server_location_code = self.server_data.get("location_code")
+
+        if not server_model_id:
             raise ModuleError(
-                "no operating_system_id was given, and unable to get old"
-                "operating_system_id"
+                "Can't obtain server_model_id which is required to get OS ID"
             )
-        return cfg["operating_system_id"]
+        if not server_location_id:
+            raise ModuleError(
+                "Can't obtain server_location_id which is required to get OS ID"
+            )
+
+        os_list = list(
+            self.api.list_os_images_by_model_id(server_location_id, server_model_id)
+        )
+        if not os_list:
+            raise ModuleError(
+                f"No available OS options found for server model '{server_model_name}' "
+                f"in location '{server_location_code}'"
+            )
+
+        try:
+            pattern = re.compile(self.operating_system_regex, flags=re.IGNORECASE)
+        except re.error as e:
+            raise ModuleError(f"Invalid operating_system_regex: {e}")
+
+        filtered = [os for os in os_list if pattern.search(os.get("full_name", ""))]
+        if len(filtered) == 1:
+            return int(filtered[0]["id"])
+        if len(filtered) > 1:
+            names = ", ".join(
+                os.get("full_name") or str(os.get("id")) for os in filtered
+            )
+            raise ModuleError(
+                f"Multiple OS options match the regex '{self.operating_system_regex}': {names}"
+            )
+        raise ModuleError(
+            f"No OS options match the regex '{self.operating_system_regex}' for "
+            f"server model '{server_model_name}' in location '{server_location_code}'"
+        )
+
+    def get_operating_system_id(self, operating_system_id, operating_system_regex):
+        if operating_system_id is not None:
+            return int(operating_system_id)
+
+        self.get_server_data()
+        if operating_system_regex:
+            return self.get_os_id_by_regex()
+
+        cfg = self.server_data.get("configuration_details") or {}
+        if "operating_system_id" not in cfg:
+            raise ModuleError(
+                "No operating_system_id was given, and unable to get old operating_system_id"
+            )
+        return int(cfg["operating_system_id"])
 
     def get_ssh_keys(self, ssh_keys, ssh_key_name):
         if ssh_keys:
@@ -2061,8 +2116,6 @@ class ScDedicatedOSList:
 
     def apply_os_name_filter(self, os_list):
         if self.os_name_regex:
-            import re
-
             pattern = re.compile(self.os_name_regex)
             return [os for os in os_list if pattern.search(os.get("full_name", ""))]
         return os_list
