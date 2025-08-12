@@ -161,17 +161,23 @@ def main():
             "os_name_regex": {"type": "str"},
         },
         supports_check_mode=True,
+        required_one_of=[
+            ['server_id', 'location_id', 'location_code']
+        ],
+
+        mutually_exclusive=[
+            ['server_id', 'location_id', 'location_code'],
+            ['server_model_id', 'server_model_name'],
+            ['sbm_flavor_model_id', 'sbm_flavor_model_name'],
+            ['server_id', 'server_model_id', 'server_model_name', 'sbm_flavor_model_id', 'sbm_flavor_model_name'],
+        ],
+
+        required_if=[
+            ['location_id', 'present', ('server_model_id', 'server_model_name', 'sbm_flavor_model_id', 'sbm_flavor_model_name'), True],
+            ['location_code', 'present', ('server_model_id', 'server_model_name', 'sbm_flavor_model_id', 'sbm_flavor_model_name'), True],
+        ]
+
     )
-    if not module.params['server_id']:
-        if not (module.params['location_id'] or module.params['location_code']):
-            module.fail_json(msg="Either location_id or location_code is required if server_id is not set.")
-        if not (
-            module.params['server_model_id']
-            or module.params['server_model_name']
-            or module.params['sbm_flavor_model_id']
-            or module.params['sbm_flavor_model_name']
-        ):
-            module.fail_json(msg="One of server_model_id, server_model_name, sbm_flavor_model_id or sbm_flavor_model_name must be set if server_id is not set.")
     try:
         sc_os = ScDedicatedOSList(
             endpoint=module.params["endpoint"],
