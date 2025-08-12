@@ -141,14 +141,21 @@ options:
                   - Only one 'fill mode' partiiton may be present
                     in the layout.
 
-
-
     operating_system_id:
       type: int
       description:
         - id of the operating system to install on the server.
         - Module will retrive and reuse old operating system if
           not specified.
+        - Mutually exclusive with I(operating_system_regex).
+
+    operating_system_regex:
+      type: str
+      description:
+        - Regular expression to filter operating systems by name.
+        - If specified, the module will install operating system
+          that match the provided regex (case insensitive).
+        - Mutually exclusive with I(operating_system_id).
 
     ssh_keys:
       type: list
@@ -444,6 +451,7 @@ def main():
             },
             "drives_layout": {"type": "list", "elements": "dict"},
             "operating_system_id": {"type": "int"},
+            "operating_system_regex": {"type": "str"},
             "ssh_keys": {"type": "list", "elements": "str", "no_log": False},
             "ssh_key_name": {"type": "str"},
             "wait": {"type": "int", "default": 86400},
@@ -454,6 +462,7 @@ def main():
         mutually_exclusive=[
             ["ssh_keys", "ssh_key_name"],
             ["drives_layout", "drives_layout_template"],
+            ["operating_system_id", "operating_system_regex"],
         ],
         required_one_of=[["drives_layout", "drives_layout_template"]],
     )
@@ -466,6 +475,7 @@ def main():
             drives_layout_template=module.params["drives_layout_template"],
             drives_layout=module.params["drives_layout"],
             operating_system_id=module.params["operating_system_id"],
+            operating_system_regex=module.params["operating_system_regex"],
             ssh_keys=module.params["ssh_keys"],
             ssh_key_name=module.params["ssh_key_name"],
             wait=module.params["wait"],
