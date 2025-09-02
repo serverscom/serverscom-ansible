@@ -1,0 +1,79 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
+  when: not sc_endpoint or not sc_token
+
+- name: Get test volumes
+  serverscom.sc_api.sc_rbs_volume_info:
+    endpoint: "{{ sc_endpoint }}"
+    token: "{{ sc_token }}"
+    location_id: 45
+    search_pattern: "rbs_ansible_modules_test_volume"
+  register: test_volumes
+
+- name: Remove test volumes if present
+  serverscom.sc_api.sc_rbs_volume:
+    endpoint: "{{ sc_endpoint }}"
+    token: "{{ sc_token }}"
+    volume_id: "{{ item.id }}"
+    state: absent
+  loop: "{{ test_volumes.rbs_volumes }}"
+
+- name: Create test volume
+  serverscom.sc_api.sc_rbs_volume:
+    endpoint: "{{ sc_endpoint }}"
+    token: "{{ sc_token }}"
+    name: rbs_ansible_modules_test_volume
+    location_id: 45
+    flavor_id: 17363  # Basic
+    size: 50
+    state: present
+
+- name: Test invalid token
+  serverscom.sc_api.sc_rbs_volume_credentials_reset:
+    endpoint: "{{ sc_endpoint }}"
+    token: invalid
+    location_id: 45
+  register: test1
+  failed_when:
+    - test1 is success
+    - test1.status_code != 401
+
+- name: Get credentials for test volume
+  serverscom.sc_api.sc_rbs_volume_info:
+    endpoint: "{{ sc_endpoint }}"
+    token: "{{ sc_token }}"
+    search_pattern: rbs_ansible_modules_test_volume
+  register: original_credentials
+
+- name: Test2, Reset credentials for test volume
+  serverscom.sc_api.sc_rbs_volume_credentials_reset:
+    endpoint: "{{ sc_endpoint }}"
+    token: "{{ sc_token }}"
+    name: rbs_ansible_modules_test_volume
+  register: new_credentials
+
+- name: Check Test2
+  assert:
+    that:
+      - new_credentials is changed
+      - new_credentials.rbs_volume_credentials.username == original_credentials.rbs_volumes[0].username
+      - new_credentials.rbs_volume_credentials.password != original_credentials.rbs_volumes[0].password
+
+- name: Test3, None volumes found
+  serverscom.sc_api.sc_rbs_volume_credentials_reset:
+    endpoint: "{{ sc_endpoint }}"
+    token: "{{ sc_token }}"
+    name: non_existent_volume_name
+  register: test3
+  failed_when:
+    - test3 is success
+
+- name: Remove test volume
+  serverscom.sc_api.sc_rbs_volume:
+    endpoint: "{{ sc_endpoint }}"
+    token: "{{ sc_token }}"
+    state: absent
+    name: rbs_ansible_modules_test_volume
