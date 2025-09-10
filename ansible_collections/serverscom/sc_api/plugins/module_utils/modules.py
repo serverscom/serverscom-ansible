@@ -935,7 +935,16 @@ class ScCloudComputingInstanceState:
         return self.instance
 
     def reboot(self):
-        raise NotImplementedError
+        if self.instance["status"] == "RESCUE":
+            raise ModuleError("Reboot is not supported in rescue mode.")
+        if self.checkmode:
+            self.instance["changed"] = True
+            return self.instance
+        self.api.post_instance_reboot(self.instance_id)
+        self.wait_for_statuses(status_done="ACTIVE", statuses_continue=["REBOOTING"])
+        self.instance = self.api.get_instances(self.instance_id)
+        self.instance["changed"] = True
+        return self.instance
 
     def run(self):
         self.instance = self.api.get_instances(self.instance_id)

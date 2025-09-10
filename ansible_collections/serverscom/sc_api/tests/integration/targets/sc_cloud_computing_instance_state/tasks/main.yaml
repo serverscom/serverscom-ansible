@@ -326,6 +326,40 @@
         that:
           - test14.status == 'RESCUE'
 
+    - name: Put instance back in normal state
+      sc_cloud_computing_instance_state:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name: 4839550e-edf5-11ea-8df4-4f25b3878e42
+        state: normal
+        wait: 600
+        update_interval: 10
+
+    - name: Test15 reboot instance
+      sc_cloud_computing_instance_state:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name: 4839550e-edf5-11ea-8df4-4f25b3878e42
+        state: rebooted
+        wait: 0
+      register: test15
+
+    - name: Test15, check result
+      assert:
+        that:
+          - test15 is changed
+          - test15.status == 'REBOOTING'
+
+    - name: Wait until instance finishes rebooting
+      sc_cloud_computing_instance_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name: 4839550e-edf5-11ea-8df4-4f25b3878e42
+      register: test15_info
+      until: test15_info.status == 'ACTIVE'
+      delay: 10
+      retries: 60
+
   always:
     - name: Testsuite cleanup
       sc_cloud_computing_instance:
