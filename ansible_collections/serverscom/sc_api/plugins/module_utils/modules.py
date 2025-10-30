@@ -2329,11 +2329,12 @@ class scRBSVolumeCreateUpdateDelete:
             else:
                 no_volume = True
         try:
-            self.api.get_rbs_volume(self.volume_id)
+            volume = self.api.get_rbs_volume(self.volume_id)
         except APIError404:
             no_volume = True
         if not self.checkmode and not no_volume:
-            self.api.delete_rbs_volume(self.volume_id)
+            if volume["status"] != "removing":
+                self.api.delete_rbs_volume(self.volume_id)
             self.wait_for_disappearance()
         return {"changed": not no_volume, "rbs_volume": {}}
 
