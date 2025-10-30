@@ -48,7 +48,9 @@ jobs:
   integration_tests_cloud:
     runs-on: ubuntu-24.04
     needs: quick_tests
-    concurrency: API
+    concurrency:
+      group: cloud
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -89,8 +91,10 @@ jobs:
 
   integration_tests_bm:
     runs-on: ubuntu-24.04
-    needs: integration_tests_cloud
-    concurrency: API
+    needs: quick_tests
+    concurrency:
+      group: BM
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -129,7 +133,9 @@ jobs:
   integration_tests_l2:
     runs-on: ubuntu-24.04
     needs: integration_tests_bm
-    concurrency: API
+    concurrency:
+      group: BM
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -162,8 +168,10 @@ jobs:
 
   integration_tests_lb_instances:
     runs-on: ubuntu-24.04
-    needs: integration_tests_bm
-    concurrency: API
+    needs: quick_tests
+    concurrency:
+      group: LB
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -197,10 +205,10 @@ jobs:
 
   integration_tests_rbs_volumes:
     runs-on: ubuntu-24.04
-    needs:
-      - integration_tests_lb_instances
-      - integration_tests_l2
-    concurrency: API
+    needs: quick_tests
+    concurrency:
+      group: RBS
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -235,6 +243,10 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     needs:
+      - integration_tests_bm
+      - integration_tests_cloud
+      - integration_tests_l2
+      - integration_tests_lb_instances
       - integration_tests_rbs_volumes
     outputs:
       version: ${{ steps.version.outputs.version }}
