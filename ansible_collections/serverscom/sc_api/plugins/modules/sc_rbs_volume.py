@@ -46,6 +46,7 @@ options:
       required: false
       description:
         - Volume identifier.
+        - If volume with specified volume_id does not exist, module will fail.
     state:
       type: str
       required: false
@@ -62,32 +63,40 @@ options:
       required: false
       description:
         - Size of the volume in GB.
+        - Should be provided to create a new volume or increase size of existing one.
     location_id:
       type: int
       required: false
       description:
-        - Location identifier.
+        - Location identifier. (mutually exclusive with I(location_name)).
+        - This or location_code should be provided to create a new volume.
     location_code:
       type: str
       required: false
       description:
         - Human-readable location slug (mutually exclusive with I(location_id)).
+        - This or location_id should be provided to create a new volume.
     flavor_id:
       type: int
       required: false
       description:
-        - Identifier of the flavor.
+        - Identifier of the flavor (mutually exclusive with I(flavor_name)).
+        - This or flavor_name should be provided to create a new volume.
     flavor_name:
       type: str
       required: false
       description:
         - Name of the flavor (mutually exclusive with I(flavor_id)).
+        - This or flavor_id should be provided to create a new volume.
     labels:
       type: dict
       required: false
       description:
         - Labels to attach to the volume. If labels do not exist they will be created.
+        - Replaces existing set of labels with provided one if labels exist.
         - Key-value pairs.
+        - If omitted, existing labels will remain unchanged.
+        - To remove all labels, set to an empty dict.
         - More info at https://developers.servers.com/api-documentation/v1/#section/Labels.
     wait:
       description:
@@ -175,6 +184,7 @@ EXAMPLES = """
         name: test_volume
         size: 100
         location_id: 34
+        flavor_name: basic
         state: present
 
     - name: Increase volume size by id
@@ -184,11 +194,14 @@ EXAMPLES = """
         size: 200
         state: present
 
-    - name: Increase volume size by name
+    - name: Increase volume size by name and update labels
       serverscom.sc_api.sc_rbs_volume:
         token: "{{ api_token }}"
         name: test_volume
         size: 250
+        labels:
+          environment: production
+          project: website
         state: present
 
     - name: Delete volume
