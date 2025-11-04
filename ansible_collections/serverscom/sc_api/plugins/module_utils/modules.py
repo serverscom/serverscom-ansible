@@ -2297,6 +2297,9 @@ class scRBSVolumeCreateUpdateDelete:
                 self.volume_id = existing_volume["id"]
                 upd = self.update_volume()
                 return upd
+        else:
+            if not(self.location_id and self.flavor_id and self.size):
+                raise ModuleError(f"RBS volume with name '{self.name}' does not exist. To create it, location_id (or location_code), flavor_id (or flavor_name) and size must be provided.")
         if not self.checkmode:
             response = self.api.create_rbs_volume(
                 name=self.name,
