@@ -5,109 +5,105 @@
     msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
   when: not sc_endpoint or not sc_token
 
-- name: Get test volumes
-  serverscom.sc_api.sc_rbs_volume_info:
-    endpoint: "{{ sc_endpoint }}"
-    token: "{{ sc_token }}"
-    location_id: 45
-    search_pattern: "rbs_ansible_modules_test_volume"
-  register: test_volumes
+- name: Volume info test series
+  block:
+    - name: Create test volume
+      serverscom.sc_api.sc_rbs_volume:
+        endpoint: "{{ sc_endpoint }}"
+        token: "{{ sc_token }}"
+        name: rbs_ansible_modules_test_volume
+        location_id: 45
+        flavor_id: 17363  # Basic
+        size: 50
+        state: present
 
-- name: Remove test volumes if present
-  serverscom.sc_api.sc_rbs_volume:
-    endpoint: "{{ sc_endpoint }}"
-    token: "{{ sc_token }}"
-    volume_id: "{{ item.id }}"
-    state: absent
-  loop: "{{ test_volumes.rbs_volumes }}"
+    - name: Test invalid token
+      serverscom.sc_api.sc_rbs_volume_info:
+        endpoint: "{{ sc_endpoint }}"
+        token: invalid
+        location_id: 45
+      register: test1
+      failed_when:
+        - test1 is success
+        - test1.status_code != 401
 
-- name: Create test volume
-  serverscom.sc_api.sc_rbs_volume:
-    endpoint: "{{ sc_endpoint }}"
-    token: "{{ sc_token }}"
-    name: rbs_ansible_modules_test_volume
-    location_id: 45
-    flavor_id: 17363  # Basic
-    size: 50
-    state: present
+    - name: Test2, Get volume list for a specific location id
+      serverscom.sc_api.sc_rbs_volume_info:
+        endpoint: "{{ sc_endpoint }}"
+        token: "{{ sc_token }}"
+        location_id: 45
+      register: test2
 
-- name: Test invalid token
-  serverscom.sc_api.sc_rbs_volume_info:
-    endpoint: "{{ sc_endpoint }}"
-    token: invalid
-    location_id: 45
-  register: test1
-  failed_when:
-    - test1 is success
-    - test1.status_code != 401
+    - name: Check Test2
+      assert:
+        that:
+          - test2 is not changed
+          - test2.rbs_volumes | length > 0
+          - test2.rbs_volumes[0].id
+          - test2.rbs_volumes[0].name
+          - test2.rbs_volumes[0].size
+          - test2.rbs_volumes[0].status
+          - test2.rbs_volumes[0].location_id
+          - test2.rbs_volumes[0].location_code
+          - test2.rbs_volumes[0].ip_address
+          - test2.rbs_volumes[0].flavor_id
+          - test2.rbs_volumes[0].flavor_name
+          - test2.rbs_volumes[0].iops
+          - test2.rbs_volumes[0].bandwidth
+          - test2.rbs_volumes[0].username
+          - test2.rbs_volumes[0].password
+          - test2.rbs_volumes[0].created_at
+          - test2.rbs_volumes[0].updated_at
 
-- name: Test2, Get volume list for a specific location id
-  serverscom.sc_api.sc_rbs_volume_info:
-    endpoint: "{{ sc_endpoint }}"
-    token: "{{ sc_token }}"
-    location_id: 45
-  register: test2
+    - name: Test3, None volumes found
+      serverscom.sc_api.sc_rbs_volume_info:
+        endpoint: "{{ sc_endpoint }}"
+        token: "{{ sc_token }}"
+        search_pattern: "no_such_volume"
+      register: test3
 
-- name: Check Test2
-  assert:
-    that:
-      - test2 is not changed
-      - test2.rbs_volumes | length > 0
-      - test2.rbs_volumes[0].id
-      - test2.rbs_volumes[0].name
-      - test2.rbs_volumes[0].size
-      - test2.rbs_volumes[0].status
-      - test2.rbs_volumes[0].location_id
-      - test2.rbs_volumes[0].location_code
-      - test2.rbs_volumes[0].ip_address
-      - test2.rbs_volumes[0].flavor_id
-      - test2.rbs_volumes[0].flavor_name
-      - test2.rbs_volumes[0].iops
-      - test2.rbs_volumes[0].bandwidth
-      - test2.rbs_volumes[0].username
-      - test2.rbs_volumes[0].password
-      - test2.rbs_volumes[0].created_at
-      - test2.rbs_volumes[0].updated_at
+    - name: Check Test3
+      assert:
+        that:
+          - test3.rbs_volumes | length == 0
 
-- name: Test3, None volumes found
-  serverscom.sc_api.sc_rbs_volume_info:
-    endpoint: "{{ sc_endpoint }}"
-    token: "{{ sc_token }}"
-    search_pattern: "no_such_volume"
-  register: test3
+    - name: Test4, Get volume list for a specific location code
+      serverscom.sc_api.sc_rbs_volume_info:
+        endpoint: "{{ sc_endpoint }}"
+        token: "{{ sc_token }}"
+        location_code: DFW5
+      register: test4
 
-- name: Check Test3
-  assert:
-    that:
-      - test3.rbs_volumes | length == 0
+    - name: Check Test4
+      assert:
+        that:
+          - test4.rbs_volumes | length > 0
 
-- name: Test4, Get volume list for a specific location code
-  serverscom.sc_api.sc_rbs_volume_info:
-    endpoint: "{{ sc_endpoint }}"
-    token: "{{ sc_token }}"
-    location_code: DFW5
-  register: test4
+    - name: Test5, Get volume list for a specific search pattern
+      serverscom.sc_api.sc_rbs_volume_info:
+        endpoint: "{{ sc_endpoint }}"
+        token: "{{ sc_token }}"
+        search_pattern:
+      register: test5
 
-- name: Check Test4
-  assert:
-    that:
-      - test4.rbs_volumes | length > 0
+    - name: Check Test5
+      assert:
+        that:
+          - test5.rbs_volumes | length > 0
 
-- name: Test5, Get volume list for a specific search pattern
-  serverscom.sc_api.sc_rbs_volume_info:
-    endpoint: "{{ sc_endpoint }}"
-    token: "{{ sc_token }}"
-    search_pattern:
-  register: test5
+  always:
+    - name: Get test volumes
+      serverscom.sc_api.sc_rbs_volume_info:
+        endpoint: "{{ sc_endpoint }}"
+        token: "{{ sc_token }}"
+        location_id: 45
+        search_pattern: "rbs_ansible_modules_test_volume"
+      register: test_volumes
 
-- name: Check Test5
-  assert:
-    that:
-      - test5.rbs_volumes | length > 0
-
-- name: Remove test volume
-  serverscom.sc_api.sc_rbs_volume:
-    endpoint: "{{ sc_endpoint }}"
-    token: "{{ sc_token }}"
-    state: absent
-    name: rbs_ansible_modules_test_volume
+    - name: Remove test volumes if present
+      serverscom.sc_api.sc_rbs_volume:
+        endpoint: "{{ sc_endpoint }}"
+        token: "{{ sc_token }}"
+        volume_id: "{{ item.id }}"
+        state: absent
+      loop: "{{ test_volumes.rbs_volumes }}"
