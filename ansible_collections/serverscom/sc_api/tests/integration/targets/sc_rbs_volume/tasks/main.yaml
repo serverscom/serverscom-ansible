@@ -1,0 +1,166 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
+  when: not sc_endpoint or not sc_token
+
+- name: Test invalid token
+  serverscom.sc_api.sc_rbs_volume:
+    endpoint: "{{ sc_endpoint }}"
+    token: invalid
+    state: absent
+    name: "test-rbs-volume-module"
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 401
+
+- name: RBS Volume test series
+  block:
+    - name: Create RBS Volume
+      serverscom.sc_api.sc_rbs_volume:
+        endpoint: "{{ sc_endpoint }}"
+        token: "{{ sc_token }}"
+        state: present
+        name: "test-rbs-volume-module"
+        location_id: 45
+        labels:
+          environment: staging
+        size: 50
+        flavor_id: 17363  # Basic
+      register: test2
+
+    - name: Check Test2
+      assert:
+        that:
+          - test2 is changed
+          - not test2.failed
+          - test2.rbs_volume.id
+          - test2.rbs_volume.name == "test-rbs-volume-module"
+          - test2.rbs_volume.size == 50
+          - test2.rbs_volume.status == "active"
+          - test2.rbs_volume.labels.environment == "staging"
+          - test2.rbs_volume.location_id == 45
+          - test2.rbs_volume.location_code == "DFW5"
+          - test2.rbs_volume.flavor_id == 17363
+          - test2.rbs_volume.ip_address
+          - test2.rbs_volume.flavor_name == "Basic"
+          - test2.rbs_volume.iops
+          - test2.rbs_volume.target_iqn
+          - test2.rbs_volume.created_at
+          - test2.rbs_volume.updated_at
+
+    - name: Idempotency check (nothing changed)
+      serverscom.sc_api.sc_rbs_volume:
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
+        state: present
+        name: "test-rbs-volume-module"
+        location_id: 45
+        labels:
+          environment: staging
+        size: 50
+        flavor_id: 17363  # Basic
+      register: test3
+
+    - name: Check Test3
+      assert:
+        that:
+          - test3 is not changed
+
+    - name: Update RBS Volume by id (change size)
+      serverscom.sc_api.sc_rbs_volume:
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
+        state: present
+        volume_id: "{{ test2.rbs_volume.id }}"
+        size: 60
+      register: test4
+
+    - name: Check Test4
+      assert:
+        that:
+          - test4 is changed
+          - test4.rbs_volume.size == 60
+
+    - name: Update RBS Volume by name (change labels)
+      serverscom.sc_api.sc_rbs_volume:
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
+        state: present
+        name: "test-rbs-volume-module"
+        labels:
+          environment: staging
+          project: alpha
+      register: test5
+
+    - name: Check Test5
+      assert:
+        that:
+          - test5 is changed
+          - test5.rbs_volume.labels.project == "alpha"
+
+    - name: Remove RBS Volume by name
+      serverscom.sc_api.sc_rbs_volume:
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
+        state: absent
+        name: "test-rbs-volume-module"
+      register: test6
+
+    - name: Check Test6
+      assert:
+        that:
+          - test6 is changed
+          - test6.rbs_volume == {}
+
+    - name: Create RBS Volume
+      serverscom.sc_api.sc_rbs_volume:
+        endpoint: "{{ sc_endpoint }}"
+        token: "{{ sc_token }}"
+        state: present
+        name: "test-rbs-volume-module"
+        location_code: "DFW5"
+        labels:
+          environment: staging
+        size: 50
+        flavor_name: Basic
+      register: test7
+
+    - name: Remove RBS Volume by id
+      serverscom.sc_api.sc_rbs_volume:
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
+        state: absent
+        volume_id: "{{ test7.rbs_volume.id }}"
+      register: test7
+
+    - name: Check Test7
+      assert:
+        that:
+          - test7 is changed
+          - test7.rbs_volume == {}
+
+    - name: Non-existing volume remove
+      serverscom.sc_api.sc_rbs_volume:
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
+        state: absent
+        name: non-existing-volume
+      register: test8
+
+    - name: Check Test8
+      assert:
+        that:
+          - test8 is not changed
+          - test8.rbs_volume == {}
+
+  always:
+    - name: Remove test volume
+      serverscom.sc_api.sc_rbs_volume:
+        endpoint: "{{ sc_endpoint }}"
+        token: "{{ sc_token }}"
+        state: absent
+        name: "test-rbs-volume-module"

@@ -48,7 +48,9 @@ jobs:
   integration_tests_cloud:
     runs-on: ubuntu-24.04
     needs: quick_tests
-    concurrency: API
+    concurrency:
+      group: cloud
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -89,8 +91,10 @@ jobs:
 
   integration_tests_bm:
     runs-on: ubuntu-24.04
-    needs: integration_tests_cloud
-    concurrency: API
+    needs: quick_tests
+    concurrency:
+      group: BM
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -129,7 +133,9 @@ jobs:
   integration_tests_l2:
     runs-on: ubuntu-24.04
     needs: integration_tests_bm
-    concurrency: API
+    concurrency:
+      group: BM
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -162,8 +168,10 @@ jobs:
 
   integration_tests_lb_instances:
     runs-on: ubuntu-24.04
-    needs: integration_tests_bm
-    concurrency: API
+    needs: quick_tests
+    concurrency:
+      group: LB
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -195,11 +203,51 @@ jobs:
           sync
           sync
 
+  integration_tests_rbs_volumes:
+    runs-on: ubuntu-24.04
+    needs: quick_tests
+    concurrency:
+      group: RBS
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Configure integration tests
+        run: |
+          envsubst < integration_config.yml.template > ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
+        env:
+          SC_TOKEN: "${{ secrets.SC_TOKEN }}"
+      - name: Integration tests
+        run: ansible-test integration --requirements --python 3.13
+          sc_rbs_flavors_info
+          sc_rbs_volume
+          sc_rbs_volume_info
+          sc_rbs_volume_credentials_reset
+
+        working-directory: ansible_collections/serverscom/sc_api
+      - name: Cleanup secrets
+        if: always()
+        run: |
+          dd if=/dev/zero bs=4k count=4 of=ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
+          sync
+          sync
+
   build:
     runs-on: ubuntu-24.04
     needs:
+      - integration_tests_bm
+      - integration_tests_cloud
       - integration_tests_l2
       - integration_tests_lb_instances
+      - integration_tests_rbs_volumes
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:

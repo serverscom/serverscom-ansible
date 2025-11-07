@@ -110,7 +110,7 @@ class ApiHelper:
             )
 
         if response.status_code == 401:
-            raise APIError(
+            raise APIError401(
                 status_code=response.status_code,
                 api_url=prep_request.url,
                 msg="401 Unauthorized. Check if token is valid.",
@@ -876,4 +876,95 @@ class ScApi:
         return self.api_helper.make_multipage_request(
             path=f"/locations/{location_id}/order_options/sbm_flavor_models/{sbm_flavor_id}/operating_systems",
             query_parameters=None,
+        )
+
+    def list_rbs_flavors(self, location_id):
+        return self.api_helper.make_multipage_request(
+            path=f"/locations/{location_id}/order_options/remote_block_storage/flavors",
+            query_parameters=None,
+        )
+
+    def list_rbs_volumes(self, label_selector=None, search_pattern=None, location_id=None):
+        query = None
+        if any([label_selector, search_pattern, location_id]):
+            query = {}
+            if label_selector:
+                query["label_selector"] = label_selector
+            if search_pattern:
+                query["search_pattern"] = search_pattern
+            if location_id:
+                query["location_id"] = location_id
+
+        return self.api_helper.make_multipage_request(
+            path="/remote_block_storage/volumes", query_parameters=query
+        )
+
+    def get_rbs_volume(self, rbs_volume_id):
+        return self.api_helper.make_get_request(
+            path=f"/remote_block_storage/volumes/{rbs_volume_id}"
+        )
+
+    def get_rbs_volume_by_name(self, name):
+        try:
+            candidates = self.list_rbs_volumes(search_pattern=name)
+            for candidate in candidates:
+                if candidate["name"] == name:
+                    return candidate
+        except APIError404:
+            return None
+        return None
+
+    def create_rbs_volume(self, name, flavor_id, size, location_id, labels=None):
+        body = {
+            "name": name,
+            "flavor_id": flavor_id,
+            "size": size,
+            "location_id": location_id,
+        }
+        if labels:
+            body["labels"] = labels
+        return self.api_helper.make_post_request(
+            path="/remote_block_storage/volumes",
+            body=body,
+            query_parameters=None,
+            good_codes=[202],
+        )
+
+    def update_rbs_volume(self, rbs_volume_id, name=None, size=None, labels=None):
+        body = None
+        if any([name, size, labels]):
+            body = {}
+            if name is not None:
+                body["name"] = name
+            if size is not None:
+                body["size"] = size
+            if labels is not None:
+                body["labels"] = labels
+
+        return self.api_helper.make_put_request(
+            path=f"/remote_block_storage/volumes/{rbs_volume_id}",
+            body=body,
+            query_parameters=None,
+            good_codes=[200, 202],
+        )
+
+    def delete_rbs_volume(self, rbs_volume_id):
+        return self.api_helper.make_delete_request(
+            path=f"/remote_block_storage/volumes/{rbs_volume_id}",
+            body=None,
+            query_parameters=None,
+            good_codes=[204],
+        )
+
+    def get_rbs_volume_credentials(self, rbs_volume_id):
+        return self.api_helper.make_get_request(
+            path=f"/remote_block_storage/volumes/{rbs_volume_id}/credentials"
+        )
+
+    def reset_rbs_volume_credentials(self, rbs_volume_id):
+        return self.api_helper.make_post_request(
+            path=f"/remote_block_storage/volumes/{rbs_volume_id}/reset_credentials",
+            body=None,
+            query_parameters=None,
+            good_codes=[202],
         )
