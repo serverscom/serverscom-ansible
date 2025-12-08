@@ -157,6 +157,40 @@
           - test8 is not changed
           - test8.rbs_volume == {}
 
+    - name: Create RBS Volume without wait
+      serverscom.sc_api.sc_rbs_volume:
+        endpoint: "{{ sc_endpoint }}"
+        token: "{{ sc_token }}"
+        state: present
+        name: "test-rbs-volume-module"
+        location_id: 45
+        labels:
+          environment: staging
+        size: 50
+        flavor_id: 17363  # Basic
+        wait: 0
+
+    - name: Wait for RBS Volume to be active
+      serverscom.sc_api.sc_rbs_volume:
+        endpoint: "{{ sc_endpoint }}"
+        token: "{{ sc_token }}"
+        state: present
+        name: "test-rbs-volume-module"
+        location_id: 45
+        labels:
+          environment: staging
+        size: 50
+        flavor_id: 17363  # Basic
+        wait: 600
+      register: test9
+
+    - name: Check Test9
+      assert:
+        that:
+          - test9 is not changed
+          - not test2.failed
+          - test9.rbs_volume.status == "active"
+
   always:
     - name: Remove test volume
       serverscom.sc_api.sc_rbs_volume:
