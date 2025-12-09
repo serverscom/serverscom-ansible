@@ -2284,7 +2284,8 @@ class scRBSVolumeCreateUpdateDelete:
             result["changed"] = True
             return result
         else:
-            result["changed"] = False
+            self.wait_for_active()
+            result["rbs_volume"]["status"] = "active"
             return result
 
     def create_or_update_volume(self):
