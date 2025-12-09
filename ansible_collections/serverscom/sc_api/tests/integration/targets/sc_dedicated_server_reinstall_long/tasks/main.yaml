@@ -155,3 +155,24 @@
       - test6.id == existing_server1_id
       - test6.power_status == "powered_on"
       - test6.title == "raid0test"
+
+- name: Test7, reinstall with no-raid_template and OS name
+  sc_dedicated_server_reinstall:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    id: '{{ existing_server1_id }}'
+    drives_layout_template: no-raid
+    operating_system_regex: "^Debian 12 (.*)x86_64$"
+    hostname: noraidtest
+    ssh_key_name: amarao
+    wait: 3600
+    update_interval: 30
+  register: test7
+
+- name: Check Test7
+  assert:
+    that:
+      - test7 is changed
+      - test7.id == existing_server1_id
+      - test7.power_status == "powered_on"
+      - test7.title == "noraidtest"
