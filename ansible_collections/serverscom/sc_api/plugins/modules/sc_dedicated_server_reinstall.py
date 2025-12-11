@@ -61,15 +61,16 @@ options:
 
     drives_layout_template:
         type: str
-        choices: [raid1-simple, raid0-simple]
+        choices: [raid1-simple, raid0-simple, no-raid]
         description:
             - Mutually exclusive with I(drives_layout).
             - Provides a template to use instead of I(drives_layout).
             - C(raid1-simple) uses two first drives to create RAID1,
               partition /boot (1Gb), swap (4Gb) and / (all other space).
-            - C(raid0-simple) uses first drive as raid0 (or no raid in case
-              of servers without hardware raid), and places /boot, swap
-              and / on this drive.
+            - C(raid0-simple) uses first two drives to create RAID0,
+              partition /boot (1Gb), swap (4Gb) and / (all other space).
+            - C(no-raid) uses first drive, does not create any RAID,
+              partition /boot (1Gb), swap (4Gb) and / (all other space).
             - This option is implemented by this module (it generates layout
               for drives['layout'] request to API based on built-in template).
 
@@ -447,7 +448,7 @@ def main():
             "hostname": {"type": "str"},
             "drives_layout_template": {
                 "type": "str",
-                "choices": ["raid1-simple", "raid0-simple"],
+                "choices": ["raid1-simple", "raid0-simple", "no-raid"],
             },
             "drives_layout": {"type": "list", "elements": "dict"},
             "operating_system_id": {"type": "int"},

@@ -421,9 +421,12 @@ class ScDedicatedServerReinstall(object):
             {"slot_positions": [0, 1], "raid": 1, "partitions": partitions_template}
         ]
         raid0_simple = [
-            {"slot_positions": [0], "raid": 0, "partitions": partitions_template}
+            {"slot_positions": [0, 1], "raid": 0, "partitions": partitions_template}
         ]
-        templates = {"raid1-simple": rai1_simple, "raid0-simple": raid0_simple}
+        no_raid = [
+            {"slot_positions": [0], "partitions": partitions_template}
+        ]
+        templates = {"raid1-simple": rai1_simple, "raid0-simple": raid0_simple, "no-raid": no_raid}
         if layout:
             return layout
         if template not in templates:
