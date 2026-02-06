@@ -706,7 +706,7 @@ class ScCloudComputingInstanceDelete:
         self.instance_id = instance_id
         if update_interval > wait:
             raise ModuleError(
-                f"update interval ({update_interval}) " f"is longer than wait ({wait})"
+                f"update interval ({update_interval}) is longer than wait ({wait})"
             )
         self.wait = wait
         self.update_interval = update_interval
@@ -743,7 +743,7 @@ class ScCloudComputingInstanceDelete:
                     if elapsed > self.wait:
                         raise WaitError(
                             msg="Timeout retrying delete for"
-                            f' instance {instance["id"]}',
+                            f" instance {instance['id']}",
                             timeout=elapsed,
                         )
                     time.sleep(self.update_interval)
@@ -2131,8 +2131,6 @@ class ScDedicatedOSList:
         location_code,
         server_model_id,
         server_model_name,
-        sbm_flavor_model_id,
-        sbm_flavor_model_name,
         os_name_regex,
     ):
         self.api = ScApi(token, endpoint)
@@ -2141,26 +2139,14 @@ class ScDedicatedOSList:
         self.location_code = location_code
         self.server_model_id = server_model_id
         self.server_model_name = server_model_name
-        self.sbm_flavor_model_id = sbm_flavor_model_id
-        self.sbm_flavor_model_name = sbm_flavor_model_name
         self.os_name_regex = os_name_regex
 
         if self.server_id:
             try:
                 server = self.api.get_dedicated_servers(self.server_id)
             except APIError404:
-                server = None
+                raise ModuleError(f"Server with id '{self.server_id}' not found.")
             self.server_model_id = server["configuration_details"]["server_model_id"]
-
-            if not server:
-                try:
-                    server = self.api.get_sbm_servers(self.server_id)
-                except APIError404:
-                    raise ModuleError(f"Server with id '{self.server_id}' not found.")
-                self.sbm_flavor_model_id = server["configuration_details"][
-                    "sbm_flavor_model_id"
-                ]
-
             self.location_id = server.get("location_id")
 
         if not self.location_id and self.location_code:
@@ -2194,23 +2180,6 @@ class ScDedicatedOSList:
                 )
         raise ModuleError(f"Server model {self.server_model_name} not found")
 
-    def get_os_list_by_sbm_flavor_model_name(self):
-        if not self.sbm_flavor_model_name:
-            raise ModuleError(
-                "sbm_flavor_model_name is required to get OS list by SBM flavor model name"
-            )
-        flavors = self.api.list_sbm_flavor_models(
-            self.location_id, search_pattern=self.sbm_flavor_model_name
-        )
-        for flavor in flavors:
-            if flavor.get("name") == self.sbm_flavor_model_name:
-                return list(
-                    self.api.list_os_images_by_sbm_flavor_id(
-                        self.location_id, flavor.get("id")
-                    )
-                )
-        raise ModuleError(f"SBM flavor model {self.sbm_flavor_model_name} not found")
-
     def apply_os_name_filter(self, os_list):
         if self.os_name_regex:
             pattern = re.compile(self.os_name_regex)
@@ -2220,23 +2189,15 @@ class ScDedicatedOSList:
     def run(self):
         if self.server_model_name:
             os_list = self.get_os_list_by_model_name()
-        elif self.sbm_flavor_model_name:
-            os_list = self.get_os_list_by_sbm_flavor_model_name()
         elif self.server_model_id:
             os_list = list(
                 self.api.list_os_images_by_model_id(
                     self.location_id, self.server_model_id
                 )
             )
-        elif self.sbm_flavor_model_id:
-            os_list = list(
-                self.api.list_os_images_by_sbm_flavor_id(
-                    self.location_id, self.sbm_flavor_model_id
-                )
-            )
         else:
             raise ModuleError(
-                "One of server_model_name, sbm_flavor_model_name, server_model_id or sbm_flavor_model_id must be provided"
+                "One of server_model_name or server_model_id must be provided"
             )
         os_list = self.apply_os_name_filter(os_list)
         if not os_list:

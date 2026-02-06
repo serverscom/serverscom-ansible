@@ -1,0 +1,9 @@
+---
+- name: Delete SBM test server
+  serverscom.sc_api.sc_sbm_server:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    state: absent
+    server_id: "{{ test_sbm_server_id }}"
+  when: test_sbm_server_id is defined
+  ignore_errors: true

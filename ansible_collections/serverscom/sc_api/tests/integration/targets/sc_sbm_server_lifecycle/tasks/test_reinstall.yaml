@@ -1,0 +1,111 @@
+---
+# Module tests for errors. Should be relatively fast.
+- name: Test invalid token
+  serverscom.sc_api.sc_sbm_server_reinstall:
+    token: invalid
+    endpoint: '{{ sc_endpoint }}'
+    server_id: '{{ test_sbm_server_id }}'
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 401
+
+# Should make a get to server before doing reinstall
+- name: Test2, Error on absent server
+  serverscom.sc_api.sc_sbm_server_reinstall:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    server_id: '{{ non_existing_id }}'
+  register: test2
+  failed_when: false
+
+- name: Check Test2
+  assert:
+    that:
+      - test2 is not changed
+      - test2.status_code == 404
+      - "'v1/hosts/sbm_servers/' ~ non_existing_id in test2.api_url"
+
+# Should fail on non-existing ssh key
+- name: Test3, Error on absent ssh key
+  serverscom.sc_api.sc_sbm_server_reinstall:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    server_id: '{{ test_sbm_server_id }}'
+    ssh_key_name: should-not-exists
+    operating_system_id: 42
+    hostname: somename
+  register: test3
+  ignore_errors: true
+
+- name: Check Test3
+  assert:
+    that:
+      - test3 is failed
+      - '"Unable to find registered ssh key" in test3.msg'
+
+# Test check_mode - should not actually reinstall
+- name: Test4, Check mode reinstall
+  serverscom.sc_api.sc_sbm_server_reinstall:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    server_id: '{{ test_sbm_server_id }}'
+    hostname: test-checkmode
+    wait: 0
+  check_mode: true
+  register: test4
+
+- name: Check Test4
+  assert:
+    that:
+      - test4 is changed
+
+# Verify server status unchanged after check_mode
+- name: Test4 verify, Get server info after check_mode
+  serverscom.sc_api.sc_sbm_server_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    server_id: '{{ test_sbm_server_id }}'
+  register: test4_verify
+
+- name: Check Test4 verify - server not reinstalling
+  assert:
+    that:
+      - test4_verify.operational_status != "installation"
+
+# Test with invalid OS regex (no match)
+- name: Test5, Error on no matching OS regex
+  serverscom.sc_api.sc_sbm_server_reinstall:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    server_id: '{{ test_sbm_server_id }}'
+    operating_system_regex: 'NonExistentOS12345'
+    hostname: test-server
+    wait: 0
+  register: test5
+  ignore_errors: true
+
+- name: Check Test5
+  assert:
+    that:
+      - test5 is failed
+      - '"No OS options match" in test5.msg'
+
+# Test wait/update_interval validation
+- name: Test6, Error when update_interval > wait
+  serverscom.sc_api.sc_sbm_server_reinstall:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    server_id: '{{ test_sbm_server_id }}'
+    hostname: test-server
+    wait: 30
+    update_interval: 60
+  register: test6
+  ignore_errors: true
+
+- name: Check Test6
+  assert:
+    that:
+      - test6 is failed
+      - '"Update interval" in test6.msg'

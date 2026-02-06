@@ -1,0 +1,43 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+  when: not sc_endpoint or not sc_token
+
+# Pre-server error tests (don't need a real server)
+- name: Test invalid token for sc_sbm_server
+  serverscom.sc_api.sc_sbm_server:
+    token: invalid
+    endpoint: "{{ sc_endpoint }}"
+    state: absent
+    server_id: fakeID
+  register: test_create_auth
+  failed_when:
+    - test_create_auth is success
+    - test_create_auth.status_code != 401
+
+- name: Test delete non-existing server
+  serverscom.sc_api.sc_sbm_server:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    state: absent
+    server_id: "{{ non_existing_id }}"
+  register: test_delete_missing
+
+- name: Check delete non-existing is not changed
+  assert:
+    that:
+      - test_delete_missing is not changed
+
+# Lifecycle block
+- block:
+    - include_tasks: setup.yaml
+    - include_tasks: test_info.yaml
+    - include_tasks: test_labels.yaml
+    - include_tasks: test_networks.yaml
+    - include_tasks: test_ptr.yaml
+    - include_tasks: test_reinstall.yaml
+    - include_tasks: test_power.yaml
+  always:
+    - include_tasks: cleanup.yaml

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# (c) 2025, Servers.com
+# (c) 2026, Servers.com
 # GNU General Public License v3.0
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -16,13 +16,13 @@ ANSIBLE_METADATA = {
 
 DOCUMENTATION = """
 ---
-module: sc_baremetal_os_list
+module: sc_sbm_os_list
 version_added: "1.0.0"
-author: "Volodymyr Rudniev (@koef)"
-short_description: Return available operating system options.
+author: "Vil Surkin (@vills)"
+short_description: Return available operating system options for SBM servers.
 description: >
-    Return list of OS images for bare metal dedicated servers in a specified location.
-    For SBM (Scalable Baremetal) servers, use M(serverscom.sc_api.sc_sbm_os_list) instead.
+    Return list of OS images for Scalable Baremetal (SBM) servers
+    in a specified location and flavor model.
 
 options:
     endpoint:
@@ -35,28 +35,21 @@ options:
       required: true
       description:
         - API token.
-    server_id:
-      type: str
-      description:
-        - A unique identifier of the bare metal server.
-        - If specified the module will return OS options for the specified server.
-        - If set the parameters I(location_id), I(location_code), I(server_model_id), and I(server_model_name) will be ignored.
     location_id:
       type: str
+      required: true
       description:
         - Location identifier.
-    location_code:
+    sbm_flavor_model_id:
       type: str
       description:
-        - Human-readable location slug (mutually exclusive with I(location_id)).
-    server_model_id:
+        - A unique identifier of an SBM flavor.
+        - Mutually exclusive with I(sbm_flavor_model_name).
+    sbm_flavor_model_name:
       type: str
       description:
-        - Server model identifier (mutually exclusive with I(server_model_name)).
-    server_model_name:
-      type: str
-      description:
-        - Server model name (mutually exclusive with I(server_model_id)).
+        - Human-readable name of an SBM flavor (mutually exclusive with I(sbm_flavor_model_id)).
+        - If set the module will resolve the name to an ID and return OS options for that model.
     os_name_regex:
       type: str
       description:
@@ -104,18 +97,26 @@ status_code:
 """
 
 EXAMPLES = """
-    - name: List OS options by location_id and server_model_id
-      sc_baremetal_os_list:
+    - name: List OS options by location_id and sbm_flavor_model_id
+      serverscom.sc_api.sc_sbm_os_list:
         token: "{{ api_token }}"
-        location_id: "34"
-        server_model_id: "12345"
+        location_id: "32"
+        sbm_flavor_model_id: "1287"
       register: result
 
-    - name: List OS options by location_code and server_model_name
-      sc_baremetal_os_list:
+    - name: List OS options by location and SBM model name
+      serverscom.sc_api.sc_sbm_os_list:
         token: "{{ api_token }}"
-        location_code: "ams1"
-        server_model_name: "R430"
+        location_id: "32"
+        sbm_flavor_model_name: "DL-01"
+      register: result
+
+    - name: List OS options with name filter
+      serverscom.sc_api.sc_sbm_os_list:
+        token: "{{ api_token }}"
+        location_id: "32"
+        sbm_flavor_model_id: "1287"
+        os_name_regex: "Ubuntu"
       register: result
 
     - debug:
@@ -123,10 +124,12 @@ EXAMPLES = """
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
+from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,
-    ScDedicatedOSList,
+)
+from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
+    ScSbmOSList,
 )
 
 
@@ -135,43 +138,26 @@ def main():
         argument_spec={
             "token": {"type": "str", "no_log": True, "required": True},
             "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT},
-            "server_id": {"type": "str"},
-            "location_id": {"type": "str"},
-            "location_code": {"type": "str"},
-            "server_model_id": {"type": "str"},
-            "server_model_name": {"type": "str"},
+            "location_id": {"type": "str", "required": True},
+            "sbm_flavor_model_id": {"type": "str"},
+            "sbm_flavor_model_name": {"type": "str"},
             "os_name_regex": {"type": "str"},
         },
         supports_check_mode=True,
-        required_one_of=[["server_id", "location_id", "location_code"]],
         mutually_exclusive=[
-            ["server_id", "location_id", "location_code"],
-            ["server_model_id", "server_model_name"],
+            ["sbm_flavor_model_id", "sbm_flavor_model_name"],
         ],
-        required_if=[
-            [
-                "location_id",
-                "present",
-                ("server_model_id", "server_model_name"),
-                True,
-            ],
-            [
-                "location_code",
-                "present",
-                ("server_model_id", "server_model_name"),
-                True,
-            ],
+        required_one_of=[
+            ["sbm_flavor_model_id", "sbm_flavor_model_name"],
         ],
     )
     try:
-        sc_os = ScDedicatedOSList(
+        sc_os = ScSbmOSList(
             endpoint=module.params["endpoint"],
             token=module.params["token"],
-            server_id=module.params.get("server_id"),
-            location_id=module.params.get("location_id"),
-            location_code=module.params.get("location_code"),
-            server_model_id=module.params.get("server_model_id"),
-            server_model_name=module.params.get("server_model_name"),
+            location_id=module.params["location_id"],
+            sbm_flavor_model_id=module.params.get("sbm_flavor_model_id"),
+            sbm_flavor_model_name=module.params.get("sbm_flavor_model_name"),
             os_name_regex=module.params.get("os_name_regex"),
         )
         module.exit_json(**sc_os.run())
