@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, print_function
 import re
+import random
+import time
 
 __metaclass__ = type
 
@@ -148,10 +150,35 @@ class ApiHelper:
             )
         return decoded
 
-    def make_get_request(self, path, query_parameters=None):
-        "Used for simple GET request without pagination."
-        self.start_request("GET", path, query_parameters)
-        return self.decode(self.send_request(good_codes=[200]))
+    def make_get_request(self, path, query_parameters=None, retry_rules=None):
+        """Used for a simple GET request without pagination.
+
+        retry_rules: dict with keys:
+            codes: list of status codes to retry on (e.g. [500, 502, 503, 504])
+            delay: delay between retries in seconds
+            max_wait: maximum total wait time in seconds (+/- additional delay).
+        """
+        start = time.time()
+        while True:
+            try:
+                self.start_request("GET", path, query_parameters)
+                return self.decode(self.send_request(good_codes=[200]))
+
+            except (
+                APIError,
+                self.requests.exceptions.Timeout,
+                self.requests.exceptions.ConnectionError,
+            ) as e:
+                if not retry_rules:
+                    raise
+                if (
+                    isinstance(e, APIError)
+                    and e.status_code not in retry_rules["codes"]
+                ):
+                    raise
+                if time.time() >= start + retry_rules["max_wait"]:
+                    raise
+                time.sleep(retry_rules["delay"] * random.uniform(0.7, 1.3))
 
     def make_delete_request(self, path, body, query_parameters, good_codes):
         self.start_request("DELETE", path, query_parameters)
@@ -178,11 +205,30 @@ class ApiHelper:
         self.request.url = response.links.get("next", {"url": None})["url"]
         self.request.query_params = []
 
-    def make_multipage_request(self, path, query_parameters=None):
+    def make_multipage_request(self, path, query_parameters=None, retry_rules=None):
         """Used for GET request with expected pagination. Returns iterator?"""
+        start = time.time()
+        transport_errors = (
+            self.requests.exceptions.Timeout,
+            self.requests.exceptions.ConnectionError,
+        )
         self.start_request("GET", path, query_parameters)
         while self.is_next():
-            response = self.send_request(good_codes=[200])
+            while True:
+                try:
+                    response = self.send_request(good_codes=[200])
+                    break
+                except (APIError,) + transport_errors as e:
+                    if not retry_rules:
+                        raise
+                    if (
+                        isinstance(e, APIError)
+                        and e.status_code not in retry_rules["codes"]
+                    ):
+                        raise
+                    if time.time() >= start + retry_rules["max_wait"]:
+                        raise
+                    time.sleep(retry_rules["delay"] * random.uniform(0.7, 1.3))
             list_from_api = self.decode(response)
             yield from list_from_api
             self.prepare_next(response)
@@ -316,13 +362,17 @@ class ScApi:
     def list_regions(self):
         return self.api_helper.make_multipage_request("/cloud_computing/regions")
 
-    def get_dedicated_servers(self, server_id):
+    def get_dedicated_servers(self, server_id, retry_rules=None):
         return self.api_helper.make_get_request(
-            path=f"/hosts/dedicated_servers/{server_id}"
+            path=f"/hosts/dedicated_servers/{server_id}",
+            retry_rules=retry_rules,
         )
 
-    def get_sbm_servers(self, server_id):
-        return self.api_helper.make_get_request(path=f"/hosts/sbm_servers/{server_id}")
+    def get_sbm_servers(self, server_id, retry_rules=None):
+        return self.api_helper.make_get_request(
+            path=f"/hosts/sbm_servers/{server_id}",
+            retry_rules=retry_rules,
+        )
 
     def list_hosts(self, type=None, search_pattern=None, label_selector=None):
         query = {}
@@ -392,9 +442,10 @@ class ScApi:
             good_codes=[204],
         )
 
-    def get_instances(self, instance_id):
+    def get_instances(self, instance_id, retry_rules=None):
         return self.api_helper.make_get_request(
-            path=f"/cloud_computing/instances/{instance_id}"
+            path=f"/cloud_computing/instances/{instance_id}",
+            retry_rules=retry_rules,
         )
 
     def get_credentials(self, region_id):
@@ -603,12 +654,18 @@ class ScApi:
         )[1]
         return response
 
-    def get_l2_segment(self, l2_segment_id):
-        return self.api_helper.make_get_request(path=f"/l2_segments/{l2_segment_id}")
+    def get_l2_segment(self, l2_segment_id, retry_rules=None):
+        return self.api_helper.make_get_request(
+            path=f"/l2_segments/{l2_segment_id}",
+            retry_rules=retry_rules,
+        )
 
-    def get_l2_segment_or_none(self, l2_segment_id):
+    def get_l2_segment_or_none(self, l2_segment_id, retry_rules=None):
         try:
-            seg = self.api_helper.make_get_request(path=f"/l2_segments/{l2_segment_id}")
+            seg = self.api_helper.make_get_request(
+                path=f"/l2_segments/{l2_segment_id}",
+                retry_rules=retry_rules,
+            )
         except APIError404:
             seg = {"id": None}
         return seg
@@ -651,17 +708,20 @@ class ScApi:
         )[1]
         return response
 
-    def list_load_balancer_instances(self, label_selector=None):
+    def list_load_balancer_instances(self, label_selector=None, retry_rules=None):
         query = {}
         if label_selector:
             query["label_selector"] = label_selector
         return self.api_helper.make_multipage_request(
-            path="/load_balancers", query_parameters=query
+            path="/load_balancers",
+            query_parameters=query,
+            retry_rules=retry_rules,
         )
 
-    def get_lb_instance(self, instance_id, lb_instance_type):
+    def get_lb_instance(self, instance_id, lb_instance_type, retry_rules=None):
         return self.api_helper.make_get_request(
-            path=f"/load_balancers/{lb_instance_type}/{instance_id}"
+            path=f"/load_balancers/{lb_instance_type}/{instance_id}",
+            retry_rules=retry_rules,
         )
 
     def delete_lb_instance(self, instance_id, lb_instance_type):
@@ -884,7 +944,9 @@ class ScApi:
             query_parameters=None,
         )
 
-    def list_rbs_volumes(self, label_selector=None, search_pattern=None, location_id=None):
+    def list_rbs_volumes(
+        self, label_selector=None, search_pattern=None, location_id=None
+    ):
         query = None
         if any([label_selector, search_pattern, location_id]):
             query = {}
@@ -899,9 +961,10 @@ class ScApi:
             path="/remote_block_storage/volumes", query_parameters=query
         )
 
-    def get_rbs_volume(self, rbs_volume_id):
+    def get_rbs_volume(self, rbs_volume_id, retry_rules=None):
         return self.api_helper.make_get_request(
-            path=f"/remote_block_storage/volumes/{rbs_volume_id}"
+            path=f"/remote_block_storage/volumes/{rbs_volume_id}",
+            retry_rules=retry_rules,
         )
 
     def get_rbs_volume_by_name(self, name):
@@ -956,9 +1019,10 @@ class ScApi:
             good_codes=[204],
         )
 
-    def get_rbs_volume_credentials(self, rbs_volume_id):
+    def get_rbs_volume_credentials(self, rbs_volume_id, retry_rules=None):
         return self.api_helper.make_get_request(
-            path=f"/remote_block_storage/volumes/{rbs_volume_id}/credentials"
+            path=f"/remote_block_storage/volumes/{rbs_volume_id}/credentials",
+            retry_rules=retry_rules,
         )
 
     def reset_rbs_volume_credentials(self, rbs_volume_id):

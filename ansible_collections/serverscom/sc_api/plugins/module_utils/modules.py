@@ -22,6 +22,19 @@ CHANGED = True
 NOT_CHANGED = False
 
 
+def _retry_rules_for_wait(max_wait, delay):
+    RETRY_CODES_WAIT = {
+        429,  # Ratelimit, need to wait for next window. If we are unlucky, it' a failure, but nothing to do within wait time.
+        500,  # Never observed, but why not?
+    }
+    # We subsrtract delay, because we wait before first request
+    return {
+        "codes": RETRY_CODES_WAIT,
+        "delay": delay,
+        "max_wait": max(0, max_wait - delay),
+    }
+
+
 class ModuleError(SCBaseError):
     def __init__(self, msg):
         self.msg = msg
@@ -423,10 +436,12 @@ class ScDedicatedServerReinstall(object):
         raid0_simple = [
             {"slot_positions": [0, 1], "raid": 0, "partitions": partitions_template}
         ]
-        no_raid = [
-            {"slot_positions": [0], "partitions": partitions_template}
-        ]
-        templates = {"raid1-simple": rai1_simple, "raid0-simple": raid0_simple, "no-raid": no_raid}
+        no_raid = [{"slot_positions": [0], "partitions": partitions_template}]
+        templates = {
+            "raid1-simple": rai1_simple,
+            "raid0-simple": raid0_simple,
+            "no-raid": no_raid,
+        }
         if layout:
             return layout
         if template not in templates:
@@ -443,7 +458,13 @@ class ScDedicatedServerReinstall(object):
             elapsed = time.time() - start_time
             if elapsed > self.wait:
                 raise WaitError(msg="Server is not ready.", timeout=elapsed)
-            server_info = self.api.get_dedicated_servers(self.server_id)
+            server_info = self.api.get_dedicated_servers(
+                self.server_id,
+                retry_rules=_retry_rules_for_wait(
+                    max_wait=max(0, self.wait - elapsed),
+                    delay=self.update_interval,
+                ),
+            )
             ready = ScDedicatedServerInfo._is_server_ready(server_info)
         server_info["ready"] = True
         server_info["elapsed"] = elapsed
@@ -619,7 +640,12 @@ class ScCloudComputingInstanceCreate:
 
     def wait_for(self, instance):
         start_time = time.time()
-        instance = self.api.get_instances(instance["id"])
+        instance = self.api.get_instances(
+            instance["id"],
+            retry_rules=_retry_rules_for_wait(
+                max_wait=self.wait, delay=self.update_interval
+            ),
+        )
         if not self.wait:
             return instance
         while instance["status"] != "ACTIVE":
@@ -631,7 +657,13 @@ class ScCloudComputingInstanceCreate:
                     f" to become ACTIVE. Last status was {instance['status']}",
                     timeout=elapsed,
                 )
-            instance = self.api.get_instances(instance["id"])
+            instance = self.api.get_instances(
+                instance["id"],
+                retry_rules=_retry_rules_for_wait(
+                    max_wait=max(0, self.wait - elapsed),
+                    delay=self.update_interval,
+                ),
+            )
         return instance
 
     def run(self):
@@ -863,7 +895,13 @@ class ScCloudComputingInstanceState:
                     timeout=time.time() - start_time,
                 )
             time.sleep(self.update_interval)
-            self.instance = self.api.get_instances(self.instance_id)
+            self.instance = self.api.get_instances(
+                self.instance_id,
+                retry_rules=_retry_rules_for_wait(
+                    max_wait=max(0, self.wait - (time.time() - start_time)),
+                    delay=self.update_interval,
+                ),
+            )
         if self.instance["status"] == status_done:
             return True
         else:
@@ -1007,7 +1045,13 @@ class ScCloudComputingInstanceReinstall:
                     timeout=time.time() - start_time,
                 )
             time.sleep(self.update_interval)
-            self.instance = self.api.get_instances(self.instance["id"])
+            self.instance = self.api.get_instances(
+                self.instance["id"],
+                retry_rules=_retry_rules_for_wait(
+                    max_wait=max(0, self.wait - (time.time() - start_time)),
+                    delay=self.update_interval,
+                ),
+            )
         if self.instance["status"] == status_done:
             return True
         else:
@@ -1178,7 +1222,13 @@ class ScL2Segment:
             elapsed = time.time() - start_time
             if elapsed > self.wait:
                 raise WaitError(msg="Segment is not ready.", timeout=elapsed)
-            segment = self.api.get_l2_segment(segment_id)
+            segment = self.api.get_l2_segment(
+                segment_id,
+                retry_rules=_retry_rules_for_wait(
+                    max_wait=max(0, self.wait - elapsed),
+                    delay=self.update_interval,
+                ),
+            )
             ready = segment["status"] == "active"
 
     def wait_for_segment_disappear(self, segment_id):
@@ -1190,7 +1240,13 @@ class ScL2Segment:
             elapsed = time.time() - start_time
             if elapsed > self.wait:
                 raise WaitError(msg="Segment is not deleted.", timeout=elapsed)
-            segment = self.api.get_l2_segment_or_none(segment_id)
+            segment = self.api.get_l2_segment_or_none(
+                segment_id,
+                retry_rules=_retry_rules_for_wait(
+                    max_wait=max(0, self.wait - elapsed),
+                    delay=self.update_interval,
+                ),
+            )
             ready = not segment["id"]
 
     def guess_member_location_groups(self, members):
@@ -1427,7 +1483,13 @@ class ScL2SegmentAliases:
                     f" Last status was {l2['status']}",
                     timeout=elapsed,
                 )
-            l2 = self.api.get_l2_segment(l2["id"])
+            l2 = self.api.get_l2_segment(
+                l2["id"],
+                retry_rules=_retry_rules_for_wait(
+                    max_wait=max(0, self.wait - elapsed),
+                    delay=self.update_interval,
+                ),
+            )
 
     def prep_result(self, changed):
         aliases = list(self.api.list_l2_segment_networks(self.found_segment_id))
@@ -1608,7 +1670,13 @@ class ScLbInstanceDelete:
     def wait_for_disappearance(self):
         start_time = time.time()
         while True:
-            instances = self.api.list_load_balancer_instances()
+            elapsed = time.time() - start_time
+            instances = self.api.list_load_balancer_instances(
+                retry_rules=_retry_rules_for_wait(
+                    max_wait=max(0, self.wait - elapsed),
+                    delay=self.update_interval,
+                )
+            )
             exists = any(
                 inst.get("id") == self.lb_instance_id
                 for inst in instances
@@ -1616,7 +1684,6 @@ class ScLbInstanceDelete:
             )
             if not exists:
                 break
-            elapsed = time.time() - start_time
             if elapsed > self.wait:
                 raise WaitError(
                     msg=f"Timeout waiting for lb instance {self.lb_instance_id} to disappear after {elapsed:.2f} seconds.",
@@ -1747,12 +1814,17 @@ class ScLbInstanceL4CreateUpdate:
     def wait_for_active(self):
         start_time = time.time()
         while True:
+            elapsed = time.time() - start_time
             instance = self.api.get_lb_instance(
-                self.lb_instance_id, self.lb_instance_type
+                self.lb_instance_id,
+                self.lb_instance_type,
+                retry_rules=_retry_rules_for_wait(
+                    max_wait=max(0, self.wait - elapsed),
+                    delay=self.update_interval,
+                ),
             )
             if instance["status"] == "active":
                 return instance
-            elapsed = time.time() - start_time
             if elapsed > self.wait:
                 raise WaitError(
                     msg=f"Timeout waiting for lb instance {self.lb_instance_id} to become active after {elapsed:.2f} seconds.",
@@ -1891,12 +1963,17 @@ class ScLbInstanceL7CreateUpdate:
     def wait_for_active(self):
         start_time = time.time()
         while True:
+            elapsed = time.time() - start_time
             instance = self.api.get_lb_instance(
-                self.lb_instance_id, self.lb_instance_type
+                self.lb_instance_id,
+                self.lb_instance_type,
+                retry_rules=_retry_rules_for_wait(
+                    max_wait=max(0, self.wait - elapsed),
+                    delay=self.update_interval,
+                ),
             )
             if instance["status"] == "active":
                 return instance
-            elapsed = time.time() - start_time
             if elapsed > self.wait:
                 raise WaitError(
                     msg=f"Timeout waiting for lb instance {self.lb_instance_id} to become active after {elapsed:.2f} seconds.",
@@ -1964,7 +2041,14 @@ class ScDedicatedServerPower:
     def wait_for_status(self, target_status):
         start = time.time()
         while True:
-            server = self.api.get_dedicated_servers(self.server_id)
+            elapsed = time.time() - start
+            server = self.api.get_dedicated_servers(
+                self.server_id,
+                retry_rules=_retry_rules_for_wait(
+                    max_wait=max(0, self.wait - elapsed),
+                    delay=self.interval,
+                ),
+            )
             status = server["power_status"]
             if status == target_status:
                 return server
@@ -1973,7 +2057,7 @@ class ScDedicatedServerPower:
                 raise ModuleError(
                     f"Unexpected power_status={status}, expected {target_status}"
                 )
-            if time.time() - start > self.wait:
+            if elapsed > self.wait:
                 raise ModuleError(
                     f"Timeout waiting for power_status={target_status}, last={status}"
                 )
@@ -2174,7 +2258,15 @@ class ScRBSFlavorsInfo:
 
 
 class ScRBSVolumeList:
-    def __init__(self, endpoint, token, label_selector=None, search_pattern=None, location_id=None, location_code=None):
+    def __init__(
+        self,
+        endpoint,
+        token,
+        label_selector=None,
+        search_pattern=None,
+        location_id=None,
+        location_code=None,
+    ):
         self.api = ScApi(token, endpoint)
         self.label_selector = label_selector
         self.search_pattern = search_pattern
@@ -2196,10 +2288,19 @@ class ScRBSVolumeList:
                 )
 
     def run(self):
-        volumes = list(self.api.list_rbs_volumes(self.label_selector, self.search_pattern, self.location_id))
+        volumes = list(
+            self.api.list_rbs_volumes(
+                self.label_selector, self.search_pattern, self.location_id
+            )
+        )
         for volume in volumes:
             volume_credentials = self.api.get_rbs_volume_credentials(volume["id"])
-            volume.update({"username": volume_credentials["username"], "password": volume_credentials["password"]})
+            volume.update(
+                {
+                    "username": volume_credentials["username"],
+                    "password": volume_credentials["password"],
+                }
+            )
         return {
             "changed": False,
             "rbs_volumes": volumes,
@@ -2221,7 +2322,7 @@ class scRBSVolumeCreateUpdateDelete:
         volume_id,
         wait,
         update_interval,
-        checkmode
+        checkmode,
     ):
         self.api = ScApi(token, endpoint)
         self.volume_id = volume_id
@@ -2266,11 +2367,13 @@ class scRBSVolumeCreateUpdateDelete:
     def update_volume(self):
         volume = self.api.get_rbs_volume(self.volume_id)
         result = {"changed": False, "rbs_volume": volume}
-        if any([
-            self.name and self.name != volume.get("name"),
-            self.size and self.size != volume.get("size"),
-            self.labels and self.labels != volume.get("labels"),
-        ]):
+        if any(
+            [
+                self.name and self.name != volume.get("name"),
+                self.size and self.size != volume.get("size"),
+                self.labels and self.labels != volume.get("labels"),
+            ]
+        ):
             if not self.checkmode:
                 updated_volume = self.api.update_rbs_volume(
                     self.volume_id,
@@ -2295,16 +2398,22 @@ class scRBSVolumeCreateUpdateDelete:
         result = {"changed": False, "rbs_volume": None}
         existing_volume = self.api.get_rbs_volume_by_name(self.name)
         if existing_volume:
-            if (self.location_id and self.location_id != existing_volume["location_id"]) or (self.flavor_id and self.flavor_id != existing_volume["flavor_id"]):
-                raise ModuleError(f"RBS volume with name '{self.name}' already exists. You cannot change its location or flavor.")
+            if (
+                self.location_id and self.location_id != existing_volume["location_id"]
+            ) or (self.flavor_id and self.flavor_id != existing_volume["flavor_id"]):
+                raise ModuleError(
+                    f"RBS volume with name '{self.name}' already exists. You cannot change its location or flavor."
+                )
             else:
                 self.volume_id = existing_volume["id"]
                 upd = self.update_volume()
                 return upd
         else:
             if not (self.location_id and self.flavor_id and self.size):
-                raise ModuleError(f"RBS volume with name '{self.name}' does not exist. "
-                                  "To create it, location_id (or location_code), flavor_id (or flavor_name) and size must be provided.")
+                raise ModuleError(
+                    f"RBS volume with name '{self.name}' does not exist. "
+                    "To create it, location_id (or location_code), flavor_id (or flavor_name) and size must be provided."
+                )
         if not self.checkmode:
             response = self.api.create_rbs_volume(
                 name=self.name,
@@ -2317,14 +2426,16 @@ class scRBSVolumeCreateUpdateDelete:
             new_volume = self.wait_for_active()
             result["rbs_volume"] = new_volume
         else:
-            result["rbs_volume"] = {"id": None,
-                                    "name": self.name,
-                                    "location_id": self.location_id,
-                                    "location_code": None,
-                                    "flavor_id": self.flavor_id,
-                                    "size": self.size,
-                                    "labels": self.labels,
-                                    "status": "creating"}
+            result["rbs_volume"] = {
+                "id": None,
+                "name": self.name,
+                "location_id": self.location_id,
+                "location_code": None,
+                "flavor_id": self.flavor_id,
+                "size": self.size,
+                "labels": self.labels,
+                "status": "creating",
+            }
         result["changed"] = True
         return result
 
@@ -2347,7 +2458,12 @@ class scRBSVolumeCreateUpdateDelete:
         return {"changed": not no_volume, "rbs_volume": {}}
 
     def wait_for_active(self):
-        volume = self.api.get_rbs_volume(self.volume_id)
+        volume = self.api.get_rbs_volume(
+            self.volume_id,
+            retry_rules=_retry_rules_for_wait(
+                max_wait=self.wait, delay=self.update_interval
+            ),
+        )
         if self.wait == 0:
             return volume
         start_time = time.time()
@@ -2361,7 +2477,13 @@ class scRBSVolumeCreateUpdateDelete:
                     timeout=elapsed,
                 )
             time.sleep(self.update_interval)
-            volume = self.api.get_rbs_volume(self.volume_id)
+            volume = self.api.get_rbs_volume(
+                self.volume_id,
+                retry_rules=_retry_rules_for_wait(
+                    max_wait=max(0, self.wait - elapsed),
+                    delay=self.update_interval,
+                ),
+            )
 
     def wait_for_disappearance(self):
         if self.wait == 0:
@@ -2369,10 +2491,16 @@ class scRBSVolumeCreateUpdateDelete:
         start_time = time.time()
         while True:
             try:
-                self.api.get_rbs_volume(self.volume_id)
+                elapsed = time.time() - start_time
+                self.api.get_rbs_volume(
+                    self.volume_id,
+                    retry_rules=_retry_rules_for_wait(
+                        max_wait=max(0, self.wait - elapsed),
+                        delay=self.update_interval,
+                    ),
+                )
             except APIError404:
                 return []
-            elapsed = time.time() - start_time
             if elapsed > self.wait:
                 raise WaitError(
                     msg=f"Timeout waiting for RBS volume {self.volume_id} to disappear after {elapsed:.2f} seconds.",
@@ -2402,7 +2530,9 @@ class ScRBSVolumeCredentialsInfo:
 
 
 class ScRBSVolumeCredentialsReset:
-    def __init__(self, endpoint, token, wait, update_interval, checkmode, volume_id, name):
+    def __init__(
+        self, endpoint, token, wait, update_interval, checkmode, volume_id, name
+    ):
         self.api = ScApi(token, endpoint)
         self.volume_id = volume_id
         self.name = name
@@ -2431,8 +2561,16 @@ class ScRBSVolumeCredentialsReset:
                             timeout=elapsed,
                         )
                     time.sleep(self.update_interval)
-                    rbs_volume = self.api.get_rbs_volume(self.volume_id)
-                rbs_volume_credentials = self.api.get_rbs_volume_credentials(self.volume_id)
+                    rbs_volume = self.api.get_rbs_volume(
+                        self.volume_id,
+                        retry_rules=_retry_rules_for_wait(
+                            max_wait=max(0, self.wait - elapsed),
+                            delay=self.update_interval,
+                        ),
+                    )
+                rbs_volume_credentials = self.api.get_rbs_volume_credentials(
+                    self.volume_id
+                )
                 return {
                     "changed": True,
                     "rbs_volume_credentials": rbs_volume_credentials,
