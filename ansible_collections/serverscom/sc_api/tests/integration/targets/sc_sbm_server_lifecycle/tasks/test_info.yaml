@@ -1,0 +1,75 @@
+---
+- name: Test invalid token
+  serverscom.sc_api.sc_sbm_server_info:
+    token: invalid
+    endpoint: '{{ sc_endpoint }}'
+    server_id: '{{ test_sbm_server_id }}'
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 401
+
+- name: Test2, Absent server without failure
+  serverscom.sc_api.sc_sbm_server_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    fail_on_absent: false
+    server_id: '{{ non_existing_id }}'
+  register: test2
+
+- name: Check Test2
+  assert:
+    that:
+      - test2 is not changed
+      - test2.found == false
+      - test2.ready == false
+
+- name: Test3, Absent server with failure
+  serverscom.sc_api.sc_sbm_server_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    fail_on_absent: true
+    server_id: '{{ non_existing_id }}'
+  register: test3
+  ignore_errors: true
+
+- name: Check Test3
+  assert:
+    that:
+      - test3 is not success
+      - test3.status_code == 404
+
+- name: Test4, Information for real SBM server
+  serverscom.sc_api.sc_sbm_server_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    fail_on_absent: false
+    server_id: '{{ test_sbm_server_id }}'
+  register: test4
+
+- name: Check Test4
+  assert:
+    that:
+      - test4 is success
+      - test4.id == test_sbm_server_id
+      - test4.configuration | length > 0
+      - test4.configuration_details | length > 0
+      - test4.found
+      - test4.power_status
+      - test4.location_id
+      - test4.status
+      - test4.type == "sbm_server"
+
+- name: Test5, Check ready field logic
+  serverscom.sc_api.sc_sbm_server_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    server_id: '{{ test_sbm_server_id }}'
+  register: test5
+
+- name: Check Test5 ready field
+  assert:
+    that:
+      - test5.ready is defined
+      - test5.ready is boolean

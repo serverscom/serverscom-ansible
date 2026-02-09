@@ -240,6 +240,42 @@ jobs:
           sync
           sync
 
+  integration_tests_sbm:
+    runs-on: ubuntu-24.04
+    needs: quick_tests
+    concurrency:
+      group: SBM
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Configure integration tests
+        run: |
+          envsubst < integration_config.yml.template > ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
+        env:
+          SC_TOKEN: "${{ secrets.SC_TOKEN }}"
+      - name: Integration tests
+        run: ansible-test integration --requirements --python 3.13
+          sc_sbm_flavor_models_info
+          sc_sbm_server_lifecycle
+          sc_sbm_servers_info
+
+        working-directory: ansible_collections/serverscom/sc_api
+      - name: Cleanup secrets
+        if: always()
+        run: |
+          dd if=/dev/zero bs=4k count=4 of=ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
+          sync
+          sync
+
   build:
     runs-on: ubuntu-24.04
     needs:
@@ -248,6 +284,7 @@ jobs:
       - integration_tests_l2
       - integration_tests_lb_instances
       - integration_tests_rbs_volumes
+      - integration_tests_sbm
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:

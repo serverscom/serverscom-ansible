@@ -1,0 +1,52 @@
+---
+- name: Get locations
+  serverscom.sc_api.sc_baremetal_locations_info:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    search_pattern: AMS7
+  register: locations_result
+
+- name: Set AMS7 location_id
+  set_fact:
+    test_location_id: "{{ (locations_result.locations | selectattr('code', 'eq', 'AMS7') | first).id }}"
+
+- name: Get SBM flavor models for AMS7
+  serverscom.sc_api.sc_sbm_flavor_models_info:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    location_id: "{{ test_location_id }}"
+    search_pattern: DL-01
+  register: flavors_result
+
+- name: Set DL-01 flavor_model_id
+  set_fact:
+    test_flavor_model_id: "{{ (flavors_result.sbm_flavor_models | selectattr('name', 'match', '.*DL-01.*') | first).id }}"
+
+- name: Get available OS for DL-01 in AMS7
+  serverscom.sc_api.sc_sbm_os_list:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    sbm_flavor_model_id: "{{ test_flavor_model_id }}"
+    location_id: "{{ test_location_id }}"
+  register: os_result
+
+- name: Set OS ID (first available)
+  set_fact:
+    test_os_id: "{{ os_result.os_list[0].id }}"
+
+- name: Create SBM test server
+  serverscom.sc_api.sc_sbm_server:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    state: present
+    location_id: "{{ test_location_id }}"
+    sbm_flavor_model_id: "{{ test_flavor_model_id }}"
+    hostname: ci-sbm-test
+    operating_system_id: "{{ test_os_id }}"
+    wait: 86400
+    update_interval: 60
+  register: created_server
+
+- name: Set server ID fact
+  set_fact:
+    test_sbm_server_id: "{{ created_server.id }}"

@@ -1,0 +1,97 @@
+---
+- name: Test1 invalid token
+  serverscom.sc_api.sc_sbm_server_labels:
+    token: invalid
+    endpoint: '{{ sc_endpoint }}'
+    server_id: '{{ test_sbm_server_id }}'
+    labels: {}
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 401
+
+- name: Test2, Update labels on non-existing server
+  serverscom.sc_api.sc_sbm_server_labels:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    server_id: '{{ non_existing_id }}'
+    labels:
+      env: test
+  register: test2
+  ignore_errors: true
+
+- name: Check Test2
+  assert:
+    that:
+      - test2 is not success
+
+- name: Test3, Set labels in check mode
+  serverscom.sc_api.sc_sbm_server_labels:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    server_id: '{{ test_sbm_server_id }}'
+    labels:
+      environment: integration-test
+      managed_by: ansible
+  check_mode: true
+  register: test3
+
+- name: Test3 verify, Get server info to check labels unchanged
+  serverscom.sc_api.sc_sbm_server_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    server_id: '{{ test_sbm_server_id }}'
+  register: test3_verify
+
+- name: Check Test3
+  assert:
+    that:
+      - test3 is changed
+      - test3_verify.labels.environment is not defined or test3_verify.labels.environment != 'integration-test'
+
+- name: Test4, Set labels
+  serverscom.sc_api.sc_sbm_server_labels:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    server_id: '{{ test_sbm_server_id }}'
+    labels:
+      environment: integration-test
+      managed_by: ansible
+  register: test4
+
+- name: Check Test4
+  assert:
+    that:
+      - test4 is changed
+      - test4.labels.environment == 'integration-test'
+      - test4.labels.managed_by == 'ansible'
+
+- name: Test5, Set same labels (idempotency)
+  serverscom.sc_api.sc_sbm_server_labels:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    server_id: '{{ test_sbm_server_id }}'
+    labels:
+      environment: integration-test
+      managed_by: ansible
+  register: test5
+
+- name: Check Test5
+  assert:
+    that:
+      - test5 is not changed
+
+- name: Test6, Clear labels
+  serverscom.sc_api.sc_sbm_server_labels:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    server_id: '{{ test_sbm_server_id }}'
+    labels: {}
+  register: test6
+
+- name: Check Test6
+  assert:
+    that:
+      - test6 is changed
+      - test6.labels == {}

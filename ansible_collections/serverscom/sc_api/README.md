@@ -48,7 +48,7 @@ List of modules
 * `sc_baremetal_locations_info` - List of available baremetal locations
 * `sc_cloud_computing_regions_info`- List of cloud computing regions
 * `sc_baremetal_servers_info` - List of baremetal servers
-* `sc_baremetal_os_list` - List of the available OS options for the specific region and server model or server ID
+* `sc_baremetal_os_list` - List of the available OS options for the specific region and dedicated server model or server ID
 * `sc_dedicated_server_info` - Information about one dedicated server
 * `sc_dedicated_server_reinstall` - Reinstallation of servers
 * `sc_ssh_key` - SSH key management
@@ -67,4 +67,14 @@ List of modules
 * `sc_l2_segments_info` - list of existing L2 segments
 * `sc_l2_segment` - Creation/delelition/membership modification for L2 segments
 * `sc_l2_segment_aliases` - Adding and removing IP addresses to/from L2 segments
-
+* `sc_sbm_server` - Create/delete SBM (Scalable Baremetal) servers
+* `sc_sbm_server_info` - Information about a Scalable Baremetal (SBM) server
+* `sc_sbm_servers_info` - List of SBM servers with optional filtering
+* `sc_sbm_server_power` - Power on/off/cycle operations for SBM servers
+* `sc_sbm_server_reinstall` - Reinstall OS on SBM servers
+* `sc_sbm_server_ptr` - Manage PTR records for SBM servers
+* `sc_sbm_server_labels` - Update labels on SBM servers
+* `sc_sbm_server_network` - Create/delete networks for SBM servers
+* `sc_sbm_server_networks_info` - List/get networks for SBM servers
+* `sc_sbm_flavor_models_info` - List of available SBM flavor models per location
+* `sc_sbm_os_list` - List of the available OS options for SBM servers by location and flavor model

@@ -1,0 +1,63 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+  when: not sc_endpoint or not sc_token
+
+- name: Test invalid token
+  serverscom.sc_api.sc_sbm_servers_info:
+    token: invalid
+    endpoint: "{{ sc_endpoint }}"
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 401
+
+- name: Test2, List all SBM servers
+  serverscom.sc_api.sc_sbm_servers_info:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+  register: test2
+
+- name: Check Test2
+  assert:
+    that:
+      - test2 is not changed
+      - test2.sbm_servers is defined
+
+- name: Test3, List SBM servers with search pattern
+  serverscom.sc_api.sc_sbm_servers_info:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    search_pattern: "nonexistent-pattern-xyz"
+  register: test3
+
+- name: Check Test3
+  assert:
+    that:
+      - test3 is not changed
+      - test3.sbm_servers is defined
+
+- name: Test4, Verify server structure if any servers exist
+  assert:
+    that:
+      - test2.sbm_servers[0].id is defined
+      - test2.sbm_servers[0].status is defined
+      - test2.sbm_servers[0].type == "sbm_server"
+  when: test2.sbm_servers | length > 0
+
+- name: Test5, List SBM servers with label selector
+  serverscom.sc_api.sc_sbm_servers_info:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    label_selector: "nonexistent-label=value"
+  register: test5
+
+- name: Check Test5
+  assert:
+    that:
+      - test5 is not changed
+      - test5.sbm_servers is defined
+      - test5.sbm_servers | length == 0

@@ -3,4 +3,6 @@
 __pytest_cache__/*
 *.swp
 ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
+ansible_collections/serverscom/sc_api/tests/integration/inventory
+ansible_collections/serverscom/sc_api/*.tar.gz
 output*
