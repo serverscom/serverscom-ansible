@@ -22,7 +22,7 @@ DOCUMENTATION = """
 module: sc_sbm_server_network
 version_added: "1.0.0"
 author: "Servers.com Team (@serverscom)"
-short_description: Create or delete a network for an SBM (Scalable Baremetal) server
+short_description: Create or delete a private network for an SBM (Scalable Baremetal) server
 description: >
     Create a private IPv4 network or delete an existing network
     for a Scalable Baremetal server.
@@ -31,9 +31,15 @@ extends_documentation_fragment: serverscom.sc_api.sc_sbm
 options:
     server_id:
       type: str
-      required: true
       description:
         - ID of the SBM server.
+        - Mutually exclusive with I(hostname).
+
+    hostname:
+      type: str
+      description:
+        - Hostname of the SBM server (exact match on server title).
+        - Mutually exclusive with I(server_id).
 
     state:
       type: str
@@ -141,10 +147,12 @@ EXAMPLES = """
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
     DEFAULT_API_ENDPOINT,
+    ScApi,
     SCBaseError,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
     ScSbmServerNetwork,
+    resolve_sbm_server_id,
 )
 
 
@@ -153,7 +161,8 @@ def main():
         argument_spec={
             "token": {"type": "str", "no_log": True, "required": True},
             "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT},
-            "server_id": {"type": "str", "required": True},
+            "server_id": {"type": "str"},
+            "hostname": {"type": "str"},
             "state": {
                 "type": "str",
                 "required": True,
@@ -169,6 +178,8 @@ def main():
             "wait": {"type": "int", "default": 600},
             "update_interval": {"type": "int", "default": 10},
         },
+        required_one_of=[["server_id", "hostname"]],
+        mutually_exclusive=[["server_id", "hostname"]],
         required_if=[
             ("state", "present", ["mask"]),
             ("state", "absent", ["network_id"]),
@@ -176,10 +187,16 @@ def main():
         supports_check_mode=True,
     )
     try:
+        api = ScApi(module.params["token"], module.params["endpoint"])
+        server_id = resolve_sbm_server_id(
+            api,
+            server_id=module.params["server_id"],
+            hostname=module.params["hostname"],
+        )
         network = ScSbmServerNetwork(
             endpoint=module.params["endpoint"],
             token=module.params["token"],
-            server_id=module.params["server_id"],
+            server_id=server_id,
             state=module.params["state"],
             network_id=module.params["network_id"],
             mask=module.params["mask"],

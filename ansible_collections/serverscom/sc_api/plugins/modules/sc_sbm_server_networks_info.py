@@ -31,9 +31,15 @@ extends_documentation_fragment: serverscom.sc_api.sc_sbm
 options:
     server_id:
       type: str
-      required: true
       description:
         - ID of the SBM server.
+        - Mutually exclusive with I(hostname).
+
+    hostname:
+      type: str
+      description:
+        - Hostname of the SBM server (exact match on server title).
+        - Mutually exclusive with I(server_id).
 
     network_id:
       type: str
@@ -128,10 +134,12 @@ EXAMPLES = """
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
     DEFAULT_API_ENDPOINT,
+    ScApi,
     SCBaseError,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
     ScSbmServerNetworksInfo,
+    resolve_sbm_server_id,
 )
 
 
@@ -140,7 +148,8 @@ def main():
         argument_spec={
             "token": {"type": "str", "no_log": True, "required": True},
             "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT},
-            "server_id": {"type": "str", "required": True},
+            "server_id": {"type": "str"},
+            "hostname": {"type": "str"},
             "network_id": {"type": "str"},
             "search_pattern": {"type": "str"},
             "family": {"type": "str", "choices": ["ipv4", "ipv6"]},
@@ -148,13 +157,21 @@ def main():
             "distribution_method": {"type": "str", "choices": ["route", "gateway"]},
             "additional": {"type": "bool"},
         },
+        required_one_of=[["server_id", "hostname"]],
+        mutually_exclusive=[["server_id", "hostname"]],
         supports_check_mode=True,
     )
     try:
+        api = ScApi(module.params["token"], module.params["endpoint"])
+        server_id = resolve_sbm_server_id(
+            api,
+            server_id=module.params["server_id"],
+            hostname=module.params["hostname"],
+        )
         networks_info = ScSbmServerNetworksInfo(
             endpoint=module.params["endpoint"],
             token=module.params["token"],
-            server_id=module.params["server_id"],
+            server_id=server_id,
             network_id=module.params["network_id"],
             search_pattern=module.params["search_pattern"],
             family=module.params["family"],

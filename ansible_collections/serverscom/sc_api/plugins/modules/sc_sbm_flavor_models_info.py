@@ -31,10 +31,16 @@ extends_documentation_fragment: serverscom.sc_api.sc_sbm
 options:
     location_id:
       type: int
-      required: true
       description:
         - ID of a location to list SBM flavor models for.
         - Use M(serverscom.sc_api.sc_baremetal_locations_info) to get location IDs.
+        - Mutually exclusive with I(location_code).
+
+    location_code:
+      type: str
+      description:
+        - Code of the location (e.g. V(AMS7)).
+        - Mutually exclusive with I(location_id).
 
     search_pattern:
       type: str
@@ -106,10 +112,12 @@ EXAMPLES = """
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
     DEFAULT_API_ENDPOINT,
+    ScApi,
     SCBaseError,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
     ScSbmFlavorModelsInfo,
+    resolve_location_id,
 )
 
 
@@ -118,16 +126,25 @@ def main():
         argument_spec={
             "token": {"type": "str", "no_log": True, "required": True},
             "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT},
-            "location_id": {"type": "int", "required": True},
+            "location_id": {"type": "int"},
+            "location_code": {"type": "str"},
             "search_pattern": {"type": "str"},
         },
+        required_one_of=[["location_id", "location_code"]],
+        mutually_exclusive=[["location_id", "location_code"]],
         supports_check_mode=True,
     )
     try:
+        api = ScApi(module.params["token"], module.params["endpoint"])
+        location_id = resolve_location_id(
+            api,
+            location_id=module.params["location_id"],
+            location_code=module.params["location_code"],
+        )
         flavors = ScSbmFlavorModelsInfo(
             endpoint=module.params["endpoint"],
             token=module.params["token"],
-            location_id=module.params["location_id"],
+            location_id=location_id,
             search_pattern=module.params["search_pattern"],
         )
         module.exit_json(**flavors.run())

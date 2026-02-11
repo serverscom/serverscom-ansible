@@ -2,7 +2,6 @@
 - name: Test1 invalid token
   serverscom.sc_api.sc_sbm_server_labels:
     token: invalid
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
     labels: {}
   register: test1
@@ -13,8 +12,6 @@
 
 - name: Test2, Update labels on non-existing server
   serverscom.sc_api.sc_sbm_server_labels:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ non_existing_id }}'
     labels:
       env: test
@@ -28,8 +25,6 @@
 
 - name: Test3, Set labels in check mode
   serverscom.sc_api.sc_sbm_server_labels:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
     labels:
       environment: integration-test
@@ -39,8 +34,6 @@
 
 - name: Test3 verify, Get server info to check labels unchanged
   serverscom.sc_api.sc_sbm_server_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
   register: test3_verify
 
@@ -52,8 +45,6 @@
 
 - name: Test4, Set labels
   serverscom.sc_api.sc_sbm_server_labels:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
     labels:
       environment: integration-test
@@ -69,8 +60,6 @@
 
 - name: Test5, Set same labels (idempotency)
   serverscom.sc_api.sc_sbm_server_labels:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
     labels:
       environment: integration-test
@@ -84,8 +73,6 @@
 
 - name: Test6, Clear labels
   serverscom.sc_api.sc_sbm_server_labels:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
     labels: {}
   register: test6
@@ -95,3 +82,40 @@
     that:
       - test6 is changed
       - test6.labels == {}
+
+- name: Test7, Set labels using hostname
+  serverscom.sc_api.sc_sbm_server_labels:
+    hostname: '{{ test_hostname }}'
+    labels:
+      hostname_test: passed
+  register: test7
+
+- name: Check Test7
+  assert:
+    that:
+      - test7 is changed
+      - test7.labels.hostname_test == 'passed'
+
+- name: Test8, Clear labels after hostname test
+  serverscom.sc_api.sc_sbm_server_labels:
+    server_id: '{{ test_sbm_server_id }}'
+    labels: {}
+  register: test8
+
+- name: Check Test8
+  assert:
+    that:
+      - test8 is changed
+
+- name: Test9, Verify server_id and hostname are mutually exclusive
+  serverscom.sc_api.sc_sbm_server_labels:
+    server_id: '{{ test_sbm_server_id }}'
+    hostname: '{{ test_hostname }}'
+    labels: {}
+  register: test9
+  ignore_errors: true
+
+- name: Check Test9
+  assert:
+    that:
+      - test9 is failed

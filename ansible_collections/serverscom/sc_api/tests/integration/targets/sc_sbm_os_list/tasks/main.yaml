@@ -1,0 +1,130 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+  when: not sc_endpoint or not sc_token
+
+- block:
+    - name: Test1, Invalid token
+      serverscom.sc_api.sc_sbm_os_list:
+        token: invalid
+        location_id: 1
+        flavor_id: "1"
+      register: test1
+      failed_when:
+        - test1 is success
+        - sc_endpoint not in test1.api_url
+        - test1.status_code != 401
+
+    - name: Get locations to find valid location
+      serverscom.sc_api.sc_baremetal_locations_info: {}
+      register: locations
+
+    - name: Get SBM flavor models for first location
+      serverscom.sc_api.sc_sbm_flavor_models_info:
+        location_id: "{{ locations.locations[0].id }}"
+      register: flavors
+      when: locations.locations | length > 0
+
+    - name: Test2, List OS by location_id and flavor_id
+      serverscom.sc_api.sc_sbm_os_list:
+        location_id: "{{ locations.locations[0].id }}"
+        flavor_id: "{{ flavors.sbm_flavor_models[0].id }}"
+      register: test2
+      when: locations.locations | length > 0 and flavors.sbm_flavor_models | default([]) | length > 0
+
+    - name: Check Test2
+      assert:
+        that:
+          - test2 is not changed
+          - test2.os_list is defined
+      when: locations.locations | length > 0 and flavors.sbm_flavor_models | default([]) | length > 0
+
+    - name: Test3, List OS by location_code and flavor_name
+      serverscom.sc_api.sc_sbm_os_list:
+        location_code: "{{ locations.locations[0].code }}"
+        flavor_name: "{{ flavors.sbm_flavor_models[0].name }}"
+      register: test3
+      when: locations.locations | length > 0 and flavors.sbm_flavor_models | default([]) | length > 0
+
+    - name: Check Test3 matches Test2
+      assert:
+        that:
+          - test3 is not changed
+          - test3.os_list == test2.os_list
+      when: locations.locations | length > 0 and flavors.sbm_flavor_models | default([]) | length > 0
+
+    - name: Test4, List OS with os_name_regex filter
+      serverscom.sc_api.sc_sbm_os_list:
+        location_id: "{{ locations.locations[0].id }}"
+        flavor_id: "{{ flavors.sbm_flavor_models[0].id }}"
+        os_name_regex: "{{ test2.os_list[0].full_name[:5] | default('Linux') }}"
+      register: test4
+      when: locations.locations | length > 0 and flavors.sbm_flavor_models | default([]) | length > 0 and test2.os_list | default([]) | length > 0
+
+    - name: Check Test4
+      assert:
+        that:
+          - test4 is not changed
+          - test4.os_list | length > 0
+      when: locations.locations | length > 0 and flavors.sbm_flavor_models | default([]) | length > 0 and test2.os_list | default([]) | length > 0
+
+    - name: Test5, Nonexistent flavor_name
+      serverscom.sc_api.sc_sbm_os_list:
+        location_id: "{{ locations.locations[0].id }}"
+        flavor_name: NONEXISTENT_FLAVOR_XYZ
+      register: test5
+      ignore_errors: true
+      when: locations.locations | length > 0
+
+    - name: Check Test5
+      assert:
+        that:
+          - test5 is failed
+          - '"not found" in test5.msg'
+      when: locations.locations | length > 0
+
+    - name: Test6, Nonexistent location_code
+      serverscom.sc_api.sc_sbm_os_list:
+        location_code: ZZZZZZ_INVALID
+        flavor_id: "1"
+      register: test6
+      ignore_errors: true
+
+    - name: Check Test6
+      assert:
+        that:
+          - test6 is failed
+          - '"not found" in test6.msg'
+
+    - name: Test7, Verify location_id and location_code are mutually exclusive
+      serverscom.sc_api.sc_sbm_os_list:
+        location_id: 1
+        location_code: AMS7
+        flavor_id: "1"
+      register: test7
+      ignore_errors: true
+
+    - name: Check Test7
+      assert:
+        that:
+          - test7 is failed
+
+    - name: Test8, Verify flavor_id and flavor_name are mutually exclusive
+      serverscom.sc_api.sc_sbm_os_list:
+        location_id: 1
+        flavor_id: "1"
+        flavor_name: "DL-01"
+      register: test8
+      ignore_errors: true
+
+    - name: Check Test8
+      assert:
+        that:
+          - test8 is failed
+
+  module_defaults:
+    group/serverscom.sc_api.api:
+      token: "{{ sc_token }}"
+      endpoint: "{{ sc_endpoint }}"

@@ -19,6 +19,151 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
 __metaclass__ = type
 
 
+def resolve_sbm_server_id(api, server_id=None, hostname=None):
+    """Resolve server_id or hostname to server_id.
+
+    Exactly one of server_id or hostname must be provided.
+    When hostname is given, searches SBM servers by title (exact match).
+    Raises ModuleError on ambiguity, not found, or invalid arguments.
+    """
+    if server_id and hostname:
+        raise ModuleError("server_id and hostname are mutually exclusive.")
+    if not server_id and not hostname:
+        raise ModuleError("One of server_id or hostname must be provided.")
+    if server_id:
+        return server_id
+    found = []
+    for server in api.list_sbm_servers(search_pattern=hostname):
+        if server.get("title") == hostname:
+            found.append(server)
+    if len(found) > 1:
+        raise ModuleError(f"Multiple SBM servers found with hostname '{hostname}'.")
+    if len(found) == 1:
+        return found[0]["id"]
+    raise ModuleError(f"SBM server with hostname '{hostname}' not found.")
+
+
+def resolve_location_id(api, location_id=None, location_code=None):
+    """Resolve location_id or location_code to location_id.
+
+    Exactly one of location_id or location_code must be provided.
+    Uppercases location_code before searching.
+    Raises ModuleError if not found.
+    """
+    if location_id and location_code:
+        raise ModuleError("location_id and location_code are mutually exclusive.")
+    if not location_id and not location_code:
+        raise ModuleError("One of location_id or location_code must be provided.")
+    if location_id:
+        return location_id
+    location_code = location_code.upper()
+    for location in api.list_locations(search_pattern=location_code):
+        if location.get("code") == location_code:
+            return location.get("id")
+    raise ModuleError(f"Location with code '{location_code}' not found.")
+
+
+def resolve_sbm_flavor_model_id(
+    api, location_id, sbm_flavor_model_id=None, sbm_flavor_model_name=None
+):
+    """Resolve sbm_flavor_model_id or sbm_flavor_model_name to sbm_flavor_model_id.
+
+    Exactly one of sbm_flavor_model_id or sbm_flavor_model_name must be provided.
+    Raises ModuleError if not found.
+    """
+    if sbm_flavor_model_id and sbm_flavor_model_name:
+        raise ModuleError(
+            "sbm_flavor_model_id and sbm_flavor_model_name are mutually exclusive."
+        )
+    if not sbm_flavor_model_id and not sbm_flavor_model_name:
+        raise ModuleError(
+            "One of sbm_flavor_model_id or sbm_flavor_model_name must be provided."
+        )
+    if sbm_flavor_model_id:
+        return sbm_flavor_model_id
+    for flavor in api.list_sbm_flavor_models(
+        location_id, search_pattern=sbm_flavor_model_name
+    ):
+        if flavor.get("name") == sbm_flavor_model_name:
+            return flavor.get("id")
+    raise ModuleError(
+        f"SBM flavor model '{sbm_flavor_model_name}' not found "
+        f"in location {location_id}."
+    )
+
+
+def resolve_operating_system_id(
+    api,
+    location_id,
+    sbm_flavor_model_id,
+    operating_system_id=None,
+    operating_system_name=None,
+    operating_system_regex=None,
+):
+    """Resolve operating_system_id, operating_system_name, or operating_system_regex.
+
+    Exactly one must be provided.
+    Raises ModuleError on ambiguity or not found.
+    """
+    provided = sum(
+        x is not None
+        for x in (operating_system_id, operating_system_name, operating_system_regex)
+    )
+    if provided > 1:
+        raise ModuleError(
+            "operating_system_id, operating_system_name, and "
+            "operating_system_regex are mutually exclusive."
+        )
+    if provided == 0:
+        raise ModuleError(
+            "One of operating_system_id, operating_system_name, or "
+            "operating_system_regex must be provided."
+        )
+    if operating_system_id is not None:
+        return int(operating_system_id)
+
+    os_list = list(
+        api.list_os_images_by_sbm_flavor_id(location_id, sbm_flavor_model_id)
+    )
+    if not os_list:
+        raise ModuleError(
+            f"No available OS options found for SBM flavor model "
+            f"{sbm_flavor_model_id} in location {location_id}."
+        )
+
+    if operating_system_name:
+        for os_item in os_list:
+            if os_item.get("full_name") == operating_system_name:
+                return int(os_item["id"])
+        raise ModuleError(
+            f"OS '{operating_system_name}' not found for SBM flavor model "
+            f"{sbm_flavor_model_id} in location {location_id}."
+        )
+
+    # operating_system_regex
+    try:
+        pattern = re.compile(operating_system_regex, flags=re.IGNORECASE)
+    except re.error as e:
+        raise ModuleError(f"Invalid operating_system_regex: {e}")
+
+    filtered = [
+        os_item for os_item in os_list if pattern.search(os_item.get("full_name", ""))
+    ]
+    if len(filtered) == 1:
+        return int(filtered[0]["id"])
+    if len(filtered) > 1:
+        names = ", ".join(
+            os_item.get("full_name") or str(os_item.get("id")) for os_item in filtered
+        )
+        raise ModuleError(
+            f"Multiple OS options match the regex '{operating_system_regex}': {names}"
+        )
+    raise ModuleError(
+        f"No OS options match the regex '{operating_system_regex}' for "
+        f"SBM flavor model {sbm_flavor_model_id} in location {location_id}."
+    )
+
+
 class ScSbmServerInfo:
     """Get single SBM server info with ready state check."""
 
@@ -181,13 +326,14 @@ class ScSbmServerReinstall:
         server_id,
         hostname,
         operating_system_id,
-        operating_system_regex,
-        ssh_keys,
-        ssh_key_name,
-        user_data,
-        wait,
-        update_interval,
-        checkmode,
+        operating_system_name=None,
+        operating_system_regex=None,
+        ssh_keys=None,
+        ssh_key_name=None,
+        user_data=None,
+        wait=86400,
+        update_interval=60,
+        checkmode=False,
     ):
         if wait:
             if int(wait) < int(update_interval):
@@ -199,9 +345,10 @@ class ScSbmServerReinstall:
         self.server_data = None
         self.server_id = server_id
         self.hostname = self.get_hostname(hostname)
+        self.operating_system_name = operating_system_name
         self.operating_system_regex = operating_system_regex
         self.operating_system_id = self.get_operating_system_id(
-            operating_system_id, operating_system_regex
+            operating_system_id, operating_system_name, operating_system_regex
         )
         self.ssh_keys = self.get_ssh_keys(ssh_keys, ssh_key_name)
         self.wait = wait
@@ -273,9 +420,53 @@ class ScSbmServerReinstall:
             f"SBM flavor model '{sbm_flavor_model_name}' in location '{server_location_code}'"
         )
 
-    def get_operating_system_id(self, operating_system_id, operating_system_regex):
+    def get_operating_system_id_by_name(self):
+        self.get_server_data()
+
+        cfg = self.server_data.get("configuration_details") or {}
+        sbm_flavor_model_id = cfg.get("sbm_flavor_model_id")
+        server_location_id = self.server_data.get("location_id")
+        server_location_code = self.server_data.get("location_code")
+
+        if not sbm_flavor_model_id:
+            raise ModuleError(
+                "Can't obtain sbm_flavor_model_id which is required to get OS ID"
+            )
+        if not server_location_id:
+            raise ModuleError(
+                "Can't obtain server_location_id which is required to get OS ID"
+            )
+
+        os_list = list(
+            self.api.list_os_images_by_sbm_flavor_id(
+                server_location_id, sbm_flavor_model_id
+            )
+        )
+        if not os_list:
+            raise ModuleError(
+                f"No available OS options found for SBM flavor model "
+                f"'{cfg.get('sbm_flavor_model_name')}' "
+                f"in location '{server_location_code}'"
+            )
+
+        for os_item in os_list:
+            if os_item.get("full_name") == self.operating_system_name:
+                return int(os_item["id"])
+
+        raise ModuleError(
+            f"OS '{self.operating_system_name}' not found for SBM flavor model "
+            f"'{cfg.get('sbm_flavor_model_name')}' "
+            f"in location '{server_location_code}'"
+        )
+
+    def get_operating_system_id(
+        self, operating_system_id, operating_system_name, operating_system_regex
+    ):
         if operating_system_id is not None:
             return int(operating_system_id)
+
+        if operating_system_name:
+            return self.get_operating_system_id_by_name()
 
         self.get_server_data()
         if operating_system_regex:
@@ -334,6 +525,18 @@ class ScSbmServerReinstall:
         return result
 
 
+class ScSbmServerPtrInfo:
+    """Query PTR records for SBM server."""
+
+    def __init__(self, endpoint, token, server_id):
+        self.api = ScApi(token, endpoint)
+        self.server_id = server_id
+
+    def run(self):
+        ptr_records = list(self.api.list_sbm_server_ptr_records(self.server_id))
+        return {"changed": False, "ptr_records": ptr_records}
+
+
 class ScSbmServerPtr:
     """Manage PTR records for SBM server."""
 
@@ -369,9 +572,7 @@ class ScSbmServerPtr:
 
     def run(self):
         ptr_records = list(self.api.list_sbm_server_ptr_records(self.server_id))
-        if self.state == "query":
-            return {"changed": False, "ptr_records": ptr_records}
-        elif self.state == "present":
+        if self.state == "present":
             if list(self.find_ptr(ptr_records, self.domain, self.ip)):
                 return {"changed": False, "ptr_records": ptr_records}
             if self.checkmode:
@@ -784,8 +985,6 @@ class ScSbmServerNetwork:
                 )
             except APIError404:
                 return
-            if network.get("status") == "removed":
-                return
             if elapsed > self.wait:
                 raise WaitError(
                     msg=f"Timeout waiting for network {self.network_id} "
@@ -796,10 +995,8 @@ class ScSbmServerNetwork:
 
     def delete(self):
         try:
-            network = self.api.get_sbm_server_network(self.server_id, self.network_id)
+            self.api.get_sbm_server_network(self.server_id, self.network_id)
         except APIError404:
-            return {"changed": NOT_CHANGED}
-        if network.get("status") == "removed":
             return {"changed": NOT_CHANGED}
         if self.checkmode:
             return {"changed": CHANGED}

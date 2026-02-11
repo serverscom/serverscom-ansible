@@ -1,48 +1,47 @@
 ---
+- name: Generate random test hostname
+  set_fact:
+    test_hostname: "ci-sbm-test-{{ 999999 | random(start=100000) }}"
+
 - name: Get locations
   serverscom.sc_api.sc_baremetal_locations_info:
-    token: "{{ sc_token }}"
-    endpoint: "{{ sc_endpoint }}"
     search_pattern: AMS7
   register: locations_result
 
-- name: Set AMS7 location_id
+- name: Set AMS7 location facts
   set_fact:
     test_location_id: "{{ (locations_result.locations | selectattr('code', 'eq', 'AMS7') | first).id }}"
+    test_location_code: AMS7
 
 - name: Get SBM flavor models for AMS7
   serverscom.sc_api.sc_sbm_flavor_models_info:
-    token: "{{ sc_token }}"
-    endpoint: "{{ sc_endpoint }}"
     location_id: "{{ test_location_id }}"
     search_pattern: DL-01
   register: flavors_result
 
-- name: Set DL-01 flavor_model_id
+- name: Set DL-01 flavor model facts
   set_fact:
     test_flavor_model_id: "{{ (flavors_result.sbm_flavor_models | selectattr('name', 'match', '.*DL-01.*') | first).id }}"
+    test_flavor_model_name: "{{ (flavors_result.sbm_flavor_models | selectattr('name', 'match', '.*DL-01.*') | first).name }}"
 
 - name: Get available OS for DL-01 in AMS7
   serverscom.sc_api.sc_sbm_os_list:
-    token: "{{ sc_token }}"
-    endpoint: "{{ sc_endpoint }}"
-    sbm_flavor_model_id: "{{ test_flavor_model_id }}"
+    flavor_id: "{{ test_flavor_model_id }}"
     location_id: "{{ test_location_id }}"
   register: os_result
 
-- name: Set OS ID (first available)
+- name: Set OS facts
   set_fact:
     test_os_id: "{{ os_result.os_list[0].id }}"
+    test_os_name: "{{ os_result.os_list[0].full_name }}"
 
-- name: Create SBM test server
+- name: Create SBM test server using os_regex
   serverscom.sc_api.sc_sbm_server:
-    token: "{{ sc_token }}"
-    endpoint: "{{ sc_endpoint }}"
     state: present
-    location_id: "{{ test_location_id }}"
-    sbm_flavor_model_id: "{{ test_flavor_model_id }}"
-    hostname: ci-sbm-test
-    operating_system_id: "{{ test_os_id }}"
+    location_code: "{{ test_location_code }}"
+    flavor_name: "{{ test_flavor_model_name }}"
+    hostname: "{{ test_hostname }}"
+    operating_system_regex: 'Debian 13'
     wait: 86400
     update_interval: 60
   register: created_server

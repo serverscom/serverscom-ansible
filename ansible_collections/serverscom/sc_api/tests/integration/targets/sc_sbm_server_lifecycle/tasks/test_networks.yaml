@@ -2,7 +2,6 @@
 - name: Test1 invalid token
   serverscom.sc_api.sc_sbm_server_networks_info:
     token: invalid
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
   register: test1
   failed_when:
@@ -12,8 +11,6 @@
 
 - name: Test2, List networks
   serverscom.sc_api.sc_sbm_server_networks_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
   register: test2
 
@@ -26,8 +23,6 @@
 
 - name: Test3, List only private IPv4 networks
   serverscom.sc_api.sc_sbm_server_networks_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
     family: ipv4
     interface_type: private
@@ -41,8 +36,6 @@
 
 - name: Test4, Get single network
   serverscom.sc_api.sc_sbm_server_networks_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
     network_id: '{{ test2.networks[0].id }}'
   register: test4
@@ -57,8 +50,6 @@
 
 - name: Test5, Create private IPv4 network in check mode
   serverscom.sc_api.sc_sbm_server_network:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
     state: present
     mask: 29
@@ -70,14 +61,8 @@
     that:
       - test5 is changed
 
-- name: Record network count before create
-  set_fact:
-    networks_before: "{{ test2.networks | length }}"
-
 - name: Test6, Create private IPv4 network
   serverscom.sc_api.sc_sbm_server_network:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
     state: present
     mask: 29
@@ -91,8 +76,6 @@
 
 - name: Test7, Delete the created network
   serverscom.sc_api.sc_sbm_server_network:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
     state: absent
     network_id: '{{ test6.id }}'
@@ -105,8 +88,6 @@
 
 - name: Test8, Delete same network again (idempotency)
   serverscom.sc_api.sc_sbm_server_network:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
     state: absent
     network_id: '{{ test6.id }}'
@@ -116,3 +97,66 @@
   assert:
     that:
       - test8 is not changed
+
+- name: Test9, List networks using hostname
+  serverscom.sc_api.sc_sbm_server_networks_info:
+    hostname: '{{ test_hostname }}'
+  register: test9
+
+- name: Check Test9
+  assert:
+    that:
+      - test9 is not changed
+      - test9.networks is defined
+      - test9.networks | length > 0
+
+- name: Test10, Create network using hostname
+  serverscom.sc_api.sc_sbm_server_network:
+    hostname: '{{ test_hostname }}'
+    state: present
+    mask: 29
+  register: test10
+
+- name: Check Test10
+  assert:
+    that:
+      - test10 is changed
+      - test10.id is defined
+
+- name: Test11, Delete the hostname-created network
+  serverscom.sc_api.sc_sbm_server_network:
+    hostname: '{{ test_hostname }}'
+    state: absent
+    network_id: '{{ test10.id }}'
+  register: test11
+
+- name: Check Test11
+  assert:
+    that:
+      - test11 is changed
+
+- name: Test12, Verify server_id and hostname are mutually exclusive (network)
+  serverscom.sc_api.sc_sbm_server_network:
+    server_id: '{{ test_sbm_server_id }}'
+    hostname: '{{ test_hostname }}'
+    state: present
+    mask: 29
+  register: test12
+  ignore_errors: true
+
+- name: Check Test12
+  assert:
+    that:
+      - test12 is failed
+
+- name: Test13, Verify server_id and hostname are mutually exclusive (networks_info)
+  serverscom.sc_api.sc_sbm_server_networks_info:
+    server_id: '{{ test_sbm_server_id }}'
+    hostname: '{{ test_hostname }}'
+  register: test13
+  ignore_errors: true
+
+- name: Check Test13
+  assert:
+    that:
+      - test13 is failed

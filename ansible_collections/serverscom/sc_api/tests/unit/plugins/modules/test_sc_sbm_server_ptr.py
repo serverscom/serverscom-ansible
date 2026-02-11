@@ -10,6 +10,7 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
     ScSbmServerPtr,
+    ScSbmServerPtrInfo,
 )  # noqa
 
 
@@ -131,14 +132,53 @@ def test_find_ptr_none_params():
 # --- run() method tests ---
 
 
-def test_run_query():
-    ptr = create_ptr_instance(state="query")
-    ptr.api.list_sbm_server_ptr_records.return_value = iter(PTR_RECORDS)
+def test_run_unknown_state():
+    ptr = create_ptr_instance(state="invalid")
+    ptr.api.list_sbm_server_ptr_records.return_value = iter([])
 
-    result = ptr.run()
+    with pytest.raises(ModuleError) as exc_info:
+        ptr.run()
+
+    assert "Unknown state" in str(exc_info.value.msg)
+
+
+# --- ScSbmServerPtrInfo tests ---
+
+
+def create_ptr_info_instance():
+    """Create a ScSbmServerPtrInfo instance with mocked API."""
+    with mock.patch(
+        "ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm.ScApi"
+    ):
+        return ScSbmServerPtrInfo(
+            endpoint="https://api.servers.com/v1",
+            token="test-token",
+            server_id="test-server",
+        )
+
+
+def test_ptr_info_returns_records():
+    ptr_info = create_ptr_info_instance()
+    ptr_info.api.list_sbm_server_ptr_records.return_value = iter(PTR_RECORDS)
+
+    result = ptr_info.run()
 
     assert result["changed"] is False
     assert result["ptr_records"] == PTR_RECORDS
+    ptr_info.api.list_sbm_server_ptr_records.assert_called_once_with("test-server")
+
+
+def test_ptr_info_empty():
+    ptr_info = create_ptr_info_instance()
+    ptr_info.api.list_sbm_server_ptr_records.return_value = iter([])
+
+    result = ptr_info.run()
+
+    assert result["changed"] is False
+    assert result["ptr_records"] == []
+
+
+# --- ScSbmServerPtr.run() tests ---
 
 
 def test_run_present_new_record():
@@ -221,13 +261,3 @@ def test_run_absent_checkmode():
 
     assert result["changed"] is True
     ptr.api.delete_sbm_server_ptr_record.assert_not_called()
-
-
-def test_run_unknown_state():
-    ptr = create_ptr_instance(state="invalid")
-    ptr.api.list_sbm_server_ptr_records.return_value = iter([])
-
-    with pytest.raises(ModuleError) as exc_info:
-        ptr.run()
-
-    assert "Unknown state" in str(exc_info.value.msg)

@@ -5,39 +5,104 @@
     msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
   when: not sc_endpoint or not sc_token
 
-# Pre-server error tests (don't need a real server)
-- name: Test invalid token for sc_sbm_server
-  serverscom.sc_api.sc_sbm_server:
-    token: invalid
-    endpoint: "{{ sc_endpoint }}"
-    state: absent
-    server_id: fakeID
-  register: test_create_auth
-  failed_when:
-    - test_create_auth is success
-    - test_create_auth.status_code != 401
-
-- name: Test delete non-existing server
-  serverscom.sc_api.sc_sbm_server:
-    token: "{{ sc_token }}"
-    endpoint: "{{ sc_endpoint }}"
-    state: absent
-    server_id: "{{ non_existing_id }}"
-  register: test_delete_missing
-
-- name: Check delete non-existing is not changed
-  assert:
-    that:
-      - test_delete_missing is not changed
-
-# Lifecycle block
 - block:
-    - include_tasks: setup.yaml
-    - include_tasks: test_info.yaml
-    - include_tasks: test_labels.yaml
-    - include_tasks: test_networks.yaml
-    - include_tasks: test_ptr.yaml
-    - include_tasks: test_reinstall.yaml
-    - include_tasks: test_power.yaml
-  always:
-    - include_tasks: cleanup.yaml
+    # Pre-server error tests (don't need a real server)
+    - name: Test invalid token for sc_sbm_server
+      serverscom.sc_api.sc_sbm_server:
+        token: invalid
+        state: absent
+        server_id: fakeID
+      register: test_create_auth
+      failed_when:
+        - test_create_auth is success
+        - test_create_auth.status_code != 401
+
+    - name: Test delete non-existing server
+      serverscom.sc_api.sc_sbm_server:
+        state: absent
+        server_id: "{{ non_existing_id }}"
+      register: test_delete_missing
+
+    - name: Check delete non-existing is not changed
+      assert:
+        that:
+          - test_delete_missing is not changed
+
+    - name: Test delete non-existing server by hostname
+      serverscom.sc_api.sc_sbm_server:
+        state: absent
+        hostname: nonexistent-ci-sbm-test-xyz
+      register: test_delete_hostname_missing
+      ignore_errors: true
+
+    - name: Check delete non-existing hostname fails
+      assert:
+        that:
+          - test_delete_hostname_missing is failed
+          - '"not found" in test_delete_hostname_missing.msg'
+
+    # Negative tests for name-based resolution during create
+    - name: Test create with invalid location_code
+      serverscom.sc_api.sc_sbm_server:
+        state: present
+        location_code: ZZZZZZ_INVALID
+        flavor_name: DL-01
+        hostname: ci-sbm-negative-test
+        operating_system_name: 'Debian 13 64-bit'
+      register: test_bad_location_code
+      ignore_errors: true
+
+    - name: Check invalid location_code fails
+      assert:
+        that:
+          - test_bad_location_code is failed
+          - '"not found" in test_bad_location_code.msg'
+
+    - name: Test create with nonexistent flavor_name
+      serverscom.sc_api.sc_sbm_server:
+        state: present
+        location_code: AMS7
+        flavor_name: NONEXISTENT_FLAVOR_XYZ
+        hostname: ci-sbm-negative-test
+        operating_system_name: 'Debian 13 64-bit'
+      register: test_bad_flavor_name
+      ignore_errors: true
+
+    - name: Check nonexistent flavor_name fails
+      assert:
+        that:
+          - test_bad_flavor_name is failed
+          - '"not found" in test_bad_flavor_name.msg'
+
+    - name: Test create with nonexistent os_name
+      serverscom.sc_api.sc_sbm_server:
+        state: present
+        location_code: AMS7
+        flavor_name: DL-01
+        hostname: ci-sbm-negative-test
+        operating_system_name: 'NonexistentOS 99.99 64-bit'
+      register: test_bad_os_name
+      ignore_errors: true
+
+    - name: Check nonexistent os_name fails
+      assert:
+        that:
+          - test_bad_os_name is failed
+          - '"not found" in test_bad_os_name.msg'
+
+    # Lifecycle block
+    - block:
+        - include_tasks: setup.yaml
+        - include_tasks: test_info.yaml
+        - include_tasks: test_labels.yaml
+        - include_tasks: test_networks.yaml
+        - include_tasks: test_ptr.yaml
+        - include_tasks: test_reinstall.yaml
+        - include_tasks: test_power.yaml
+      always:
+        - include_tasks: cleanup.yaml
+
+  module_defaults:
+    group/serverscom.sc_api.api:
+      token: "{{ sc_token }}"
+      endpoint: "{{ sc_endpoint }}"

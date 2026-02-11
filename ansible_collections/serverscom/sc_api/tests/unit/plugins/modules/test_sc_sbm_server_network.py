@@ -215,27 +215,34 @@ def test_delete_network_not_found():
     instance.api.delete_sbm_server_network.assert_not_called()
 
 
-def test_delete_already_removed():
+@mock.patch("ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm.time")
+def test_delete_already_removed_waits_for_404(mock_time):
+    mock_time.time.side_effect = [0, 0, 0]
+    mock_time.sleep = mock.MagicMock()
+
     instance = create_network_instance(state="absent", network_id="net-1", mask=None)
-    instance.api.get_sbm_server_network.return_value = dict(DELETED_NETWORK)
+    instance.api.get_sbm_server_network.side_effect = [
+        dict(DELETED_NETWORK),  # initial check: status=removed, proceed with delete
+        APIError404(msg="Not found", api_url="/test", status_code=404),  # wait poll
+    ]
 
     result = instance.run()
 
-    assert result["changed"] is False
-    instance.api.delete_sbm_server_network.assert_not_called()
+    assert result["changed"] is True
+    instance.api.delete_sbm_server_network.assert_called_once()
 
 
 @mock.patch("ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm.time")
 def test_delete_409_still_succeeds(mock_time):
     # retry loop: time(start), delete->409, time(elapsed), sleep, delete->ok
-    # _wait_for_network_gone: time(start), GET->removed
+    # _wait_for_network_gone: time(start), GET->404
     mock_time.time.side_effect = [0, 0, 0, 0, 0]
     mock_time.sleep = mock.MagicMock()
 
     instance = create_network_instance(state="absent", network_id="net-1", mask=None)
     instance.api.get_sbm_server_network.side_effect = [
         dict(ACTIVE_NETWORK),  # initial check
-        dict(DELETED_NETWORK),  # poll returns removed
+        APIError404(msg="Not found", api_url="/test", status_code=404),  # wait poll
     ]
     instance.api.delete_sbm_server_network.side_effect = [
         APIError409(msg="Conflict", api_url="/test", status_code=409),

@@ -2,7 +2,6 @@
 - name: Test invalid token
   serverscom.sc_api.sc_sbm_server_info:
     token: invalid
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
   register: test1
   failed_when:
@@ -12,8 +11,6 @@
 
 - name: Test2, Absent server without failure
   serverscom.sc_api.sc_sbm_server_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     fail_on_absent: false
     server_id: '{{ non_existing_id }}'
   register: test2
@@ -27,8 +24,6 @@
 
 - name: Test3, Absent server with failure
   serverscom.sc_api.sc_sbm_server_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     fail_on_absent: true
     server_id: '{{ non_existing_id }}'
   register: test3
@@ -42,8 +37,6 @@
 
 - name: Test4, Information for real SBM server
   serverscom.sc_api.sc_sbm_server_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     fail_on_absent: false
     server_id: '{{ test_sbm_server_id }}'
   register: test4
@@ -63,8 +56,6 @@
 
 - name: Test5, Check ready field logic
   serverscom.sc_api.sc_sbm_server_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
   register: test5
 
@@ -73,3 +64,53 @@
     that:
       - test5.ready is defined
       - test5.ready is boolean
+
+- name: Test6, Get server info by hostname
+  serverscom.sc_api.sc_sbm_server_info:
+    hostname: '{{ test_hostname }}'
+  register: test6
+
+- name: Check Test6
+  assert:
+    that:
+      - test6 is success
+      - test6.id == test_sbm_server_id
+      - test6.found
+
+- name: Test7, Get server info by non-existing hostname with fail_on_absent false
+  serverscom.sc_api.sc_sbm_server_info:
+    hostname: nonexistent-ci-sbm-test-xyz
+    fail_on_absent: false
+  register: test7
+
+- name: Check Test7
+  assert:
+    that:
+      - test7 is not changed
+      - test7.found == false
+      - test7.ready == false
+
+- name: Test8, Get server info by non-existing hostname with fail_on_absent true
+  serverscom.sc_api.sc_sbm_server_info:
+    hostname: nonexistent-ci-sbm-test-xyz
+    fail_on_absent: true
+  register: test8
+  ignore_errors: true
+
+- name: Check Test8
+  assert:
+    that:
+      - test8 is failed
+      - '"not found" in test8.msg'
+
+- name: Test9, Verify server_id and hostname are mutually exclusive
+  serverscom.sc_api.sc_sbm_server_info:
+    server_id: '{{ test_sbm_server_id }}'
+    hostname: '{{ test_hostname }}'
+  register: test9
+  ignore_errors: true
+
+- name: Check Test9
+  assert:
+    that:
+      - test9 is failed

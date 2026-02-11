@@ -19,21 +19,20 @@ ANSIBLE_METADATA = {
 
 DOCUMENTATION = """
 ---
-module: sc_sbm_server_labels
+module: sc_sbm_server_ptr_info
 version_added: "1.0.0"
 author: "Servers.com Team (@serverscom)"
-short_description: Update labels on an SBM (Scalable Baremetal) server
+short_description: Query PTR records for an SBM (Scalable Baremetal) server
 description: >
-    Update the labels associated with a Scalable Baremetal server.
-    Labels are key-value pairs that can be used for filtering and
-    organizing servers.
+    Returns the list of PTR records associated with
+    IP addresses of the SBM (Scalable Baremetal) server.
 extends_documentation_fragment: serverscom.sc_api.sc_sbm
 
 options:
     server_id:
       type: str
       description:
-        - ID of the SBM server to update.
+        - ID of the SBM server.
         - Mutually exclusive with I(hostname).
 
     hostname:
@@ -41,28 +40,35 @@ options:
       description:
         - Hostname of the SBM server (exact match on server title).
         - Mutually exclusive with I(server_id).
-
-    labels:
-      type: dict
-      required: true
-      description:
-        - Labels to set on the server.
-        - This replaces all existing labels.
-        - Use an empty dict to remove all labels.
 """
 
 RETURN = """
-id:
-  type: str
+ptr_records:
+  type: list
   description:
-    - Unique identifier of the server.
+    - List of PTR records for the server.
   returned: on success
-
-labels:
-  type: dict
-  description:
-    - Labels associated with the server after update.
-  returned: on success
+  contains:
+    id:
+      type: str
+      description:
+        - Unique identifier of the PTR record.
+    ip:
+      type: str
+      description:
+        - IP address of the PTR record.
+    domain:
+      type: str
+      description:
+        - Domain name of the PTR record.
+    ttl:
+      type: int
+      description:
+        - TTL value of the PTR record.
+    priority:
+      type: int
+      description:
+        - Priority of the PTR record.
 
 api_url:
   description: URL for the failed request.
@@ -76,20 +82,21 @@ status_code:
 """
 
 EXAMPLES = """
-- name: Set labels on an SBM server
-  serverscom.sc_api.sc_sbm_server_labels:
+- name: Query PTR records by server ID
+  serverscom.sc_api.sc_sbm_server_ptr_info:
     token: '{{ sc_token }}'
-    server_id: 'abc123xyz'
-    labels:
-      environment: production
-      service: my-web-app
-  register: result
+    server_id: abc123xyz
+  register: ptr_info
 
-- name: Remove all labels
-  serverscom.sc_api.sc_sbm_server_labels:
+- name: Query PTR records by hostname
+  serverscom.sc_api.sc_sbm_server_ptr_info:
     token: '{{ sc_token }}'
-    server_id: 'abc123xyz'
-    labels: {}
+    hostname: my-sbm-server
+  register: ptr_info
+
+- name: Show PTR records
+  debug:
+    var: ptr_info.ptr_records
 """
 
 
@@ -100,7 +107,7 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
     SCBaseError,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
-    ScSbmServerLabels,
+    ScSbmServerPtrInfo,
     resolve_sbm_server_id,
 )
 
@@ -108,11 +115,10 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
 def main():
     module = AnsibleModule(
         argument_spec={
-            "token": {"type": "str", "no_log": True, "required": True},
             "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT},
+            "token": {"type": "str", "no_log": True, "required": True},
             "server_id": {"type": "str"},
             "hostname": {"type": "str"},
-            "labels": {"type": "dict", "required": True},
         },
         required_one_of=[["server_id", "hostname"]],
         mutually_exclusive=[["server_id", "hostname"]],
@@ -125,14 +131,12 @@ def main():
             server_id=module.params["server_id"],
             hostname=module.params["hostname"],
         )
-        labels = ScSbmServerLabels(
+        ptr_info = ScSbmServerPtrInfo(
             endpoint=module.params["endpoint"],
             token=module.params["token"],
             server_id=server_id,
-            labels=module.params["labels"],
-            checkmode=module.check_mode,
         )
-        module.exit_json(**labels.run())
+        module.exit_json(**ptr_info.run())
     except SCBaseError as e:
         module.fail_json(**e.fail())
 

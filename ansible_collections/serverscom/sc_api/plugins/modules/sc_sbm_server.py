@@ -38,38 +38,71 @@ options:
         - State of the SBM server.
         - C(present) orders a new SBM server.
         - C(absent) releases (deletes) an existing SBM server.
-        - C(present) requires I(location_id), I(sbm_flavor_model_id),
-          I(hostname), and I(operating_system_id).
-        - C(absent) requires I(server_id).
+        - C(present) requires I(hostname) and one of each pair
+          I(location_id)/I(location_code),
+          I(flavor_id)/I(flavor_name),
+          I(operating_system_id)/I(operating_system_name)/I(operating_system_regex).
+        - C(absent) requires I(server_id) or I(hostname).
 
     server_id:
       type: str
       description:
         - ID of the SBM server for I(state)=C(absent).
+        - Mutually exclusive with I(hostname) when I(state)=C(absent).
 
     location_id:
       type: int
       description:
         - ID of the location to order the server in.
-        - Required for I(state)=C(present).
+        - Mutually exclusive with I(location_code).
 
-    sbm_flavor_model_id:
+    location_code:
+      type: str
+      description:
+        - Code of the location to order the server in (e.g. V(AMS7)).
+        - Mutually exclusive with I(location_id).
+
+    flavor_id:
       type: int
       description:
         - ID of the SBM flavor model to order.
-        - Required for I(state)=C(present).
+        - Mutually exclusive with I(flavor_name).
+
+    flavor_name:
+      type: str
+      description:
+        - Human-readable name of the SBM flavor model (e.g. V(DL-01)).
+        - Mutually exclusive with I(flavor_id).
 
     hostname:
       type: str
       description:
-        - Hostname for the new server.
-        - Required for I(state)=C(present).
+        - Hostname for the new server (I(state)=C(present)).
+        - Can also be used to identify the server for I(state)=C(absent)
+          instead of I(server_id). The hostname is resolved to a server ID
+          via exact match on the server title.
 
     operating_system_id:
       type: int
+      aliases: ['os_id']
       description:
         - ID of the operating system to install.
-        - Required for I(state)=C(present).
+        - Mutually exclusive with I(operating_system_name) and I(operating_system_regex).
+
+    operating_system_name:
+      type: str
+      aliases: ['os_name']
+      description:
+        - Full name of the operating system to install (exact match on C(full_name)).
+        - Mutually exclusive with I(operating_system_id) and I(operating_system_regex).
+
+    operating_system_regex:
+      type: str
+      aliases: ['os_regex']
+      description:
+        - Regular expression to match an operating system by C(full_name) (case insensitive).
+        - Must match exactly one OS option.
+        - Mutually exclusive with I(operating_system_id) and I(operating_system_name).
 
     ssh_key_fingerprints:
       type: list
@@ -236,23 +269,49 @@ status_code:
 """
 
 EXAMPLES = """
-- name: Create an SBM server
+- name: Create an SBM server using IDs
   serverscom.sc_api.sc_sbm_server:
     token: '{{ sc_token }}'
     state: present
     location_id: 1
-    sbm_flavor_model_id: 42
+    flavor_id: 42
     hostname: my-sbm-server
     operating_system_id: 100
     wait: 86400
     update_interval: 60
   register: new_server
 
-- name: Delete an SBM server (fire-and-forget)
+- name: Create an SBM server using human-readable names
+  serverscom.sc_api.sc_sbm_server:
+    token: '{{ sc_token }}'
+    state: present
+    location_code: AMS7
+    flavor_name: DL-01
+    hostname: my-sbm-server
+    os_name: 'Debian 13 64-bit'
+  register: new_server
+
+- name: Create an SBM server with OS regex
+  serverscom.sc_api.sc_sbm_server:
+    token: '{{ sc_token }}'
+    state: present
+    location_code: AMS7
+    flavor_name: DL-01
+    hostname: my-sbm-server
+    os_regex: 'Debian 13'
+  register: new_server
+
+- name: Delete an SBM server by ID (fire-and-forget)
   serverscom.sc_api.sc_sbm_server:
     token: '{{ sc_token }}'
     state: absent
     server_id: '{{ server_id }}'
+
+- name: Delete an SBM server by hostname
+  serverscom.sc_api.sc_sbm_server:
+    token: '{{ sc_token }}'
+    state: absent
+    hostname: my-sbm-server
 
 - name: Delete an SBM server and wait for it to disappear
   serverscom.sc_api.sc_sbm_server:
@@ -268,11 +327,16 @@ EXAMPLES = """
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
     DEFAULT_API_ENDPOINT,
+    ScApi,
     SCBaseError,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
     ScSbmServerCreate,
     ScSbmServerDelete,
+    resolve_location_id,
+    resolve_operating_system_id,
+    resolve_sbm_flavor_model_id,
+    resolve_sbm_server_id,
 )
 
 
@@ -288,9 +352,22 @@ def main():
             },
             "server_id": {"type": "str"},
             "location_id": {"type": "int"},
-            "sbm_flavor_model_id": {"type": "int"},
+            "location_code": {"type": "str"},
+            "flavor_id": {"type": "int"},
+            "flavor_name": {"type": "str"},
             "hostname": {"type": "str"},
-            "operating_system_id": {"type": "int"},
+            "operating_system_id": {
+                "type": "int",
+                "aliases": ["os_id"],
+            },
+            "operating_system_name": {
+                "type": "str",
+                "aliases": ["os_name"],
+            },
+            "operating_system_regex": {
+                "type": "str",
+                "aliases": ["os_regex"],
+            },
             "ssh_key_fingerprints": {
                 "type": "list",
                 "elements": "str",
@@ -306,26 +383,79 @@ def main():
             [
                 "state",
                 "present",
-                [
-                    "location_id",
-                    "sbm_flavor_model_id",
-                    "hostname",
-                    "operating_system_id",
-                ],
+                ["hostname"],
             ],
-            ["state", "absent", ["server_id"]],
+            [
+                "state",
+                "present",
+                ["location_id", "location_code"],
+                True,
+            ],
+            [
+                "state",
+                "present",
+                ["flavor_id", "flavor_name"],
+                True,
+            ],
+            [
+                "state",
+                "present",
+                [
+                    "operating_system_id",
+                    "operating_system_name",
+                    "operating_system_regex",
+                ],
+                True,
+            ],
+            [
+                "state",
+                "absent",
+                ["server_id", "hostname"],
+                True,
+            ],
+        ],
+        mutually_exclusive=[
+            ["location_id", "location_code"],
+            ["flavor_id", "flavor_name"],
+            [
+                "operating_system_id",
+                "operating_system_name",
+                "operating_system_regex",
+            ],
+            ["server_id", "location_id"],
+            ["server_id", "location_code"],
         ],
         supports_check_mode=True,
     )
     try:
         if module.params["state"] == "present":
+            api = ScApi(module.params["token"], module.params["endpoint"])
+            location_id = resolve_location_id(
+                api,
+                location_id=module.params["location_id"],
+                location_code=module.params["location_code"],
+            )
+            sbm_flavor_model_id = resolve_sbm_flavor_model_id(
+                api,
+                location_id,
+                sbm_flavor_model_id=module.params["flavor_id"],
+                sbm_flavor_model_name=module.params["flavor_name"],
+            )
+            operating_system_id = resolve_operating_system_id(
+                api,
+                location_id,
+                sbm_flavor_model_id,
+                operating_system_id=module.params["operating_system_id"],
+                operating_system_name=module.params["operating_system_name"],
+                operating_system_regex=module.params["operating_system_regex"],
+            )
             instance = ScSbmServerCreate(
                 endpoint=module.params["endpoint"],
                 token=module.params["token"],
-                location_id=module.params["location_id"],
-                sbm_flavor_model_id=module.params["sbm_flavor_model_id"],
+                location_id=location_id,
+                sbm_flavor_model_id=sbm_flavor_model_id,
                 hostname=module.params["hostname"],
-                operating_system_id=module.params["operating_system_id"],
+                operating_system_id=operating_system_id,
                 ssh_key_fingerprints=module.params.get("ssh_key_fingerprints"),
                 user_data=module.params.get("user_data"),
                 wait=module.params["wait"],
@@ -333,10 +463,16 @@ def main():
                 checkmode=module.check_mode,
             )
         elif module.params["state"] == "absent":
+            api = ScApi(module.params["token"], module.params["endpoint"])
+            server_id = resolve_sbm_server_id(
+                api,
+                server_id=module.params["server_id"],
+                hostname=module.params["hostname"],
+            )
             instance = ScSbmServerDelete(
                 endpoint=module.params["endpoint"],
                 token=module.params["token"],
-                server_id=module.params["server_id"],
+                server_id=server_id,
                 wait=module.params["wait"],
                 update_interval=module.params["update_interval"],
                 retry_on_conflicts=module.params["retry_on_conflicts"],

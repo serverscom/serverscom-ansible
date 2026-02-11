@@ -1,2 +1,46 @@
 ---
 requires_ansible: '>=2.9.10'
+
+action_groups:
+  api:
+    - sc_baremetal_locations_info
+    - sc_baremetal_os_list
+    - sc_baremetal_servers_info
+    - sc_cloud_computing_flavors_info
+    - sc_cloud_computing_images_info
+    - sc_cloud_computing_instance
+    - sc_cloud_computing_instance_info
+    - sc_cloud_computing_instance_ptr
+    - sc_cloud_computing_instance_state
+    - sc_cloud_computing_instances_info
+    - sc_cloud_computing_openstack_credentials
+    - sc_cloud_computing_regions_info
+    - sc_dedicated_server_info
+    - sc_dedicated_server_power
+    - sc_dedicated_server_reinstall
+    - sc_l2_segment
+    - sc_l2_segment_aliases
+    - sc_l2_segment_info
+    - sc_l2_segments_info
+    - sc_load_balancer_instance_info
+    - sc_load_balancer_instance_l4
+    - sc_load_balancer_instance_l7
+    - sc_load_balancer_instances_list
+    - sc_rbs_flavors_info
+    - sc_rbs_volume
+    - sc_rbs_volume_credentials_reset
+    - sc_rbs_volume_info
+    - sc_sbm_flavor_models_info
+    - sc_sbm_os_list
+    - sc_sbm_server
+    - sc_sbm_server_info
+    - sc_sbm_server_labels
+    - sc_sbm_server_network
+    - sc_sbm_server_networks_info
+    - sc_sbm_server_power
+    - sc_sbm_server_ptr
+    - sc_sbm_server_ptr_info
+    - sc_sbm_server_reinstall
+    - sc_sbm_servers_info
+    - sc_ssh_key
+    - sc_ssh_keys_info

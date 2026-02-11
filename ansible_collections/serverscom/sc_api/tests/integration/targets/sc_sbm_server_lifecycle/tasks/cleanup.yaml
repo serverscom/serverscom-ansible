@@ -1,9 +1,17 @@
 ---
-- name: Delete SBM test server
+- name: Delete SBM test server by hostname
   serverscom.sc_api.sc_sbm_server:
-    token: "{{ sc_token }}"
-    endpoint: "{{ sc_endpoint }}"
+    state: absent
+    hostname: "{{ test_hostname }}"
+    wait: 0
+  when: test_hostname is defined
+  register: cleanup_by_hostname
+  ignore_errors: true
+
+- name: Delete SBM test server by ID (fallback)
+  serverscom.sc_api.sc_sbm_server:
     state: absent
     server_id: "{{ test_sbm_server_id }}"
-  when: test_sbm_server_id is defined
+    wait: 0
+  when: test_sbm_server_id is defined and (cleanup_by_hostname is skipped or cleanup_by_hostname is failed)
   ignore_errors: true

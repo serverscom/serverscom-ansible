@@ -126,6 +126,45 @@ def test_get_operating_system_id_from_server(mock_api):
     assert reinstall.operating_system_id == 49
 
 
+def test_get_operating_system_id_by_name(mock_api):
+    reinstall = ScSbmServerReinstall(
+        endpoint="https://api.servers.com/v1",
+        token="test-token",
+        server_id="test-server",
+        hostname="test",
+        operating_system_id=None,
+        operating_system_name="Debian 11",
+        operating_system_regex=None,
+        ssh_keys=None,
+        ssh_key_name=None,
+        user_data=None,
+        wait=0,
+        update_interval=60,
+        checkmode=True,
+    )
+    assert reinstall.operating_system_id == 51
+
+
+def test_get_operating_system_id_by_name_not_found(mock_api):
+    with pytest.raises(ModuleError) as exc_info:
+        ScSbmServerReinstall(
+            endpoint="https://api.servers.com/v1",
+            token="test-token",
+            server_id="test-server",
+            hostname="test",
+            operating_system_id=None,
+            operating_system_name="Windows Server 2022",
+            operating_system_regex=None,
+            ssh_keys=None,
+            ssh_key_name=None,
+            user_data=None,
+            wait=0,
+            update_interval=60,
+            checkmode=True,
+        )
+    assert "not found" in str(exc_info.value.msg)
+
+
 def test_get_operating_system_id_by_regex(mock_api):
     reinstall = ScSbmServerReinstall(
         endpoint="https://api.servers.com/v1",

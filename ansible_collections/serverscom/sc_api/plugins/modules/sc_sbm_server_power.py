@@ -30,10 +30,16 @@ extends_documentation_fragment: serverscom.sc_api.sc_sbm
 options:
   server_id:
     type: str
-    required: true
     description:
       - ID of the SBM server.
+      - Mutually exclusive with I(hostname).
       - Use I(serverscom.sc_api.sc_baremetal_servers_info) with type=sbm_server to retrieve servers.
+
+  hostname:
+    type: str
+    description:
+      - Hostname of the SBM server (exact match on server title).
+      - Mutually exclusive with I(server_id).
 
   state:
     type: str
@@ -133,16 +139,16 @@ updated_at:
 """
 
 EXAMPLES = """
-- name: Power off SBM server
+- name: Power off SBM server by ID
   serverscom.sc_api.sc_sbm_server_power:
     token: "{{ sc_token }}"
     server_id: "abc123xyz"
     state: off
 
-- name: Power on SBM server
+- name: Power on SBM server by hostname
   serverscom.sc_api.sc_sbm_server_power:
     token: "{{ sc_token }}"
-    server_id: "abc123xyz"
+    hostname: my-sbm-server
     state: on
 
 - name: Cycle power on SBM server
@@ -161,10 +167,12 @@ EXAMPLES = """
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
     DEFAULT_API_ENDPOINT,
+    ScApi,
     SCBaseError,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
     ScSbmServerPower,
+    resolve_sbm_server_id,
 )
 
 
@@ -173,7 +181,8 @@ def main():
         argument_spec={
             "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT},
             "token": {"type": "str", "no_log": True, "required": True},
-            "server_id": {"type": "str", "required": True},
+            "server_id": {"type": "str"},
+            "hostname": {"type": "str"},
             "state": {
                 "type": "str",
                 "choices": ["on", "off", "cycle"],
@@ -181,14 +190,22 @@ def main():
             },
             "wait": {"type": "int", "default": 180},
         },
+        required_one_of=[["server_id", "hostname"]],
+        mutually_exclusive=[["server_id", "hostname"]],
         supports_check_mode=True,
     )
 
     try:
+        api = ScApi(module.params["token"], module.params["endpoint"])
+        server_id = resolve_sbm_server_id(
+            api,
+            server_id=module.params["server_id"],
+            hostname=module.params["hostname"],
+        )
         power = ScSbmServerPower(
             endpoint=module.params["endpoint"],
             token=module.params["token"],
-            server_id=module.params["server_id"],
+            server_id=server_id,
             state=module.params["state"],
             wait=module.params["wait"],
             checkmode=module.check_mode,

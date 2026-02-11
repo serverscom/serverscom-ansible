@@ -73,6 +73,7 @@ List of modules
 * `sc_sbm_server_power` - Power on/off/cycle operations for SBM servers
 * `sc_sbm_server_reinstall` - Reinstall OS on SBM servers
 * `sc_sbm_server_ptr` - Manage PTR records for SBM servers
+* `sc_sbm_server_ptr_info` - Query PTR records for SBM servers
 * `sc_sbm_server_labels` - Update labels on SBM servers
 * `sc_sbm_server_network` - Create/delete networks for SBM servers
 * `sc_sbm_server_networks_info` - List/get networks for SBM servers

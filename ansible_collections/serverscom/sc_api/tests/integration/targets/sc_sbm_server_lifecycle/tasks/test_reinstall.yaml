@@ -3,7 +3,6 @@
 - name: Test invalid token
   serverscom.sc_api.sc_sbm_server_reinstall:
     token: invalid
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
   register: test1
   failed_when:
@@ -14,8 +13,6 @@
 # Should make a get to server before doing reinstall
 - name: Test2, Error on absent server
   serverscom.sc_api.sc_sbm_server_reinstall:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ non_existing_id }}'
   register: test2
   failed_when: false
@@ -30,8 +27,6 @@
 # Should fail on non-existing ssh key
 - name: Test3, Error on absent ssh key
   serverscom.sc_api.sc_sbm_server_reinstall:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
     ssh_key_name: should-not-exists
     operating_system_id: 42
@@ -48,8 +43,6 @@
 # Test check_mode - should not actually reinstall
 - name: Test4, Check mode reinstall
   serverscom.sc_api.sc_sbm_server_reinstall:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
     hostname: test-checkmode
     wait: 0
@@ -64,8 +57,6 @@
 # Verify server status unchanged after check_mode
 - name: Test4 verify, Get server info after check_mode
   serverscom.sc_api.sc_sbm_server_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
   register: test4_verify
 
@@ -77,8 +68,6 @@
 # Test with invalid OS regex (no match)
 - name: Test5, Error on no matching OS regex
   serverscom.sc_api.sc_sbm_server_reinstall:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
     operating_system_regex: 'NonExistentOS12345'
     hostname: test-server
@@ -95,8 +84,6 @@
 # Test wait/update_interval validation
 - name: Test6, Error when update_interval > wait
   serverscom.sc_api.sc_sbm_server_reinstall:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     server_id: '{{ test_sbm_server_id }}'
     hostname: test-server
     wait: 30
@@ -109,3 +96,81 @@
     that:
       - test6 is failed
       - '"Update interval" in test6.msg'
+
+# Test server_hostname parameter
+- name: Test7, Reinstall check mode using server_hostname
+  serverscom.sc_api.sc_sbm_server_reinstall:
+    server_hostname: '{{ test_hostname }}'
+    hostname: '{{ test_hostname }}'
+    wait: 0
+  check_mode: true
+  register: test7
+
+- name: Check Test7
+  assert:
+    that:
+      - test7 is changed
+
+# Test real reinstall with operating_system_name
+- name: Test8, Reinstall server to Ubuntu 24.04 using operating_system_name
+  serverscom.sc_api.sc_sbm_server_reinstall:
+    server_id: '{{ test_sbm_server_id }}'
+    operating_system_name: 'Ubuntu 24.04-server x86_64'
+    hostname: '{{ test_hostname }}'
+    wait: 86400
+    update_interval: 60
+  register: test8
+
+- name: Check Test8
+  assert:
+    that:
+      - test8 is changed
+      - test8.status == 'active'
+      - test8.ready == true
+
+# Test mutual exclusivity of OS params
+- name: Test9, Verify operating_system_id and operating_system_name are mutually exclusive
+  serverscom.sc_api.sc_sbm_server_reinstall:
+    server_id: '{{ test_sbm_server_id }}'
+    operating_system_id: "{{ test_os_id }}"
+    operating_system_name: '{{ test_os_name }}'
+    hostname: '{{ test_hostname }}'
+    wait: 0
+  register: test9
+  ignore_errors: true
+
+- name: Check Test9
+  assert:
+    that:
+      - test9 is failed
+
+# Test nonexistent operating_system_name
+- name: Test10, Reinstall with nonexistent operating_system_name
+  serverscom.sc_api.sc_sbm_server_reinstall:
+    server_id: '{{ test_sbm_server_id }}'
+    operating_system_name: 'NonexistentOS 99.99 64-bit'
+    hostname: '{{ test_hostname }}'
+    wait: 0
+  register: test10
+  ignore_errors: true
+
+- name: Check Test10
+  assert:
+    that:
+      - test10 is failed
+      - '"not found" in test10.msg'
+
+# Test server_id and server_hostname mutual exclusivity
+- name: Test11, Verify server_id and server_hostname are mutually exclusive
+  serverscom.sc_api.sc_sbm_server_reinstall:
+    server_id: '{{ test_sbm_server_id }}'
+    server_hostname: '{{ test_hostname }}'
+    hostname: '{{ test_hostname }}'
+    wait: 0
+  register: test11
+  ignore_errors: true
+
+- name: Check Test11
+  assert:
+    that:
+      - test11 is failed

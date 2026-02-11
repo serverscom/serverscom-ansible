@@ -31,33 +31,47 @@ extends_documentation_fragment: serverscom.sc_api.sc_sbm
 
 options:
     server_id:
-      aliases: [id, name]
       type: str
-      required: true
       description:
         - ID of the SBM server to reinstall.
+        - Mutually exclusive with I(server_hostname).
+
+    server_hostname:
+      type: str
+      description:
+        - Hostname of the SBM server to reinstall (exact match on server title).
+        - Mutually exclusive with I(server_id).
 
     hostname:
       type: str
       description:
-        - Hostname for the server.
+        - Hostname for the server after reinstall.
         - Module will retrieve old server title if not specified.
 
     operating_system_id:
       type: int
+      aliases: ['os_id']
       description:
         - ID of the operating system to install on the server.
         - Module will retrieve and reuse old operating system if
           not specified.
-        - Mutually exclusive with I(operating_system_regex).
+        - Mutually exclusive with I(operating_system_regex) and I(operating_system_name).
+
+    operating_system_name:
+      type: str
+      aliases: ['os_name']
+      description:
+        - Full name of the operating system to install (exact match on C(full_name)).
+        - Mutually exclusive with I(operating_system_id) and I(operating_system_regex).
 
     operating_system_regex:
       type: str
+      aliases: ['os_regex']
       description:
         - Regular expression to filter operating systems by name.
         - If specified, the module will install operating system
           that matches the provided regex (case insensitive).
-        - Mutually exclusive with I(operating_system_id).
+        - Mutually exclusive with I(operating_system_id) and I(operating_system_name).
 
     ssh_keys:
       type: list
@@ -260,11 +274,19 @@ EXAMPLES = """
     hostname: my-sbm-server
     wait: 0
 
+- name: Reinstall SBM server by hostname with OS name
+  serverscom.sc_api.sc_sbm_server_reinstall:
+    token: "{{ sc_token }}"
+    server_hostname: my-sbm-server
+    operating_system_name: 'Debian 13 64-bit'
+    hostname: my-sbm-server
+    wait: 3600
+
 - name: Reinstall SBM server using OS regex
   serverscom.sc_api.sc_sbm_server_reinstall:
     token: "{{ sc_token }}"
     server_id: 'abc123xyz'
-    operating_system_regex: 'Ubuntu 22'
+    operating_system_regex: 'Debian 13'
     hostname: my-sbm-server
     ssh_key_name: my-key
     wait: 3600
@@ -282,10 +304,12 @@ EXAMPLES = """
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
     DEFAULT_API_ENDPOINT,
+    ScApi,
     SCBaseError,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
     ScSbmServerReinstall,
+    resolve_sbm_server_id,
 )
 
 
@@ -294,29 +318,53 @@ def main():
         argument_spec={
             "token": {"type": "str", "no_log": True, "required": True},
             "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT},
-            "server_id": {"type": "str", "required": True, "aliases": ["id", "name"]},
+            "server_id": {"type": "str"},
+            "server_hostname": {"type": "str"},
             "hostname": {"type": "str"},
-            "operating_system_id": {"type": "int"},
-            "operating_system_regex": {"type": "str"},
+            "operating_system_id": {
+                "type": "int",
+                "aliases": ["os_id"],
+            },
+            "operating_system_name": {
+                "type": "str",
+                "aliases": ["os_name"],
+            },
+            "operating_system_regex": {
+                "type": "str",
+                "aliases": ["os_regex"],
+            },
             "ssh_keys": {"type": "list", "elements": "str", "no_log": False},
             "ssh_key_name": {"type": "str"},
             "wait": {"type": "int", "default": 86400},
             "update_interval": {"type": "int", "default": 60},
             "user_data": {"type": "str", "no_log": True},
         },
+        required_one_of=[["server_id", "server_hostname"]],
         supports_check_mode=True,
         mutually_exclusive=[
+            ["server_id", "server_hostname"],
             ["ssh_keys", "ssh_key_name"],
-            ["operating_system_id", "operating_system_regex"],
+            [
+                "operating_system_id",
+                "operating_system_name",
+                "operating_system_regex",
+            ],
         ],
     )
     try:
+        api = ScApi(module.params["token"], module.params["endpoint"])
+        server_id = resolve_sbm_server_id(
+            api,
+            server_id=module.params["server_id"],
+            hostname=module.params["server_hostname"],
+        )
         sc_sbm_server_reinstall = ScSbmServerReinstall(
             endpoint=module.params["endpoint"],
             token=module.params["token"],
-            server_id=module.params["server_id"],
+            server_id=server_id,
             hostname=module.params["hostname"],
             operating_system_id=module.params["operating_system_id"],
+            operating_system_name=module.params["operating_system_name"],
             operating_system_regex=module.params["operating_system_regex"],
             ssh_keys=module.params["ssh_keys"],
             ssh_key_name=module.params["ssh_key_name"],

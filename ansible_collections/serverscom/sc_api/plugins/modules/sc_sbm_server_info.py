@@ -28,12 +28,17 @@ extends_documentation_fragment: serverscom.sc_api.sc_sbm
 
 options:
     server_id:
-      aliases: [id, name]
       type: str
-      required: true
       description:
         - ID of the SBM server.
+        - Mutually exclusive with I(hostname).
         - If ID is malformed, error 400 is returned.
+
+    hostname:
+      type: str
+      description:
+        - Hostname of the SBM server (exact match on server title).
+        - Mutually exclusive with I(server_id).
 
     fail_on_absent:
       type: bool
@@ -186,10 +191,16 @@ ready:
 """  # noqa
 
 EXAMPLES = """
-- name: Get SBM server info
+- name: Get SBM server info by ID
   serverscom.sc_api.sc_sbm_server_info:
     token: "{{ sc_token }}"
     server_id: 'abc123xyz'
+  register: srv
+
+- name: Get SBM server info by hostname
+  serverscom.sc_api.sc_sbm_server_info:
+    token: "{{ sc_token }}"
+    hostname: my-sbm-server
   register: srv
 
 - name: Report server information
@@ -209,10 +220,15 @@ EXAMPLES = """
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
     DEFAULT_API_ENDPOINT,
+    ScApi,
     SCBaseError,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
     ScSbmServerInfo,
+    resolve_sbm_server_id,
+)
+from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
+    ModuleError,
 )
 
 
@@ -221,16 +237,30 @@ def main():
         argument_spec={
             "token": {"type": "str", "no_log": True, "required": True},
             "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT},
-            "server_id": {"type": "str", "required": True, "aliases": ["id", "name"]},
+            "server_id": {"type": "str"},
+            "hostname": {"type": "str"},
             "fail_on_absent": {"type": "bool", "default": True},
         },
+        required_one_of=[["server_id", "hostname"]],
+        mutually_exclusive=[["server_id", "hostname"]],
         supports_check_mode=True,
     )
     try:
+        api = ScApi(module.params["token"], module.params["endpoint"])
+        try:
+            server_id = resolve_sbm_server_id(
+                api,
+                server_id=module.params["server_id"],
+                hostname=module.params["hostname"],
+            )
+        except ModuleError:
+            if module.params["hostname"] and not module.params["fail_on_absent"]:
+                module.exit_json(changed=False, found=False, ready=False)
+            raise
         sc_sbm_server_info = ScSbmServerInfo(
             endpoint=module.params["endpoint"],
             token=module.params["token"],
-            server_id=module.params["server_id"],
+            server_id=server_id,
             fail_on_absent=module.params["fail_on_absent"],
         )
         module.exit_json(**sc_sbm_server_info.run())

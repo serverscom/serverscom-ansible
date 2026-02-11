@@ -24,24 +24,29 @@ version_added: "1.0.0"
 author: "Servers.com Team (@serverscom)"
 short_description: Manage SBM server PTR records
 description: >
-    Add or remove PTR records to IP addresses of the SBM (Scalable Baremetal) server.
+    Add or remove PTR records for IP addresses of the SBM (Scalable Baremetal) server.
+    Use M(serverscom.sc_api.sc_sbm_server_ptr_info) to query existing PTR records.
 extends_documentation_fragment: serverscom.sc_api.sc_sbm
 
 options:
     server_id:
       type: str
-      required: true
       description:
         - ID of the SBM server to manage PTR records for.
+        - Mutually exclusive with I(hostname).
+
+    hostname:
+      type: str
+      description:
+        - Hostname of the SBM server (exact match on server title).
+        - Mutually exclusive with I(server_id).
 
     state:
       type: str
       required: true
-      choices: ['present', 'absent', 'query']
+      choices: ['present', 'absent']
       description:
         - State of the PTR record.
-        - C(query) does not change anything and returns current list of PTRs
-          for the server.
         - C(present) creates the PTR record if it doesn't exist.
         - C(absent) removes matching PTR records.
 
@@ -103,13 +108,6 @@ ptr_records:
 """
 
 EXAMPLES = """
-- name: Query current PTR records
-  serverscom.sc_api.sc_sbm_server_ptr:
-    token: '{{ sc_token }}'
-    server_id: abc123xyz
-    state: query
-  register: ptr_info
-
 - name: Add PTR record to server
   serverscom.sc_api.sc_sbm_server_ptr:
     token: '{{ sc_token }}'
@@ -147,10 +145,12 @@ EXAMPLES = """
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
     DEFAULT_API_ENDPOINT,
+    ScApi,
     SCBaseError,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
     ScSbmServerPtr,
+    resolve_sbm_server_id,
 )
 
 
@@ -159,10 +159,11 @@ def main():
         argument_spec={
             "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT},
             "token": {"type": "str", "no_log": True, "required": True},
-            "server_id": {"type": "str", "required": True},
+            "server_id": {"type": "str"},
+            "hostname": {"type": "str"},
             "state": {
                 "type": "str",
-                "choices": ["present", "absent", "query"],
+                "choices": ["present", "absent"],
                 "required": True,
             },
             "ip": {"type": "str"},
@@ -170,6 +171,8 @@ def main():
             "ttl": {"type": "int"},
             "priority": {"type": "int"},
         },
+        required_one_of=[["server_id", "hostname"]],
+        mutually_exclusive=[["server_id", "hostname"]],
         required_if=[
             ["state", "present", ["domain", "ip"]],
             ["state", "absent", ["ip", "domain"], True],
@@ -177,11 +180,17 @@ def main():
         supports_check_mode=True,
     )
     try:
+        api = ScApi(module.params["token"], module.params["endpoint"])
+        server_id = resolve_sbm_server_id(
+            api,
+            server_id=module.params["server_id"],
+            hostname=module.params["hostname"],
+        )
         ptr = ScSbmServerPtr(
             endpoint=module.params["endpoint"],
             token=module.params["token"],
             state=module.params["state"],
-            server_id=module.params["server_id"],
+            server_id=server_id,
             ip=module.params["ip"],
             domain=module.params["domain"],
             ttl=module.params["ttl"],
