@@ -21,7 +21,8 @@ version_added: "1.0.0"
 author: "Volodymyr Rudniev (@koef)"
 short_description: Return available operating system options.
 description: >
-    Return list of OS images for bare metal servers in a specified location.
+    Return list of OS images for bare metal dedicated servers in a specified location.
+    For SBM (Scalable Baremetal) servers, use M(serverscom.sc_api.sc_sbm_os_list) instead.
 
 options:
     endpoint:
@@ -56,16 +57,6 @@ options:
       type: str
       description:
         - Server model name (mutually exclusive with I(server_model_id)).
-    sbm_flavor_model_id:
-      type: str
-      description:
-        - A unique identifier of an SBM flavor.
-        - If set the module will return OS options for the specified SBM model.
-    sbm_flavor_model_name:
-      type: str
-      description:
-        - Human-readable name of an SBM flavor (mutually exclusive with I(sbm_flavor_model_id)).
-        - If set the module will return OS options for the specified SBM model.
     os_name_regex:
       type: str
       description:
@@ -127,13 +118,6 @@ EXAMPLES = """
         server_model_name: "R430"
       register: result
 
-    - name: List OS options by location and SBM model
-      sc_baremetal_os_list:
-        token: "{{ api_token }}"
-        location_id: "32"
-        sbm_flavor_model_id: "1287"
-      register: result
-
     - debug:
         var: result.os_list
 """
@@ -156,27 +140,28 @@ def main():
             "location_code": {"type": "str"},
             "server_model_id": {"type": "str"},
             "server_model_name": {"type": "str"},
-            "sbm_flavor_model_id": {"type": "str"},
-            "sbm_flavor_model_name": {"type": "str"},
             "os_name_regex": {"type": "str"},
         },
         supports_check_mode=True,
-        required_one_of=[
-            ['server_id', 'location_id', 'location_code']
-        ],
-
+        required_one_of=[["server_id", "location_id", "location_code"]],
         mutually_exclusive=[
-            ['server_id', 'location_id', 'location_code'],
-            ['server_model_id', 'server_model_name'],
-            ['sbm_flavor_model_id', 'sbm_flavor_model_name'],
-            ['server_id', 'server_model_id', 'server_model_name', 'sbm_flavor_model_id', 'sbm_flavor_model_name'],
+            ["server_id", "location_id", "location_code"],
+            ["server_model_id", "server_model_name"],
         ],
-
         required_if=[
-            ['location_id', 'present', ('server_model_id', 'server_model_name', 'sbm_flavor_model_id', 'sbm_flavor_model_name'), True],
-            ['location_code', 'present', ('server_model_id', 'server_model_name', 'sbm_flavor_model_id', 'sbm_flavor_model_name'), True],
-        ]
-
+            [
+                "location_id",
+                "present",
+                ("server_model_id", "server_model_name"),
+                True,
+            ],
+            [
+                "location_code",
+                "present",
+                ("server_model_id", "server_model_name"),
+                True,
+            ],
+        ],
     )
     try:
         sc_os = ScDedicatedOSList(
@@ -187,8 +172,6 @@ def main():
             location_code=module.params.get("location_code"),
             server_model_id=module.params.get("server_model_id"),
             server_model_name=module.params.get("server_model_name"),
-            sbm_flavor_model_id=module.params.get("sbm_flavor_model_id"),
-            sbm_flavor_model_name=module.params.get("sbm_flavor_model_name"),
             os_name_regex=module.params.get("os_name_regex"),
         )
         module.exit_json(**sc_os.run())

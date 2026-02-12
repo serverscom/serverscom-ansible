@@ -1,0 +1,111 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+  when: not sc_endpoint or not sc_token
+
+- block:
+    - name: Test invalid token
+      serverscom.sc_api.sc_sbm_flavor_models_info:
+        token: invalid
+        location_id: 1
+      register: test1
+      failed_when:
+        - test1 is success
+        - sc_endpoint not in test1.api_url
+        - test1.status_code != 401
+
+    - name: Test2, List for non-existing location
+      serverscom.sc_api.sc_sbm_flavor_models_info:
+        location_id: 424242
+      register: test2
+      failed_when: test2.status_code != 404
+
+    - name: Check Test2
+      assert:
+        that:
+          - test2 is not changed
+          - test2.status_code == 404
+
+    - name: Get locations to find valid location_id
+      serverscom.sc_api.sc_baremetal_locations_info: {}
+      register: locations
+
+    - name: Test3, Get SBM flavor models for first location
+      serverscom.sc_api.sc_sbm_flavor_models_info:
+        location_id: "{{ locations.locations[0].id }}"
+      register: test3
+      when: locations.locations | length > 0
+
+    - name: Check Test3
+      assert:
+        that:
+          - test3 is not changed
+          - test3.sbm_flavor_models is defined
+      when: locations.locations | length > 0
+
+    - name: Test4, Get SBM flavor models with search pattern
+      serverscom.sc_api.sc_sbm_flavor_models_info:
+        location_id: "{{ locations.locations[0].id }}"
+        search_pattern: "{{ test3.sbm_flavor_models[0].name[:3] | default('SBM') }}"
+      register: test4
+      when: locations.locations | length > 0 and test3.sbm_flavor_models | default([]) | length > 0
+
+    - name: Check Test4
+      assert:
+        that:
+          - test4 is not changed
+          - test4.sbm_flavor_models is defined
+      when: locations.locations | length > 0 and test3.sbm_flavor_models | default([]) | length > 0
+
+    - name: Test5, Verify flavor model structure
+      assert:
+        that:
+          - test3.sbm_flavor_models[0].id is defined
+          - test3.sbm_flavor_models[0].name is defined
+      when: locations.locations | length > 0 and test3.sbm_flavor_models | default([]) | length > 0
+
+    - name: Test6, Get SBM flavor models using location_code
+      serverscom.sc_api.sc_sbm_flavor_models_info:
+        location_code: "{{ locations.locations[0].code }}"
+      register: test6
+      when: locations.locations | length > 0
+
+    - name: Check Test6 matches Test3
+      assert:
+        that:
+          - test6 is not changed
+          - test6.sbm_flavor_models == test3.sbm_flavor_models
+      when: locations.locations | length > 0
+
+    - name: Test7, Get SBM flavor models with non-existing location_code
+      serverscom.sc_api.sc_sbm_flavor_models_info:
+        location_code: ZZZZZZ
+      register: test7
+      ignore_errors: true
+
+    - name: Check Test7
+      assert:
+        that:
+          - test7 is failed
+          - '"not found" in test7.msg'
+
+    - name: Test8, Verify location_id and location_code are mutually exclusive
+      serverscom.sc_api.sc_sbm_flavor_models_info:
+        location_id: 1
+        location_code: AMS7
+      register: test8
+      ignore_errors: true
+      when: locations.locations | length > 0
+
+    - name: Check Test8
+      assert:
+        that:
+          - test8 is failed
+      when: locations.locations | length > 0
+
+  module_defaults:
+    group/serverscom.sc_api.api:
+      token: "{{ sc_token }}"
+      endpoint: "{{ sc_endpoint }}"

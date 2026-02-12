@@ -1,0 +1,158 @@
+---
+- name: Test invalid token
+  serverscom.sc_api.sc_sbm_server_power:
+    token: invalid
+    state: "off"
+    server_id: "{{ test_sbm_server_id }}"
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.status_code != 401
+
+- name: Test2, Power operation on non-existing server
+  serverscom.sc_api.sc_sbm_server_power:
+    state: "on"
+    server_id: "{{ non_existing_id }}"
+  register: test2
+  ignore_errors: true
+
+- name: Check Test2
+  assert:
+    that:
+      - test2 is not success
+      - '"not found" in test2.msg or test2.status_code == 404'
+
+- name: Make sure that test SBM server is powered on
+  serverscom.sc_api.sc_sbm_server_power:
+    state: "on"
+    server_id: "{{ test_sbm_server_id }}"
+  register: server_power_on
+  failed_when:
+    - server_power_on.power_status != "powered_on"
+
+- name: Power off SBM server
+  serverscom.sc_api.sc_sbm_server_power:
+    state: "off"
+    server_id: "{{ test_sbm_server_id }}"
+  register: test3
+
+- name: Check Test3
+  assert:
+    that:
+      - test3 is changed
+      - test3.power_status == "powered_off"
+
+- name: Power off SBM server (idempotency test)
+  serverscom.sc_api.sc_sbm_server_power:
+    state: "off"
+    server_id: "{{ test_sbm_server_id }}"
+  register: test4
+
+- name: Check Test4
+  assert:
+    that:
+      - test4 is not changed
+      - test4.power_status == "powered_off"
+
+- name: Power on SBM server
+  serverscom.sc_api.sc_sbm_server_power:
+    state: "on"
+    server_id: "{{ test_sbm_server_id }}"
+  register: test5
+
+- name: Check Test5
+  assert:
+    that:
+      - test5 is changed
+      - test5.power_status == "powered_on"
+
+- name: Power on SBM server (idempotency test)
+  serverscom.sc_api.sc_sbm_server_power:
+    state: "on"
+    server_id: "{{ test_sbm_server_id }}"
+  register: test6
+
+- name: Check Test6
+  assert:
+    that:
+      - test6 is not changed
+      - test6.power_status == "powered_on"
+
+- name: Power cycle SBM server
+  serverscom.sc_api.sc_sbm_server_power:
+    state: cycle
+    server_id: "{{ test_sbm_server_id }}"
+  register: test7
+
+- name: Check Test7
+  assert:
+    that:
+      - test7 is changed
+      - test7.power_status == "powered_on"
+
+- name: Test check_mode for power off
+  serverscom.sc_api.sc_sbm_server_power:
+    state: "off"
+    server_id: "{{ test_sbm_server_id }}"
+  check_mode: true
+  register: test8
+
+- name: Verify server still powered on after check_mode
+  serverscom.sc_api.sc_sbm_server_info:
+    server_id: "{{ test_sbm_server_id }}"
+  register: test8_verify
+
+- name: Check Test8
+  assert:
+    that:
+      - test8 is changed
+      - test8_verify.power_status == "powered_on"
+
+- name: Test9, Power off SBM server by hostname
+  serverscom.sc_api.sc_sbm_server_power:
+    state: "off"
+    hostname: '{{ test_hostname }}'
+  register: test9
+
+- name: Check Test9
+  assert:
+    that:
+      - test9 is changed
+      - test9.power_status == "powered_off"
+
+- name: Test10, Power on SBM server by hostname
+  serverscom.sc_api.sc_sbm_server_power:
+    state: "on"
+    hostname: '{{ test_hostname }}'
+  register: test10
+
+- name: Check Test10
+  assert:
+    that:
+      - test10 is changed
+      - test10.power_status == "powered_on"
+
+- name: Test11, Power cycle SBM server by hostname
+  serverscom.sc_api.sc_sbm_server_power:
+    state: "cycle"
+    hostname: '{{ test_hostname }}'
+  register: test11
+
+- name: Check Test11
+  assert:
+    that:
+      - test11 is changed
+
+- name: Test12, Verify server_id and hostname are mutually exclusive (power)
+  serverscom.sc_api.sc_sbm_server_power:
+    server_id: '{{ test_sbm_server_id }}'
+    hostname: '{{ test_hostname }}'
+    state: "on"
+  register: test12
+  ignore_errors: true
+
+- name: Check Test12
+  assert:
+    that:
+      - test12 is failed

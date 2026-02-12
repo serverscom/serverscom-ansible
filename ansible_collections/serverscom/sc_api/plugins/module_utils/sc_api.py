@@ -374,6 +374,196 @@ class ScApi:
             retry_rules=retry_rules,
         )
 
+    def post_sbm_server_power_on(self, server_id):
+        return self.api_helper.make_post_request(
+            path=f"/hosts/sbm_servers/{server_id}/power_on",
+            body=None,
+            query_parameters=None,
+            good_codes=[202],
+        )
+
+    def post_sbm_server_power_off(self, server_id):
+        return self.api_helper.make_post_request(
+            path=f"/hosts/sbm_servers/{server_id}/power_off",
+            body=None,
+            query_parameters=None,
+            good_codes=[202],
+        )
+
+    def post_sbm_server_power_cycle(self, server_id):
+        return self.api_helper.make_post_request(
+            path=f"/hosts/sbm_servers/{server_id}/power_cycle",
+            body=None,
+            query_parameters=None,
+            good_codes=[202],
+        )
+
+    def post_sbm_server_reinstall(
+        self,
+        server_id,
+        hostname,
+        operating_system_id,
+        ssh_key_fingerprints=None,
+        user_data=None,
+    ):
+        body = {
+            "hostname": hostname,
+            "operating_system_id": operating_system_id,
+        }
+        if ssh_key_fingerprints is not None:
+            body["ssh_key_fingerprints"] = ssh_key_fingerprints
+        if user_data is not None:
+            body["user_data"] = user_data
+        return self.api_helper.make_post_request(
+            path=f"/hosts/sbm_servers/{server_id}/reinstall",
+            body=body,
+            query_parameters=None,
+            good_codes=[202],
+        )
+
+    def list_sbm_server_ptr_records(self, server_id):
+        return self.api_helper.make_multipage_request(
+            path=f"/hosts/sbm_servers/{server_id}/ptr_records"
+        )
+
+    def post_sbm_server_ptr_record(
+        self, server_id, ip, domain, ttl=None, priority=None
+    ):
+        body = {"ip": ip, "domain": domain}
+        if ttl is not None:
+            body["ttl"] = ttl
+        if priority is not None:
+            body["priority"] = priority
+        return self.api_helper.make_post_request(
+            path=f"/hosts/sbm_servers/{server_id}/ptr_records",
+            body=body,
+            query_parameters=None,
+            good_codes=[201],
+        )
+
+    def delete_sbm_server_ptr_record(self, server_id, record_id):
+        return self.api_helper.make_delete_request(
+            path=f"/hosts/sbm_servers/{server_id}/ptr_records/{record_id}",
+            body=None,
+            query_parameters=None,
+            good_codes=[204],
+        )
+
+    def post_sbm_servers(
+        self,
+        location_id,
+        sbm_flavor_model_id,
+        hosts,
+        operating_system_id,
+        ssh_key_fingerprints=None,
+        user_data=None,
+    ):
+        body = {
+            "location_id": location_id,
+            "sbm_flavor_model_id": sbm_flavor_model_id,
+            "hosts": hosts,
+            "operating_system_id": operating_system_id,
+        }
+        if ssh_key_fingerprints is not None:
+            body["ssh_key_fingerprints"] = ssh_key_fingerprints
+        if user_data is not None:
+            body["user_data"] = user_data
+        return self.api_helper.make_post_request(
+            path="/hosts/sbm_servers",
+            body=body,
+            query_parameters=None,
+            good_codes=[202],
+        )
+
+    def delete_sbm_server(self, server_id):
+        return self.api_helper.make_delete_request(
+            path=f"/hosts/sbm_servers/{server_id}",
+            body=None,
+            query_parameters=None,
+            good_codes=[200],
+        )
+
+    def list_sbm_servers(
+        self,
+        search_pattern=None,
+        location_id=None,
+        rack_id=None,
+        label_selector=None,
+    ):
+        query = {}
+        if search_pattern:
+            query["search_pattern"] = search_pattern
+        if location_id is not None:
+            query["location_id"] = location_id
+        if rack_id:
+            query["rack_id"] = rack_id
+        if label_selector:
+            query["label_selector"] = label_selector
+        return self.api_helper.make_multipage_request(
+            path="/hosts/sbm_servers", query_parameters=query
+        )
+
+    def put_sbm_server(self, server_id, labels):
+        body = {"labels": labels}
+        return self.api_helper.make_put_request(
+            path=f"/hosts/sbm_servers/{server_id}",
+            body=body,
+            query_parameters=None,
+            good_codes=[200],
+        )
+
+    def list_sbm_server_networks(
+        self,
+        server_id,
+        search_pattern=None,
+        family=None,
+        interface_type=None,
+        distribution_method=None,
+        additional=None,
+    ):
+        query = {}
+        if search_pattern:
+            query["search_pattern"] = search_pattern
+        if family:
+            query["family"] = family
+        if interface_type:
+            query["interface_type"] = interface_type
+        if distribution_method:
+            query["distribution_method"] = distribution_method
+        if additional is not None:
+            query["additional"] = additional
+        return self.api_helper.make_multipage_request(
+            path=f"/hosts/sbm_servers/{server_id}/networks",
+            query_parameters=query,
+        )
+
+    def get_sbm_server_network(self, server_id, network_id, retry_rules=None):
+        return self.api_helper.make_get_request(
+            path=f"/hosts/sbm_servers/{server_id}/networks/{network_id}",
+            retry_rules=retry_rules,
+        )
+
+    def delete_sbm_server_network(self, server_id, network_id):
+        return self.api_helper.make_delete_request(
+            path=f"/hosts/sbm_servers/{server_id}/networks/{network_id}",
+            body=None,
+            query_parameters=None,
+            good_codes=[202],
+        )
+
+    def post_sbm_server_private_ipv4_network(
+        self, server_id, mask, distribution_method=None
+    ):
+        body = {"mask": mask}
+        if distribution_method:
+            body["distribution_method"] = distribution_method
+        return self.api_helper.make_post_request(
+            path=f"/hosts/sbm_servers/{server_id}/networks/private_ipv4",
+            body=body,
+            query_parameters=None,
+            good_codes=[202],
+        )
+
     def list_hosts(self, type=None, search_pattern=None, label_selector=None):
         query = {}
         if type:
