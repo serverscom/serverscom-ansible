@@ -52,79 +52,81 @@
     - test4.failed != false
     - test4.status != "absent"
 
-- name: Create test load balancer instance
-  serverscom.sc_api.sc_load_balancer_instance_l7:
-    token: "{{ sc_token }}"
-    state: present
-    name: "test-sc-load-balancer-instance-info-module"
-    location_id: 32
-    store_logs: false
-    geoip: false
-    vhost_zones:
-      - id: "zone1"
-        ports: [80]
-        ssl: false
-        http2: true
-        http_to_https_redirect: false
-        http2_push_preload: false
-        domains: ["demo.test"]
-        location_zones:
-          - location: "/"
-            upstream_id: "upstream-zone1"
-            upstream_path: "/"
-            redirect: false
-        real_ip_header:
-          name: "real_ip"
-          networks: ["192.168.1.0/24"]
-    upstream_zones:
-      - id: "upstream-zone1"
-        hc_interval: 5
-        hc_jitter: 0
-        method: "round-robin"
-        ssl: false
-        sticky: false
-        hc_domain: "demo.test"
-        hc_path: "/"
-        hc_method: "GET"
-        hc_fails: 1
-        hc_passes: 3
-        grpc: false
-        upstreams:
-          - ip: 10.33.180.116
-            port: 3000
-            weight: 1
-            max_conns: 63000
-            max_fails: 0
-            fail_timeout: 30
-    labels:
-      environment: staging
-  register: test_lb_instance
+- name: LB instance info tests
+  block:
+  - name: Create test load balancer instance
+    serverscom.sc_api.sc_load_balancer_instance_l7:
+      token: "{{ sc_token }}"
+      state: present
+      name: "test-sc-load-balancer-instance-info-module"
+      location_id: 32
+      store_logs: false
+      geoip: false
+      vhost_zones:
+        - id: "zone1"
+          ports: [80]
+          ssl: false
+          http2: true
+          http_to_https_redirect: false
+          http2_push_preload: false
+          domains: ["demo.test"]
+          location_zones:
+            - location: "/"
+              upstream_id: "upstream-zone1"
+              upstream_path: "/"
+              redirect: false
+          real_ip_header:
+            name: "real_ip"
+            networks: ["192.168.1.0/24"]
+      upstream_zones:
+        - id: "upstream-zone1"
+          hc_interval: 5
+          hc_jitter: 0
+          method: "round-robin"
+          ssl: false
+          sticky: false
+          hc_domain: "demo.test"
+          hc_path: "/"
+          hc_method: "GET"
+          hc_fails: 1
+          hc_passes: 3
+          grpc: false
+          upstreams:
+            - ip: 10.33.180.116
+              port: 3000
+              weight: 1
+              max_conns: 63000
+              max_fails: 0
+              fail_timeout: 30
+      labels:
+        environment: staging
+    register: test_lb_instance
 
-- name: Test5, Get LB instance by id
-  sc_load_balancer_instance_info:
-    token: "{{ sc_token }}"
-    endpoint: "{{ sc_endpoint }}"
-    id: "{{ test_lb_instance.id }}"
-  register: test5
+  - name: Test5, Get LB instance by id
+    sc_load_balancer_instance_info:
+      token: "{{ sc_token }}"
+      endpoint: "{{ sc_endpoint }}"
+      id: "{{ test_lb_instance.id }}"
+    register: test5
 
-- name: Check Test5
-  assert:
-    that:
-      - test5 is not changed
-      - test5.created_at
-      - test5.updated_at
-      - test5.external_addresses | length > 0
-      - test5.domains | length > 0
-      - test5.upstream_zones | length > 0
-      - test5.vhost_zones | length > 0
-      - test5.id
-      - test5.location_id
-      - test5.name
-      - test5.status
-      - test5.type
-
-- name: Remove test load balancer instance
-  serverscom.sc_api.sc_load_balancer_instance_l7:
-    token: "{{ sc_token }}"
-    state: absent
-    id: "{{ test_lb_instance.id }}"
+  - name: Check Test5
+    assert:
+      that:
+        - test5 is not changed
+        - test5.created_at
+        - test5.updated_at
+        - test5.external_addresses | length > 0
+        - test5.domains | length > 0
+        - test5.upstream_zones | length > 0
+        - test5.vhost_zones | length > 0
+        - test5.id
+        - test5.location_id
+        - test5.name
+        - test5.status
+        - test5.type
+  always:
+  - name: Destroy test load balancer instance
+    serverscom.sc_api.sc_load_balancer_instance_l7:
+      token: "{{ sc_token }}"
+      state: absent
+      name: "test-sc-load-balancer-instance-info-module"

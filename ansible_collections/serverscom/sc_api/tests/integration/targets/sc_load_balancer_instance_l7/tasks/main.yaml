@@ -16,248 +16,250 @@
     - sc_endpoint not in test1.api_url
     - test1.status_code != 401
 
-- name: Make sure 7 LB 'test-lb-l7-instance-module' doesn't exist
-  serverscom.sc_api.sc_load_balancer_instance_l7:
-    token: "{{ sc_token }}"
-    state: absent
-    name: "test-lb-l7-instance-module"
+- name: L7 load balancer instance tests
+  block:
+  - name: Create L7 load balancer instance
+    serverscom.sc_api.sc_load_balancer_instance_l7:
+      token: "{{ sc_token }}"
+      state: present
+      name: "test-lb-l7-instance-module"
+      location_id: 32
+      store_logs: false
+      geoip: false
+      vhost_zones:
+        - id: "zone1"
+          ports: [80]
+          ssl: false
+          http2: true
+          http_to_https_redirect: false
+          http2_push_preload: false
+          domains: ["demo.test"]
+          location_zones:
+            - location: "/"
+              upstream_id: "upstream-zone1"
+              upstream_path: "/"
+              redirect: false
+          real_ip_header:
+            name: "real_ip"
+            networks: ["192.168.1.0/24"]
+      upstream_zones:
+        - id: "upstream-zone1"
+          hc_interval: 5
+          hc_jitter: 0
+          method: "round-robin"
+          ssl: false
+          sticky: false
+          hc_domain: "demo.test"
+          hc_path: "/"
+          hc_method: "GET"
+          hc_fails: 1
+          hc_passes: 3
+          grpc: false
+          upstreams:
+            - ip: 10.33.180.116
+              port: 3000
+              weight: 1
+              max_conns: 63000
+              max_fails: 0
+              fail_timeout: 30
+      labels:
+        environment: staging
+    register: test2
 
-- name: Create L7 load balancer instance
-  serverscom.sc_api.sc_load_balancer_instance_l7:
-    token: "{{ sc_token }}"
-    state: present
-    name: "test-lb-l7-instance-module"
-    location_id: 32
-    store_logs: false
-    geoip: false
-    vhost_zones:
-      - id: "zone1"
-        ports: [80]
-        ssl: false
-        http2: true
-        http_to_https_redirect: false
-        http2_push_preload: false
-        domains: ["demo.test"]
-        location_zones:
-          - location: "/"
-            upstream_id: "upstream-zone1"
-            upstream_path: "/"
-            redirect: false
-        real_ip_header:
-          name: "real_ip"
-          networks: ["192.168.1.0/24"]
-    upstream_zones:
-      - id: "upstream-zone1"
-        hc_interval: 5
-        hc_jitter: 0
-        method: "round-robin"
-        ssl: false
-        sticky: false
-        hc_domain: "demo.test"
-        hc_path: "/"
-        hc_method: "GET"
-        hc_fails: 1
-        hc_passes: 3
-        grpc: false
-        upstreams:
-          - ip: 10.33.180.116
-            port: 3000
-            weight: 1
-            max_conns: 63000
-            max_fails: 0
-            fail_timeout: 30
-    labels:
-      environment: staging
-  register: test2
+  - name: Check Test2
+    assert:
+      that:
+        - test2.changed
+        - not test2.failed
+        - test2.cluster_id is none
+        - test2.created_at is defined
+        - test2.updated_at is defined
+        - test2.domains | length > 0
+        - test2.domains[0] == "demo.test"
+        - test2.external_addresses | length > 0
+        - test2.geoip == false
+        - test2.geoip_enabled == false
+        - test2.id is defined
+        - test2.labels.environment == "staging"
+        - test2.location_id == 32
+        - test2.name == "test-lb-l7-instance-module"
+        - test2.redirect_http == false
+        - (test2.proxy_protocol_enabled | default(false)) == false
+        - test2.shared_cluster == true
+        - test2.status == "active"
+        - test2.store_logs == false
+        - test2.type == "l7"
+        - test2.upstream_zones | length == 1
+        - test2.upstream_zones[0].hc_domain == "demo.test"
+        - test2.upstream_zones[0].hc_path == "/"
+        - test2.upstream_zones[0].id == "upstream-zone1"
+        - test2.upstream_zones[0].method == "round-robin"
+        - test2.upstream_zones[0].upstreams | length == 1
+        - test2.vhost_zones | length == 1
+        - test2.vhost_zones[0].domains | length == 1
+        - test2.vhost_zones[0].domains[0] == "demo.test"
+        - test2.vhost_zones[0].http2 == true
+        - test2.vhost_zones[0].id == "zone1"
+        - test2.vhost_zones[0].location_zones | length == 1
+        - test2.vhost_zones[0].location_zones[0].location == "/"
+        - test2.vhost_zones[0].location_zones[0].upstream_id == "upstream-zone1"
+        - test2.vhost_zones[0].location_zones[0].upstream_path == "/"
+        - test2.vhost_zones[0].ports == [80]
+        - test2.vhost_zones[0].proxy_request_headers | length == 0
+        - test2.vhost_zones[0].real_ip_header.name == "real_ip"
+        - test2.vhost_zones[0].real_ip_header.networks == ["192.168.1.0/24"]
+        - test2.vhost_zones[0].ssl == false
 
-- name: Check Test2
-  assert:
-    that:
-      - test2.changed
-      - not test2.failed
-      - test2.cluster_id is none
-      - test2.created_at is defined
-      - test2.updated_at is defined
-      - test2.domains | length > 0
-      - test2.domains[0] == "demo.test"
-      - test2.external_addresses | length > 0
-      - test2.geoip == false
-      - test2.geoip_enabled == false
-      - test2.id is defined
-      - test2.labels.environment == "staging"
-      - test2.location_id == 32
-      - test2.name == "test-lb-l7-instance-module"
-      - test2.redirect_http == false
-      - (test2.proxy_protocol_enabled | default(false)) == false
-      - test2.shared_cluster == true
-      - test2.status == "active"
-      - test2.store_logs == false
-      - test2.type == "l7"
-      - test2.upstream_zones | length == 1
-      - test2.upstream_zones[0].hc_domain == "demo.test"
-      - test2.upstream_zones[0].hc_path == "/"
-      - test2.upstream_zones[0].id == "upstream-zone1"
-      - test2.upstream_zones[0].method == "round-robin"
-      - test2.upstream_zones[0].upstreams | length == 1
-      - test2.vhost_zones | length == 1
-      - test2.vhost_zones[0].domains | length == 1
-      - test2.vhost_zones[0].domains[0] == "demo.test"
-      - test2.vhost_zones[0].http2 == true
-      - test2.vhost_zones[0].id == "zone1"
-      - test2.vhost_zones[0].location_zones | length == 1
-      - test2.vhost_zones[0].location_zones[0].location == "/"
-      - test2.vhost_zones[0].location_zones[0].upstream_id == "upstream-zone1"
-      - test2.vhost_zones[0].location_zones[0].upstream_path == "/"
-      - test2.vhost_zones[0].ports == [80]
-      - test2.vhost_zones[0].proxy_request_headers | length == 0
-      - test2.vhost_zones[0].real_ip_header.name == "real_ip"
-      - test2.vhost_zones[0].real_ip_header.networks == ["192.168.1.0/24"]
-      - test2.vhost_zones[0].ssl == false
+  - name: Idempotency check (nothing changed)
+    serverscom.sc_api.sc_load_balancer_instance_l7:
+      token: "{{ sc_token }}"
+      state: present
+      name: "test-lb-l7-instance-module"
+      location_id: 32
+      store_logs: false
+      geoip: false
+      vhost_zones:
+        - id: "zone1"
+          ports: [80]
+          ssl: false
+          http2: true
+          http_to_https_redirect: false
+          http2_push_preload: false
+          domains: ["demo.test"]
+          location_zones:
+            - location: "/"
+              upstream_id: "upstream-zone1"
+              upstream_path: "/"
+              redirect: false
+          real_ip_header:
+            name: "real_ip"
+            networks: ["192.168.1.0/24"]
+      upstream_zones:
+        - id: "upstream-zone1"
+          hc_interval: 5
+          hc_jitter: 0
+          method: "round-robin"
+          ssl: false
+          sticky: false
+          hc_domain: "demo.test"
+          hc_path: "/"
+          hc_method: "GET"
+          hc_fails: 1
+          hc_passes: 3
+          grpc: false
+          upstreams:
+            - ip: 10.33.180.116
+              port: 3000
+              weight: 1
+              max_conns: 63000
+              max_fails: 0
+              fail_timeout: 30
+      labels:
+        environment: staging
+    register: test3
 
-- name: Idempotency check (nothing changed)
-  serverscom.sc_api.sc_load_balancer_instance_l7:
-    token: "{{ sc_token }}"
-    state: present
-    name: "test-lb-l7-instance-module"
-    location_id: 32
-    store_logs: false
-    geoip: false
-    vhost_zones:
-      - id: "zone1"
-        ports: [80]
-        ssl: false
-        http2: true
-        http_to_https_redirect: false
-        http2_push_preload: false
-        domains: ["demo.test"]
-        location_zones:
-          - location: "/"
-            upstream_id: "upstream-zone1"
-            upstream_path: "/"
-            redirect: false
-        real_ip_header:
-          name: "real_ip"
-          networks: ["192.168.1.0/24"]
-    upstream_zones:
-      - id: "upstream-zone1"
-        hc_interval: 5
-        hc_jitter: 0
-        method: "round-robin"
-        ssl: false
-        sticky: false
-        hc_domain: "demo.test"
-        hc_path: "/"
-        hc_method: "GET"
-        hc_fails: 1
-        hc_passes: 3
-        grpc: false
-        upstreams:
-          - ip: 10.33.180.116
-            port: 3000
-            weight: 1
-            max_conns: 63000
-            max_fails: 0
-            fail_timeout: 30
-    labels:
-      environment: staging
-  register: test3
+  - name: Check Test3
+    assert:
+      that:
+        - test3 is not changed
 
-- name: Check Test3
-  assert:
-    that:
-      - test3 is not changed
+  - name: Update L7 load balancer instance by id (add additional upstream)
+    serverscom.sc_api.sc_load_balancer_instance_l7:
+      token: "{{ sc_token }}"
+      state: present
+      id: "{{ test2.id }}"
+      vhost_zones:
+        - id: "zone1"
+          ports: [80]
+          ssl: false
+          http2: true
+          http_to_https_redirect: false
+          http2_push_preload: false
+          domains: ["demo.test"]
+          location_zones:
+            - location: "/"
+              upstream_id: "upstream-zone1"
+              upstream_path: "/"
+              redirect: false
+          real_ip_header:
+            name: "real_ip"
+            networks: ["192.168.1.0/24"]
+      upstream_zones:
+        - id: "upstream-zone1"
+          upstreams:
+            - ip: 10.33.180.116
+              port: 3000
+              weight: 1
+              max_conns: 63000
+              max_fails: 0
+              fail_timeout: 30
+            - ip: 10.33.180.196
+              port: 3000
+              weight: 1
+              max_conns: 63000
+              max_fails: 0
+              fail_timeout: 30
+    register: test4
 
-- name: Update L7 load balancer instance by id (add additional upstream)
-  serverscom.sc_api.sc_load_balancer_instance_l7:
-    token: "{{ sc_token }}"
-    state: present
-    id: "{{ test2.id }}"
-    vhost_zones:
-      - id: "zone1"
-        ports: [80]
-        ssl: false
-        http2: true
-        http_to_https_redirect: false
-        http2_push_preload: false
-        domains: ["demo.test"]
-        location_zones:
-          - location: "/"
-            upstream_id: "upstream-zone1"
-            upstream_path: "/"
-            redirect: false
-        real_ip_header:
-          name: "real_ip"
-          networks: ["192.168.1.0/24"]
-    upstream_zones:
-      - id: "upstream-zone1"
-        upstreams:
-          - ip: 10.33.180.116
-            port: 3000
-            weight: 1
-            max_conns: 63000
-            max_fails: 0
-            fail_timeout: 30
-          - ip: 10.33.180.196
-            port: 3000
-            weight: 1
-            max_conns: 63000
-            max_fails: 0
-            fail_timeout: 30
-  register: test4
+  - name: Check Test4
+    assert:
+      that:
+        - test4 is changed
+        - test4.upstream_zones[0].upstreams | length == 2
 
-- name: Check Test4
-  assert:
-    that:
-      - test4 is changed
-      - test4.upstream_zones[0].upstreams | length == 2
+  - name: Update L7 load balancer instance by name (remove additional upstream)
+    serverscom.sc_api.sc_load_balancer_instance_l7:
+      token: "{{ sc_token }}"
+      state: present
+      name: "test-lb-l7-instance-module"
+      vhost_zones:
+        - id: "zone1"
+          ports: [80]
+          ssl: false
+          http2: true
+          http_to_https_redirect: false
+          http2_push_preload: false
+          domains: ["demo.test"]
+          location_zones:
+            - location: "/"
+              upstream_id: "upstream-zone1"
+              upstream_path: "/"
+              redirect: false
+          real_ip_header:
+            name: "real_ip"
+            networks: ["192.168.1.0/24"]
+      upstream_zones:
+        - id: "upstream-zone1"
+          upstreams:
+            - ip: 10.33.180.196
+              port: 3000
+              weight: 1
+              max_conns: 63000
+              max_fails: 0
+              fail_timeout: 30
+    register: test5
 
-- name: Update L7 load balancer instance by name (remove additional upstream)
-  serverscom.sc_api.sc_load_balancer_instance_l7:
-    token: "{{ sc_token }}"
-    state: present
-    name: "test-lb-l7-instance-module"
-    vhost_zones:
-      - id: "zone1"
-        ports: [80]
-        ssl: false
-        http2: true
-        http_to_https_redirect: false
-        http2_push_preload: false
-        domains: ["demo.test"]
-        location_zones:
-          - location: "/"
-            upstream_id: "upstream-zone1"
-            upstream_path: "/"
-            redirect: false
-        real_ip_header:
-          name: "real_ip"
-          networks: ["192.168.1.0/24"]
-    upstream_zones:
-      - id: "upstream-zone1"
-        upstreams:
-          - ip: 10.33.180.196
-            port: 3000
-            weight: 1
-            max_conns: 63000
-            max_fails: 0
-            fail_timeout: 30
-  register: test5
+  - name: Check Test5
+    assert:
+      that:
+        - test5 is changed
+        - test5.upstream_zones[0].upstreams | length == 1
 
-- name: Check Test5
-  assert:
-    that:
-      - test5 is changed
-      - test5.upstream_zones[0].upstreams | length == 1
+  - name: Remove L7 LB 'test-lb-l7-instance-module' by id
+    serverscom.sc_api.sc_load_balancer_instance_l7:
+      token: "{{ sc_token }}"
+      state: absent
+      id: "{{ test2.id }}"
+    register: test6
 
-- name: Remove L7 LB 'test-lb-l7-instance-module' by id
-  serverscom.sc_api.sc_load_balancer_instance_l7:
-    token: "{{ sc_token }}"
-    state: absent
-    id: "{{ test2.id }}"
-  register: test6
-
-- name: Check Test6
-  assert:
-    that:
-      - test6 is changed
-      - test6.status == "absent"
+  - name: Check Test6
+    assert:
+      that:
+        - test6 is changed
+        - test6.status == "absent"
+  always:
+  - name: Destroy test L7 load balancer instance
+    serverscom.sc_api.sc_load_balancer_instance_l7:
+      token: "{{ sc_token }}"
+      state: absent
+      name: "test-lb-l7-instance-module"
