@@ -21,7 +21,7 @@
       serverscom.sc_api.sc_load_balancer_instance_l4:
         token: "{{ sc_token }}"
         state: present
-        name: "test-lb-l4-instances-list-module"
+        name: "test-lb-l4-instances-list-module2"
         location_id: 32
         vhost_zones:
           - id: "vhost-zone1"
@@ -71,9 +71,9 @@
       sc_load_balancer_instances_list:
         token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
-        name: test1
+        name: test-lb-l4-instances-list-module2
       register: test3
-
+    - debug: var=test3
     - name: Check Test3
       assert:
         that:
@@ -84,7 +84,7 @@
           - (test3.load_balancer_instances[0].external_addresses | length) > 0
           - (test3.load_balancer_instances[0].id | string | length) > 0
           - test3.load_balancer_instances[0].location_id is defined
-          - (test3.load_balancer_instances[0].name | string | length) > 0
+          - test3.load_balancer_instances[0].name == "test-lb-l4-instances-list-module2"
           - (test3.load_balancer_instances[0].status | string | length) > 0
           - (test3.load_balancer_instances[0].type | string | length) > 0
 
@@ -135,4 +135,4 @@
       serverscom.sc_api.sc_load_balancer_instance_l4:
         token: "{{ sc_token }}"
         state: absent
-        name: "test-lb-l4-instances-list-module"
+        name: "test-lb-l4-instances-list-module2"
