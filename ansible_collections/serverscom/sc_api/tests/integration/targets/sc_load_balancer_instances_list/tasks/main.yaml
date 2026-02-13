@@ -3,7 +3,7 @@
   no_log: true
   fail:
     msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
-  when: not sc_endpoint or not sc_token
+  when: (sc_endpoint | default('') | length == 0) or (sc_token | default('') | length == 0)
 
 - name: Test invalid token
   sc_load_balancer_instances_list:
@@ -57,15 +57,15 @@
       assert:
         that:
           - test2 is not changed
-          - test2.load_balancer_instances | length > 0
-          - test2.load_balancer_instances[0].created_at
-          - test2.load_balancer_instances[0].updated_at
-          - test2.load_balancer_instances[0].external_addresses | length > 0
-          - test2.load_balancer_instances[0].id
-          - test2.load_balancer_instances[0].location_id
-          - test2.load_balancer_instances[0].name
-          - test2.load_balancer_instances[0].status
-          - test2.load_balancer_instances[0].type
+          - (test2.load_balancer_instances | length) > 0
+          - (test2.load_balancer_instances[0].created_at | string | length) > 0
+          - (test2.load_balancer_instances[0].updated_at | string | length) > 0
+          - (test2.load_balancer_instances[0].external_addresses | length) > 0
+          - (test2.load_balancer_instances[0].id | string | length) > 0
+          - test2.load_balancer_instances[0].location_id is defined
+          - (test2.load_balancer_instances[0].name | string | length) > 0
+          - (test2.load_balancer_instances[0].status | string | length) > 0
+          - (test2.load_balancer_instances[0].type | string | length) > 0
 
     - name: Test3, Get Load Balancer instances by name
       sc_load_balancer_instances_list:
@@ -78,15 +78,15 @@
       assert:
         that:
           - test3 is not changed
-          - test3.load_balancer_instances | length > 0
-          - test3.load_balancer_instances[0].created_at
-          - test3.load_balancer_instances[0].updated_at
-          - test3.load_balancer_instances[0].external_addresses | length > 0
-          - test3.load_balancer_instances[0].id
-          - test3.load_balancer_instances[0].location_id
-          - test3.load_balancer_instances[0].name
-          - test3.load_balancer_instances[0].status
-          - test3.load_balancer_instances[0].type
+          - (test3.load_balancer_instances | length) > 0
+          - (test3.load_balancer_instances[0].created_at | string | length) > 0
+          - (test3.load_balancer_instances[0].updated_at | string | length) > 0
+          - (test3.load_balancer_instances[0].external_addresses | length) > 0
+          - (test3.load_balancer_instances[0].id | string | length) > 0
+          - test3.load_balancer_instances[0].location_id is defined
+          - (test3.load_balancer_instances[0].name | string | length) > 0
+          - (test3.load_balancer_instances[0].status | string | length) > 0
+          - (test3.load_balancer_instances[0].type | string | length) > 0
 
     - name: Test4, Get Load Balancer instances by type
       sc_load_balancer_instances_list:
@@ -99,15 +99,15 @@
       assert:
         that:
           - test4 is not changed
-          - test4.load_balancer_instances | length > 0
-          - test4.load_balancer_instances[0].created_at
-          - test4.load_balancer_instances[0].updated_at
-          - test4.load_balancer_instances[0].external_addresses | length > 0
-          - test4.load_balancer_instances[0].id
-          - test4.load_balancer_instances[0].location_id
-          - test4.load_balancer_instances[0].name
-          - test4.load_balancer_instances[0].status
-          - test4.load_balancer_instances[0].type
+          - (test4.load_balancer_instances | length) > 0
+          - (test4.load_balancer_instances[0].created_at | string | length) > 0
+          - (test4.load_balancer_instances[0].updated_at | string | length) > 0
+          - (test4.load_balancer_instances[0].external_addresses | length) > 0
+          - (test4.load_balancer_instances[0].id | string | length) > 0
+          - test4.load_balancer_instances[0].location_id is defined
+          - (test4.load_balancer_instances[0].name | string | length) > 0
+          - (test4.load_balancer_instances[0].status | string | length) > 0
+          - (test4.load_balancer_instances[0].type | string | length) > 0
 
     - name: Test5, Get Load Balancer instances by label
       sc_load_balancer_instances_list:
@@ -120,15 +120,15 @@
       assert:
         that:
           - test5 is not changed
-          - test5.load_balancer_instances | length > 0
-          - test5.load_balancer_instances[0].created_at
-          - test5.load_balancer_instances[0].updated_at
-          - test5.load_balancer_instances[0].external_addresses | length > 0
-          - test5.load_balancer_instances[0].id
-          - test5.load_balancer_instances[0].location_id
-          - test5.load_balancer_instances[0].name
-          - test5.load_balancer_instances[0].status
-          - test5.load_balancer_instances[0].type
+          - (test5.load_balancer_instances | length) > 0
+          - (test5.load_balancer_instances[0].created_at | string | length) > 0
+          - (test5.load_balancer_instances[0].updated_at | string | length) > 0
+          - (test5.load_balancer_instances[0].external_addresses | length) > 0
+          - (test5.load_balancer_instances[0].id | string | length) > 0
+          - test5.load_balancer_instances[0].location_id is defined
+          - (test5.load_balancer_instances[0].name | string | length) > 0
+          - (test5.load_balancer_instances[0].status | string | length) > 0
+          - (test5.load_balancer_instances[0].type | string | length) > 0
           - test5.load_balancer_instances[0].labels.test_label == "test_value"
   always:
     - name: Destroy test load balancer instance

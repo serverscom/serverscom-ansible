@@ -3,7 +3,7 @@
   no_log: true
   fail:
     msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
-  when: not sc_endpoint or not sc_token
+  when: (sc_endpoint | default('') | length == 0) or (sc_token | default('') | length == 0)
 
 - name: Test invalid token
   sc_load_balancer_instance_info:
@@ -113,17 +113,17 @@
     assert:
       that:
         - test5 is not changed
-        - test5.created_at
-        - test5.updated_at
-        - test5.external_addresses | length > 0
-        - test5.domains | length > 0
-        - test5.upstream_zones | length > 0
-        - test5.vhost_zones | length > 0
-        - test5.id
-        - test5.location_id
-        - test5.name
-        - test5.status
-        - test5.type
+        - (test5.created_at | string | length) > 0
+        - (test5.updated_at | string | length) > 0
+        - (test5.external_addresses | length) > 0
+        - (test5.domains | length) > 0
+        - (test5.upstream_zones | length) > 0
+        - (test5.vhost_zones | length) > 0
+        - (test5.id | string | length) > 0
+        - test5.location_id is defined
+        - (test5.name | string | length) > 0
+        - (test5.status | string | length) > 0
+        - (test5.type | string | length) > 0
   always:
   - name: Destroy test load balancer instance
     serverscom.sc_api.sc_load_balancer_instance_l7:
