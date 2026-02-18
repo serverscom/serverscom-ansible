@@ -929,6 +929,7 @@ class ScApi:
         cluster_id,
         store_logs,
         store_logs_region_id,
+        shared_cluster,
         vhost_zones,
         upstream_zones,
         labels,
@@ -941,10 +942,11 @@ class ScApi:
         }
         if cluster_id is not None:
             body["cluster_id"] = cluster_id
-        if store_logs:
-            body["store_logs"] = True
+        body["store_logs"] = store_logs
         if store_logs_region_id is not None:
             body["store_logs_region_id"] = store_logs_region_id
+        if shared_cluster is not None:
+            body["shared_cluster"] = shared_cluster
         if labels:
             body["labels"] = labels
 
@@ -1005,6 +1007,7 @@ class ScApi:
         cluster_id,
         store_logs,
         store_logs_region_id,
+        shared_cluster,
         geoip,
         vhost_zones,
         upstream_zones,
@@ -1018,10 +1021,11 @@ class ScApi:
         }
         if cluster_id is not None:
             body["cluster_id"] = cluster_id
-        if store_logs:
-            body["store_logs"] = True
+        body["store_logs"] = store_logs
         if store_logs_region_id is not None:
             body["store_logs_region_id"] = store_logs_region_id
+        if shared_cluster is not None:
+            body["shared_cluster"] = shared_cluster
         if geoip is not None:
             body["geoip"] = geoip
         if labels:
