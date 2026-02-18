@@ -30,21 +30,28 @@ class APIRequirementsError(SCBaseError):
 
 
 class APIError(SCBaseError):
-    def __init__(self, msg, api_url, status_code):
+    def __init__(self, msg, api_url, status_code, correlation_id=None):
         self.api_url = api_url
         self.status_code = status_code
-        self.msg = msg
+        self.correlation_id = correlation_id
+        if correlation_id:
+            self.msg = f"{msg} (X-Correlation-ID: {correlation_id})"
+        else:
+            self.msg = msg
 
     def fail(self):
-        return {
+        result = {
             "failed": True,
             "msg": self.msg,
             "api_url": self.api_url,
             "status_code": self.status_code,
         }
+        if self.correlation_id:
+            result["correlation_id"] = self.correlation_id
+        return result
 
     def __repr__(self):
-        return f"APIError(msg='{self.msg}', api_url={self.api_url}, status_code={self.status_code})"  # noqa
+        return f"APIError(msg='{self.msg}', api_url={self.api_url}, status_code={self.status_code}, correlation_id={self.correlation_id})"  # noqa
 
     def __str__(self):
         return self.__repr__()
@@ -104,11 +111,13 @@ class ApiHelper:
         self.request.headers["User-Agent"] = "ansible-module/sc_api/0.1"
         prep_request = self.request.prepare()
         response = self.session.send(prep_request)
+        correlation_id = response.headers.get("X-Correlation-ID")
         if response.status_code == 400:
             raise APIError400(
                 status_code=response.status_code,
                 api_url=prep_request.url,
                 msg="400 Bad request. Check the object ID.",
+                correlation_id=correlation_id,
             )
 
         if response.status_code == 401:
@@ -116,6 +125,7 @@ class ApiHelper:
                 status_code=response.status_code,
                 api_url=prep_request.url,
                 msg="401 Unauthorized. Check if token is valid.",
+                correlation_id=correlation_id,
             )
 
         if response.status_code == 404:
@@ -123,18 +133,21 @@ class ApiHelper:
                 status_code=response.status_code,
                 api_url=prep_request.url,
                 msg="404 Not Found.",
+                correlation_id=correlation_id,
             )
         if response.status_code == 409:
             raise APIError409(
                 status_code=response.status_code,
                 api_url=prep_request.url,
                 msg=f"409 Conflict. {response.content}",
+                correlation_id=correlation_id,
             )
         if response.status_code not in good_codes:
             raise APIError(
                 status_code=response.status_code,
                 api_url=prep_request.url,
                 msg=f"API Error: {response.content}",
+                correlation_id=correlation_id,
             )
         return response
 
@@ -147,6 +160,7 @@ class ApiHelper:
                 api_url=response.url,
                 status_code=response.status_code,
                 msg=f"API decoding error: {str(e)}, data: {response.content}",
+                correlation_id=response.headers.get("X-Correlation-ID"),
             )
         return decoded
 
