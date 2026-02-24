@@ -22,14 +22,13 @@ There are two types of baremetal: Enterprise Baremetal (baremetal) and Scalable 
 3. **API client layers**: `ScApi` (API methods) → `ApiHelper` (HTTP, Bearer auth, retry, pagination) → `ScApiToolbox` (convenience lookups by name/regex)
 4. **Error handling**: `APIError400`, `APIError401`, `APIError404`, `APIError409`, `DecodeError` — all carry `correlation_id` and have `.fail()` returning structured dict
 5. **Wait/retry**: Handler classes poll API with `retry_rules` (retries on 429 rate-limit and 500); `WaitError` on timeout
-6. **SBM resolvers** (`sc_sbm.py`): Allow users to specify resources by name/code/regex instead of numeric ID
-7. **Parameters**: All modules require `token` and accept `endpoint`. Action modules often support `wait`/`update_interval`
+6. **Parameters**: All modules require `token` and accept `endpoint`. Action modules often support `wait`/`update_interval`
+7. **Module parameter naming:** All `_id` params need `_name` / `_regex` alternatives. Module resolves to IDs internally.
+   Examples: `server_id` / `server_hostname` / `server_regex`, `flavor_id` / `flavor_name`, `location_id` / `location_code`
 
 ## Testing
 - **Sanity/Unit**: `ansible-test sanity/units --requirements --python 3.13` (from `ansible_collections/serverscom/sc_api/`)
-- **Integration**: Needs `tests/integration/integration_config.yml` with `SC_TOKEN` (see template)
-
-There are integration tests, you should not run them.
+- **Integration**: Needs `tests/integration/integration_config.yml` with `SC_TOKEN` (see template). You should not run them.
 
 Libraries: ansible-provided and requests.
 CI: Github Actions .github/workflows/tests.yaml
