@@ -26,7 +26,7 @@ short_description: List or get networks for an SBM (Scalable Baremetal) server
 description: >
     Returns a list of networks for a Scalable Baremetal server, or
     details of a single network if network_id is provided.
-extends_documentation_fragment: serverscom.sc_api.sc_sbm
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
 
 options:
     server_id:

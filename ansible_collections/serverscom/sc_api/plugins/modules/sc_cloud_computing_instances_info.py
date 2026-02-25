@@ -26,20 +26,9 @@ short_description: List of cloud computing instances
 description: >
     Return list of all instances in a given region
 
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
+
 options:
-    endpoint:
-      type: str
-      default: https://api.servers.com/v1
-      description:
-        - Endpoint to use to connect to API.
-        - Do not change until specifically asked to do otherwise.
-    token:
-      type: str
-      required: true
-      description:
-        - Token to use.
-        - You can create token for you account in https://portal.servers.com
-          in Profile -> Public API section.
     region_id:
       type: int
       description:

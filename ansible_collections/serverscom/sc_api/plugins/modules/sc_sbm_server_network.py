@@ -26,7 +26,7 @@ short_description: Create or delete a private network for an SBM (Scalable Barem
 description: >
     Create a private IPv4 network or delete an existing network
     for a Scalable Baremetal server.
-extends_documentation_fragment: serverscom.sc_api.sc_sbm
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
 
 options:
     server_id:

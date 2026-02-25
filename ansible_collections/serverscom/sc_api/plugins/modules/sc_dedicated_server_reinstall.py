@@ -29,22 +29,9 @@ description: >
     Reinstallation request may fail for servers with custom hardware
     configuration (external drive shelves).
 
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
+
 options:
-    endpoint:
-      type: str
-      default: https://api.servers.com/v1
-      description:
-        - Endpoint to use to connect to API.
-        - Do not change until specifically asked to do otherwise.
-
-    token:
-      type: str
-      required: true
-      description:
-        - Token to use.
-        - You can create token for you account in https://portal.servers.com
-          in Profile -> Public API section.
-
     server_id:
       aliases: [name, id]
       type: str

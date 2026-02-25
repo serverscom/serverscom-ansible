@@ -26,6 +26,8 @@ description: >
     Module searches for locations for baremetal servers, including
     locations with dedicated servers.
 
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
+
 options:
     search_pattern:
         type: str
@@ -41,21 +43,6 @@ options:
             - Seach both top-level features and supported_features.
             - If more than one element specified, search for all of them
               ('and' operation).
-
-    endpoint:
-      type: str
-      default: https://api.servers.com/v1
-      description:
-        - Endpoint to use to connect to API.
-        - Do not change until specifically asked to do otherwise.
-
-    token:
-      type: str
-      required: true
-      description:
-        - Token to use.
-        - You can create token for you account in https://portal.servers.com
-          in Profile -> Public API section.
 """
 
 RETURN = """

@@ -23,18 +23,9 @@ short_description: Resets RBS volume credentials.
 description: >
     Resets credentials for Remote Block Storage volume.
 
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
+
 options:
-    endpoint:
-      type: str
-      required: false
-      default: https://api.servers.com/v1
-      description:
-        - API endpoint.
-    token:
-      type: str
-      required: true
-      description:
-        - API token.
     volume_id:
       type: str
       required: false

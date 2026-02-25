@@ -26,7 +26,7 @@ short_description: Manage SBM server PTR records
 description: >
     Add or remove PTR records for IP addresses of the SBM (Scalable Baremetal) server.
     Use M(serverscom.sc_api.sc_sbm_server_ptr_info) to query existing PTR records.
-extends_documentation_fragment: serverscom.sc_api.sc_sbm
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
 
 options:
     server_id:

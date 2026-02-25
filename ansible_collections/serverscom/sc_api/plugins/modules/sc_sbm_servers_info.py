@@ -26,7 +26,7 @@ short_description: List SBM (Scalable Baremetal) servers
 description: >
     Returns a list of all Scalable Baremetal servers with optional filtering
     by search pattern, location, rack, or labels.
-extends_documentation_fragment: serverscom.sc_api.sc_sbm
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
 
 options:
     search_pattern:

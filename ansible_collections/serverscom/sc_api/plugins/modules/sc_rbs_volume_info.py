@@ -23,18 +23,9 @@ short_description: Returns list of Remote Block Storage volumes.
 description: >
     Returns list of Remote Block Storage volumes for specified search criteria.
 
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
+
 options:
-    endpoint:
-      type: str
-      required: false
-      default: https://api.servers.com/v1
-      description:
-        - API endpoint.
-    token:
-      type: str
-      required: true
-      description:
-        - API token.
     label_selector:
       type: str
       required: false

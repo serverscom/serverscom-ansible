@@ -25,7 +25,7 @@ author: "Servers.com Team (@serverscom)"
 short_description: Power on/off SBM (Scalable Baremetal) server
 description: >
     Manage the power state of a Scalable Baremetal server outlet.
-extends_documentation_fragment: serverscom.sc_api.sc_sbm
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
 
 options:
   server_id:

@@ -27,7 +27,7 @@ description: >
     Update the labels associated with a Scalable Baremetal server.
     Labels are key-value pairs that can be used for filtering and
     organizing servers.
-extends_documentation_fragment: serverscom.sc_api.sc_sbm
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
 
 options:
     server_id:

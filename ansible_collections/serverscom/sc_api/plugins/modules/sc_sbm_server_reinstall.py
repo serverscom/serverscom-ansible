@@ -27,7 +27,7 @@ description: >
     the process. No secure erase or wipe is performed during installation.
     Note that SBM servers do not support custom drive layouts - the disk
     configuration is managed automatically.
-extends_documentation_fragment: serverscom.sc_api.sc_sbm
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
 
 options:
     server_id:

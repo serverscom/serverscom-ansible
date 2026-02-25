@@ -26,7 +26,7 @@ short_description: List of available SBM (Scalable Baremetal) flavor models.
 description: >
     Returns list of available Scalable Baremetal flavor models for a location.
     These flavor models define the hardware configurations available for SBM servers.
-extends_documentation_fragment: serverscom.sc_api.sc_sbm
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
 
 options:
     location_id:

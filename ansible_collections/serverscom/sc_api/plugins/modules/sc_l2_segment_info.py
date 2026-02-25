@@ -25,21 +25,9 @@ short_description: Information about L2 segment.
 description: >
     Returns information about exiting L2 segment or fail.
 
-options:
-    endpoint:
-      type: str
-      default: https://api.servers.com/v1
-      description:
-        - Endpoint to use to connect to API.
-        - Do not change until specifically asked to do otherwise.
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
 
-    token:
-      type: str
-      required: true
-      description:
-        - Token to use.
-        - You can create token for you account in https://portal.servers.com
-          in Profile -> Public API section.
+options:
     id:
       type: str
       description:
