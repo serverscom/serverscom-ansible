@@ -128,6 +128,8 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,
+)
+from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_load_balancer import (
     ScLoadBalancerInstancesList,
 )
 

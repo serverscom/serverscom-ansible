@@ -3,7 +3,7 @@
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
-from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
+from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_ssh_key import (
     ScSshKey,
 )  # noqa
 
