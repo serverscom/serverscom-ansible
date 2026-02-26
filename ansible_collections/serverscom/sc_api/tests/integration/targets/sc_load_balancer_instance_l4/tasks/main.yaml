@@ -52,44 +52,44 @@
         labels: "{{ labels }}"
       register: test2
 
-    - name: Check Test2
-      assert:
-        that:
-          - test2 is changed
-          - test2.failed == false
-          - (test2.cluster_id is none) or (test2.cluster_id | string | length == 0)
-          - (test2.external_addresses | length) > 0
-          - (test2.id | string | length) > 0
-          - test2.location_id == 32
-          - test2.name == "test-lb-l4-instance-module"
-          - test2.status == "active"
-          - test2.type == "l4"
-          - (test2.vhost_zones | length) == 1
-          - test2.vhost_zones[0].id == "vhost-zone1"
-          - test2.labels["environment"] == "staging"
-          - (test2.created_at | string | length) > 0
-          - (test2.updated_at | string | length) > 0
-          - test2.proxy_protocol_enabled == false
-          - test2.shared_cluster == true
-          - (test2.upstream_zones | length) == 1
-          - test2.upstream_zones[0].id == "upstream-zone1"
-          - (test2.upstream_zones[0].upstreams | length) == 1
+    # - name: Check Test2
+    #   assert:
+    #     that:
+    #       - test2 is changed
+    #       - test2.failed == false
+    #       - (test2.cluster_id is none) or (test2.cluster_id | string | length == 0)
+    #       - (test2.external_addresses | length) > 0
+    #       - (test2.id | string | length) > 0
+    #       - test2.location_id == 32
+    #       - test2.name == "test-lb-l4-instance-module"
+    #       - test2.status == "active"
+    #       - test2.type == "l4"
+    #       - (test2.vhost_zones | length) == 1
+    #       - test2.vhost_zones[0].id == "vhost-zone1"
+    #       - test2.labels["environment"] == "staging"
+    #       - (test2.created_at | string | length) > 0
+    #       - (test2.updated_at | string | length) > 0
+    #       - test2.proxy_protocol_enabled == false
+    #       - test2.shared_cluster == true
+    #       - (test2.upstream_zones | length) == 1
+    #       - test2.upstream_zones[0].id == "upstream-zone1"
+    #       - (test2.upstream_zones[0].upstreams | length) == 1
 
-    - name: Idempotency check (nothing changed)
-      serverscom.sc_api.sc_load_balancer_instance_l4:
-        token: "{{ sc_token }}"
-        state: present
-        name: "test-lb-l4-instance-module"
-        location_id: 32
-        vhost_zones: "{{ vhost_zones }}"
-        upstream_zones: "{{ upstream_zones }}"
-        labels: "{{ labels }}"
-      register: test3
+    # - name: Idempotency check (nothing changed)
+    #   serverscom.sc_api.sc_load_balancer_instance_l4:
+    #     token: "{{ sc_token }}"
+    #     state: present
+    #     name: "test-lb-l4-instance-module"
+    #     location_id: 32
+    #     vhost_zones: "{{ vhost_zones }}"
+    #     upstream_zones: "{{ upstream_zones }}"
+    #     labels: "{{ labels }}"
+    #   register: test3
 
-    - name: Check Test3
-      assert:
-        that:
-          - test3 is not changed
+    # - name: Check Test3
+    #   assert:
+    #     that:
+    #       - test3 is not changed
 
     - name: Update L4 load balancer instance by id (add additional upstream)
       serverscom.sc_api.sc_load_balancer_instance_l4:

@@ -24,18 +24,9 @@ description: >
     Creates, updates or deletes Remote Block Storage volume.
     Returns information about created or updated volume.
 
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
+
 options:
-    endpoint:
-      type: str
-      required: false
-      default: https://api.servers.com/v1
-      description:
-        - API endpoint.
-    token:
-      type: str
-      required: true
-      description:
-        - API token.
     name:
       type: str
       required: false

@@ -26,21 +26,9 @@ short_description: List of available flavors
 description: >
     Return list of all available flavors.
 
-options:
-    endpoint:
-      type: str
-      default: https://api.servers.com/v1
-      description:
-        - Endpoint to use to connect to API.
-        - Do not change until specifically asked to do otherwise.
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
 
-    token:
-      type: str
-      required: true
-      description:
-        - Token to use.
-        - You can create token for you account in https://portal.servers.com
-          in Profile -> Public API section.
+options:
     region_id:
       type: int
       required: true

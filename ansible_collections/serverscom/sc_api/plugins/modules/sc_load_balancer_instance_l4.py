@@ -34,20 +34,10 @@ notes:
     object by "name"), provide either "id" or "name" (but not both) along with
     parameters to modify.
   - For deletion (state "absent"), provide exactly one of "id" or "name".
+
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
+
 options:
-  endpoint:
-    type: str
-    default: https://api.servers.com/v1
-    description:
-      - Endpoint to use to connect to API.
-      - Do not change until specifically asked to do otherwise.
-  token:
-    type: str
-    required: true
-    description:
-      - Token to use.
-      - You can create token for your account in https://portal.servers.com
-        in Profile -> Public API section.
   state:
     description: Define the desired state of the load balancer instance.
     required: true

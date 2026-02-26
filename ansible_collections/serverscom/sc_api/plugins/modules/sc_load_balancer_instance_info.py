@@ -26,18 +26,10 @@ description:
     and detailed configuration for vhost and upstream zones (with L4/L7 specifics).
 version_added: "1.0.0"
 author: "Volodymyr Rudniev (@koef)"
+
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
+
 options:
-  token:
-    description:
-      - API access token for authentication.
-    required: true
-    type: str
-  endpoint:
-    description:
-      - API endpoint URL.
-    required: false
-    type: str
-    default: https://api.servers.com/v1
   fail_on_absent:
     description:
       - Whether to fail if the load balancer instance is absent.

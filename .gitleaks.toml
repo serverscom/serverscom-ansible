@@ -1,0 +1,7 @@
+[allowlist]
+# Demo/test token allowlist - escaped for regex special characters
+regexes = [
+  "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9\\.eyJpZCI6MzgxMjEsInR5cGUiOiJVc2VyIiwiYWNjZXNzX2dyYW50X2lkIjoyNjg"
+]
+commits = []
+paths = []

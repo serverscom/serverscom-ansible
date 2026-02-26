@@ -27,20 +27,9 @@ description: >
     Manage the power state of a Bare Metal server outlet. Power on will start
     the server only if OOB configured accordingly.
 
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
+
 options:
-  endpoint:
-    type: str
-    default: "https://api.servers.com/v1"
-    description:
-      - API endpoint to connect to.
-
-  token:
-    type: str
-    required: true
-    description:
-      - API bearer token.
-      - Obtain from https://portal.servers.com under Profile → Public API.
-
   server_id:
     type: str
     required: true

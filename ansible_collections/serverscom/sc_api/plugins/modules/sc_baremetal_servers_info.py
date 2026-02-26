@@ -30,22 +30,9 @@ notes:
   - Includes information for both dedicated and other types of servers
     (f.e. kubernetes baremetal node)
 
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
+
 options:
-    endpoint:
-      type: str
-      default: https://api.servers.com/v1
-      description:
-        - Endpoint to use to connect to API.
-        - Do not change until specifically asked to do otherwise.
-
-    token:
-      type: str
-      required: true
-      description:
-        - Token to use.
-        - You can create token for you account in https://portal.servers.com
-          in Profile -> Public API section.
-
     type:
       type: str
       choices: ["dedicated_server", "kubernetes_baremetal_node", "sbm_server"]

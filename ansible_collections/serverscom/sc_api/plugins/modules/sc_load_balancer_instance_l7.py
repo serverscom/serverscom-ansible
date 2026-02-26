@@ -24,17 +24,10 @@ short_description: Create, update, or delete L7 load balancer instances via Serv
 description:
   - Manages L7 load balancer instances by interacting with the Servers.com API.
   - Supports creation, update, and deletion operations.
+
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
+
 options:
-  token:
-    description: API authentication token.
-    required: true
-    type: str
-  endpoint:
-    description:
-      - API endpoint URL.
-    required: false
-    type: str
-    default: https://api.servers.com/v1
   state:
     description: Desired state of the L7 instance.
     required: true

@@ -27,7 +27,7 @@ description: >
     Allow to create (order) or delete (release) a Scalable Baremetal server.
     Note that C(present) always creates a new server and is not idempotent.
     Running the same playbook twice will order two servers.
-extends_documentation_fragment: serverscom.sc_api.sc_sbm
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
 
 options:
     state:

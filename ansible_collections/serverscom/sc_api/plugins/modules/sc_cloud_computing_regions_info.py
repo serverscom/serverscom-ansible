@@ -25,27 +25,14 @@ short_description: Information about available cloud computing regions.
 description: >
     Module searches for computing cloud regions.
 
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
+
 options:
     search_pattern:
         type: str
         description:
             - Search for substring in regions names and codes.
             - Case insensitive.
-
-    endpoint:
-      type: str
-      default: https://api.servers.com/v1
-      description:
-        - Endpoint to use to connect to API.
-        - Do not change until specifically asked to do otherwise.
-
-    token:
-      type: str
-      required: true
-      description:
-        - Token to use.
-        - You can create token for you account in https://portal.servers.com
-          in Profile -> Public API section.
 """
 
 RETURN = """

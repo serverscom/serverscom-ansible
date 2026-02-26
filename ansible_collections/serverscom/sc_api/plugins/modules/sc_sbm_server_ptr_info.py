@@ -26,7 +26,7 @@ short_description: Query PTR records for an SBM (Scalable Baremetal) server
 description: >
     Returns the list of PTR records associated with
     IP addresses of the SBM (Scalable Baremetal) server.
-extends_documentation_fragment: serverscom.sc_api.sc_sbm
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
 
 options:
     server_id:

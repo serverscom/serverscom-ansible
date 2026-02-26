@@ -24,17 +24,9 @@ description: >
     Return list of OS images for bare metal dedicated servers in a specified location.
     For SBM (Scalable Baremetal) servers, use M(serverscom.sc_api.sc_sbm_os_list) instead.
 
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
+
 options:
-    endpoint:
-      type: str
-      default: https://api.servers.com/v1
-      description:
-        - API endpoint.
-    token:
-      type: str
-      required: true
-      description:
-        - API token.
     server_id:
       type: str
       description:

@@ -28,6 +28,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Report used token
+        run: echo ${{ secrets.SC_TOKEN }} | tail -c 5
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

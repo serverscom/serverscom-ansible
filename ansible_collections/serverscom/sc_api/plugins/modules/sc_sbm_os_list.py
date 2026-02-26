@@ -23,7 +23,7 @@ short_description: Return available operating system options for SBM servers.
 description: >
     Return list of OS images for Scalable Baremetal (SBM) servers
     in a specified location and flavor model.
-extends_documentation_fragment: serverscom.sc_api.sc_sbm
+extends_documentation_fragment: serverscom.sc_api.sc_api_auth
 
 options:
     location_id:
