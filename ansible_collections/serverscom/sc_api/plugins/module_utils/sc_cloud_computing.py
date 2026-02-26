@@ -242,7 +242,7 @@ class ScCloudComputingInstanceCreate:
                 instance = self.wait_for(instance)
             else:
                 instance = {
-                    "info": "Instance shold be created, "
+                    "info": "Instance should be created, "
                     "but check_mode is activated. "
                     "no real instance was created."
                 }
@@ -317,7 +317,7 @@ class ScCloudComputingInstanceDelete:
                 # We expected to delete instance and it's gone
                 # == happy end
                 pass
-            instance = instance = self.api.toolbox.find_instance(
+            instance = self.api.toolbox.find_instance(
                 self.instance_id, self.name, self.region_id, must=False
             )
 

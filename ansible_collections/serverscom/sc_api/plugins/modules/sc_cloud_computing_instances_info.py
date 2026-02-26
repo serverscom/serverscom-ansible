@@ -34,7 +34,7 @@ options:
       description:
         - Id of cloud computing region to filter.
         - Use I(serverscom.sc_api.sc_cloud_computing_regions_info) module
-          to retrive list of available regions.
+          to retrieve list of available regions.
         - Module returns instances for all regions if I(region_id) is not
           specified.
     label_selector:

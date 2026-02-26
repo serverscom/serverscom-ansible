@@ -23,7 +23,7 @@ version_added: "1.0.0"
 author: "George Shuklin (@amarao)"
 short_description: Information about existing dedicated server
 description: >
-    Retrive information about existing dedicated baremetal server.
+    retrieve information about existing dedicated baremetal server.
 
 extends_documentation_fragment: serverscom.sc_api.sc_api_auth
 

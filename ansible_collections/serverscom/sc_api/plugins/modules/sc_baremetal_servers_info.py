@@ -23,7 +23,7 @@ version_added: "1.1.0"
 author: "George Shuklin (@amarao)"
 short_description: Information about existing dedicated servers
 description: >
-    Retrive list of all existing dedicated baremetal servers.
+    retrieve list of all existing dedicated baremetal servers.
 
 notes:
   - Not to be confused with M(serverscom.sc_api.sc_dedicated_servers_info).

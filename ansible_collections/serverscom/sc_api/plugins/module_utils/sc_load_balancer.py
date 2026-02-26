@@ -72,7 +72,7 @@ class ScLoadBalancerInstanceInfo(object):
             if len(matched_instances) > 1:
                 instance_ids = ", ".join(inst.get("id") for inst in matched_instances)
                 raise ModuleError(
-                    msg=f"There are more than one instance with the specified name: {instance_ids}. Such configuration doesn't support by the module."
+                    msg=f"There are more than one instance with the specified name: {instance_ids}. Such configuration is not supported by the module."
                 )
             elif matched_instances:
                 target_instance = matched_instances[0]

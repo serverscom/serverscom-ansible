@@ -22,12 +22,12 @@ DOCUMENTATION = """
 module: sc_cloud_computing_openstack_credentials
 version_added: "1.0.0"
 author: "George Shuklin (@amarao)"
-short_description: Retrive credentials for Openstack API in this regions
+short_description: retrieve credentials for Openstack API in this regions
 description: >
     Return credentials for Openstack API this region.
 
 notes:
-  - Please be careful with retrived information, passwords may be disclosed
+  - Please be careful with retrieved information, passwords may be disclosed
     in log files.
   - Some functions may fail if performed directly through openstack API.
   - Tenant-level networks are allocated by Servers.com Public API
@@ -47,7 +47,7 @@ options:
       description:
         - Id of cloud computing region.
         - Use I(serverscom.sc_api.sc_cloud_computing_regions_info) module
-          to retrive list of available regions.
+          to retrieve list of available regions.
 """
 
 RETURN = """
@@ -104,7 +104,7 @@ EXAMPLES = """
     region_id: 0
   register: os
 
-- name: Retrive service catalog from Openstack
+- name: retrieve service catalog from Openstack
   os_auth:
     auth:
       auth_url: '{{ creds.url }}'

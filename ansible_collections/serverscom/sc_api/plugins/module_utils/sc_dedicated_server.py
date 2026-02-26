@@ -122,7 +122,7 @@ class ScDedicatedServerReinstall(object):
             if int(wait) < int(update_interval):
                 raise ModuleError(
                     f"Update interval ({update_interval}) is longer "
-                    f"than wait time ({wait}"
+                    f"than wait time ({wait})"
                 )
         self.api = ScApi(token, endpoint)
         self.server_data = None
@@ -151,7 +151,7 @@ class ScDedicatedServerReinstall(object):
         self.get_server_data()
         if "title" not in self.server_data:
             raise ModuleError(
-                "Unable to retrive old title for the server. "
+                "Unable to retrieve old title for the server. "
                 "use hostname option to specify the hostname for reinstall."
             )
         return self.server_data["title"]
