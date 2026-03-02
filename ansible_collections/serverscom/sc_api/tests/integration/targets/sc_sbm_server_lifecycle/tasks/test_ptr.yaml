@@ -1,62 +1,66 @@
 ---
-- name: Test1 invalid token (ptr_info)
-  serverscom.sc_api.sc_sbm_server_ptr_info:
-    token: invalid
-    server_id: '{{ test_sbm_server_id }}'
-  register: test1
-  failed_when:
-    - test1 is success
-    - sc_endpoint not in test1.api_url
-    - test1.status_code != 401
-
-- name: Test2, Query PTR for non-existing server
+- name: Test1, Query PTR for non-existing server
   serverscom.sc_api.sc_sbm_server_ptr_info:
     server_id: '{{ non_existing_id }}'
-  register: test2
+  register: test1
   ignore_errors: true
 
-- name: Check Test2
+- name: Check Test1
   assert:
     that:
-      - test2.status_code == 404
+      - test1.status_code == 404
 
 - name: Get SBM server info for PTR tests
   serverscom.sc_api.sc_sbm_server_info:
     server_id: '{{ test_sbm_server_id }}'
   register: sbm_server
 
-- name: Test3, Query PTR records
+- name: Test2, Query PTR records
   serverscom.sc_api.sc_sbm_server_ptr_info:
     server_id: '{{ test_sbm_server_id }}'
-  register: test3
+  register: test2
 
-- name: Check Test3
+- name: Check Test2
   assert:
     that:
-      - test3 is not changed
-      - test3.ptr_records is defined
+      - test2 is not changed
+      - test2.ptr_records is defined
 
-- name: Test4, Create PTR record in check mode
+- name: Test3, Create PTR record in check mode
   serverscom.sc_api.sc_sbm_server_ptr:
     server_id: '{{ test_sbm_server_id }}'
     domain: ptr-test.example.com
     ip: '{{ sbm_server.public_ipv4_address }}'
     state: present
   check_mode: true
-  register: test4
+  register: test3
 
-- name: Test4 verify, Query PTR records after check_mode
+- name: Test3 verify, Query PTR records after check_mode
   serverscom.sc_api.sc_sbm_server_ptr_info:
     server_id: '{{ test_sbm_server_id }}'
-  register: test4_verify
+  register: test3_verify
+
+- name: Check Test3
+  assert:
+    that:
+      - test3 is changed
+      - test3_verify.ptr_records | selectattr('domain', 'equalto', 'ptr-test.example.com') | list | length == 0
+
+- name: Test4, Create PTR record
+  serverscom.sc_api.sc_sbm_server_ptr:
+    server_id: '{{ test_sbm_server_id }}'
+    domain: ptr-test.example.com
+    ip: '{{ sbm_server.public_ipv4_address }}'
+    state: present
+  register: test4
 
 - name: Check Test4
   assert:
     that:
       - test4 is changed
-      - test4_verify.ptr_records | selectattr('domain', 'equalto', 'ptr-test.example.com') | list | length == 0
+      - test4.ptr_records | selectattr('domain', 'equalto', 'ptr-test.example.com') | list | length == 1
 
-- name: Test5, Create PTR record
+- name: Test5, Create PTR record again (idempotency)
   serverscom.sc_api.sc_sbm_server_ptr:
     server_id: '{{ test_sbm_server_id }}'
     domain: ptr-test.example.com
@@ -67,43 +71,43 @@
 - name: Check Test5
   assert:
     that:
-      - test5 is changed
-      - test5.ptr_records | selectattr('domain', 'equalto', 'ptr-test.example.com') | list | length == 1
+      - test5 is not changed
 
-- name: Test6, Create PTR record again (idempotency)
-  serverscom.sc_api.sc_sbm_server_ptr:
-    server_id: '{{ test_sbm_server_id }}'
-    domain: ptr-test.example.com
-    ip: '{{ sbm_server.public_ipv4_address }}'
-    state: present
-  register: test6
-
-- name: Check Test6
-  assert:
-    that:
-      - test6 is not changed
-
-- name: Test7, Delete PTR record in check mode
+- name: Test6, Delete PTR record in check mode
   serverscom.sc_api.sc_sbm_server_ptr:
     server_id: '{{ test_sbm_server_id }}'
     domain: ptr-test.example.com
     ip: '{{ sbm_server.public_ipv4_address }}'
     state: absent
   check_mode: true
-  register: test7
+  register: test6
 
-- name: Test7 verify, Query PTR records after check_mode delete
+- name: Test6 verify, Query PTR records after check_mode delete
   serverscom.sc_api.sc_sbm_server_ptr_info:
     server_id: '{{ test_sbm_server_id }}'
-  register: test7_verify
+  register: test6_verify
+
+- name: Check Test6
+  assert:
+    that:
+      - test6 is changed
+      - test6_verify.ptr_records | selectattr('domain', 'equalto', 'ptr-test.example.com') | list | length == 1
+
+- name: Test7, Delete PTR record
+  serverscom.sc_api.sc_sbm_server_ptr:
+    server_id: '{{ test_sbm_server_id }}'
+    domain: ptr-test.example.com
+    ip: '{{ sbm_server.public_ipv4_address }}'
+    state: absent
+  register: test7
 
 - name: Check Test7
   assert:
     that:
       - test7 is changed
-      - test7_verify.ptr_records | selectattr('domain', 'equalto', 'ptr-test.example.com') | list | length == 1
+      - test7.ptr_records | selectattr('domain', 'equalto', 'ptr-test.example.com') | list | length == 0
 
-- name: Test8, Delete PTR record
+- name: Test8, Delete PTR record again (idempotency)
   serverscom.sc_api.sc_sbm_server_ptr:
     server_id: '{{ test_sbm_server_id }}'
     domain: ptr-test.example.com
@@ -114,60 +118,46 @@
 - name: Check Test8
   assert:
     that:
-      - test8 is changed
-      - test8.ptr_records | selectattr('domain', 'equalto', 'ptr-test.example.com') | list | length == 0
+      - test8 is not changed
 
-- name: Test9, Delete PTR record again (idempotency)
-  serverscom.sc_api.sc_sbm_server_ptr:
-    server_id: '{{ test_sbm_server_id }}'
-    domain: ptr-test.example.com
-    ip: '{{ sbm_server.public_ipv4_address }}'
-    state: absent
-  register: test9
-
-- name: Check Test9
-  assert:
-    that:
-      - test9 is not changed
-
-- name: Test10, Create PTR record using hostname
+- name: Test9, Create PTR record using hostname
   serverscom.sc_api.sc_sbm_server_ptr:
     hostname: '{{ test_hostname }}'
     domain: ptr-hostname-test.example.com
     ip: '{{ sbm_server.public_ipv4_address }}'
     state: present
+  register: test9
+
+- name: Check Test9
+  assert:
+    that:
+      - test9 is changed
+      - test9.ptr_records | selectattr('domain', 'equalto', 'ptr-hostname-test.example.com') | list | length == 1
+
+- name: Test10, Delete PTR record using hostname
+  serverscom.sc_api.sc_sbm_server_ptr:
+    hostname: '{{ test_hostname }}'
+    domain: ptr-hostname-test.example.com
+    ip: '{{ sbm_server.public_ipv4_address }}'
+    state: absent
   register: test10
 
 - name: Check Test10
   assert:
     that:
       - test10 is changed
-      - test10.ptr_records | selectattr('domain', 'equalto', 'ptr-hostname-test.example.com') | list | length == 1
 
-- name: Test11, Delete PTR record using hostname
-  serverscom.sc_api.sc_sbm_server_ptr:
-    hostname: '{{ test_hostname }}'
-    domain: ptr-hostname-test.example.com
-    ip: '{{ sbm_server.public_ipv4_address }}'
-    state: absent
-  register: test11
-
-- name: Check Test11
-  assert:
-    that:
-      - test11 is changed
-
-- name: Test12, Verify server_id and hostname are mutually exclusive (ptr)
+- name: Test11, Verify server_id and hostname are mutually exclusive (ptr)
   serverscom.sc_api.sc_sbm_server_ptr:
     server_id: '{{ test_sbm_server_id }}'
     hostname: '{{ test_hostname }}'
     state: present
     ip: '{{ sbm_server.public_ipv4_address }}'
     domain: test-exclusive.example.com
-  register: test12
+  register: test11
   ignore_errors: true
 
-- name: Check Test12
+- name: Check Test11
   assert:
     that:
-      - test12 is failed
+      - test11 is failed

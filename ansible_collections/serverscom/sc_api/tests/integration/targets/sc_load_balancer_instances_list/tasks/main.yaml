@@ -5,16 +5,6 @@
     msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
   when: (sc_endpoint | default('') | length == 0) or (sc_token | default('') | length == 0)
 
-- name: Test invalid token
-  sc_load_balancer_instances_list:
-    token: invalid
-    endpoint: "{{ sc_endpoint }}"
-  register: test1
-  failed_when:
-    - test1 is success
-    - sc_endpoint not in test1.api_url
-    - test1.status_code != 401
-
 - name: LB tests with type L4
   block:
     - name: Create L4 load balancer instance
@@ -47,12 +37,33 @@
           test_label: "test_value"
       register: test_lb_instance
 
-    - name: Test2, Get Load Balancer instances list
+    - name: Test1, Get Load Balancer instances list
       sc_load_balancer_instances_list:
         token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
-      register: test2
+      register: test1
 
+    - name: Check Test1
+      assert:
+        that:
+          - test1 is not changed
+          - (test1.load_balancer_instances | length) > 0
+          - (test1.load_balancer_instances[0].created_at | string | length) > 0
+          - (test1.load_balancer_instances[0].updated_at | string | length) > 0
+          - (test1.load_balancer_instances[0].external_addresses | length) > 0
+          - (test1.load_balancer_instances[0].id | string | length) > 0
+          - test1.load_balancer_instances[0].location_id is defined
+          - (test1.load_balancer_instances[0].name | string | length) > 0
+          - (test1.load_balancer_instances[0].status | string | length) > 0
+          - (test1.load_balancer_instances[0].type | string | length) > 0
+
+    - name: Test2, Get Load Balancer instances by name
+      sc_load_balancer_instances_list:
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
+        name: test-lb-l4-instances-list-module2
+      register: test2
+    - debug: var=test2
     - name: Check Test2
       assert:
         that:
@@ -63,17 +74,17 @@
           - (test2.load_balancer_instances[0].external_addresses | length) > 0
           - (test2.load_balancer_instances[0].id | string | length) > 0
           - test2.load_balancer_instances[0].location_id is defined
-          - (test2.load_balancer_instances[0].name | string | length) > 0
+          - test2.load_balancer_instances[0].name == "test-lb-l4-instances-list-module2"
           - (test2.load_balancer_instances[0].status | string | length) > 0
           - (test2.load_balancer_instances[0].type | string | length) > 0
 
-    - name: Test3, Get Load Balancer instances by name
+    - name: Test3, Get Load Balancer instances by type
       sc_load_balancer_instances_list:
         token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
-        name: test-lb-l4-instances-list-module2
+        type: l4
       register: test3
-    - debug: var=test3
+
     - name: Check Test3
       assert:
         that:
@@ -84,15 +95,15 @@
           - (test3.load_balancer_instances[0].external_addresses | length) > 0
           - (test3.load_balancer_instances[0].id | string | length) > 0
           - test3.load_balancer_instances[0].location_id is defined
-          - test3.load_balancer_instances[0].name == "test-lb-l4-instances-list-module2"
+          - (test3.load_balancer_instances[0].name | string | length) > 0
           - (test3.load_balancer_instances[0].status | string | length) > 0
           - (test3.load_balancer_instances[0].type | string | length) > 0
 
-    - name: Test4, Get Load Balancer instances by type
+    - name: Test4, Get Load Balancer instances by label
       sc_load_balancer_instances_list:
         token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
-        type: l4
+        label_selector: "test_label==test_value"
       register: test4
 
     - name: Check Test4
@@ -108,28 +119,7 @@
           - (test4.load_balancer_instances[0].name | string | length) > 0
           - (test4.load_balancer_instances[0].status | string | length) > 0
           - (test4.load_balancer_instances[0].type | string | length) > 0
-
-    - name: Test5, Get Load Balancer instances by label
-      sc_load_balancer_instances_list:
-        token: "{{ sc_token }}"
-        endpoint: "{{ sc_endpoint }}"
-        label_selector: "test_label==test_value"
-      register: test5
-
-    - name: Check Test5
-      assert:
-        that:
-          - test5 is not changed
-          - (test5.load_balancer_instances | length) > 0
-          - (test5.load_balancer_instances[0].created_at | string | length) > 0
-          - (test5.load_balancer_instances[0].updated_at | string | length) > 0
-          - (test5.load_balancer_instances[0].external_addresses | length) > 0
-          - (test5.load_balancer_instances[0].id | string | length) > 0
-          - test5.load_balancer_instances[0].location_id is defined
-          - (test5.load_balancer_instances[0].name | string | length) > 0
-          - (test5.load_balancer_instances[0].status | string | length) > 0
-          - (test5.load_balancer_instances[0].type | string | length) > 0
-          - test5.load_balancer_instances[0].labels.test_label == "test_value"
+          - test4.load_balancer_instances[0].labels.test_label == "test_value"
   always:
     - name: Destroy test load balancer instance
       serverscom.sc_api.sc_load_balancer_instance_l4:

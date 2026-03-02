@@ -5,18 +5,6 @@
     msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
   when: not sc_endpoint or not sc_token
 
-- name: Test1 invalid token
-  sc_cloud_computing_instance_ptr:
-    token: invalid
-    endpoint: '{{ sc_endpoint }}'
-    instance_id: noID
-    state: absent
-  register: test1
-  failed_when:
-    - test1 is success
-    - sc_endpoint not in test1.api_url
-    - test1.status_code != 401
-
 - name: Test3 prep, get regions
   sc_cloud_computing_regions_info:
     token: '{{ sc_token }}'

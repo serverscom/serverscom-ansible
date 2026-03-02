@@ -5,36 +5,38 @@
     msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
   when: not sc_endpoint or not sc_token
 
-- name: Test1 invalid token
-  sc_cloud_computing_instance:
-    token: invalid
-    endpoint: "{{ sc_endpoint }}"
-    instance_id: noID
-    state: absent
-  register: test1
-  failed_when:
-    - test1 is success
-    - sc_endpoint not in test1.api_url
-    - test1.status_code != 401
-
-- name: Test2, state=absent of absent instance by id
+- name: Test1, state=absent of absent instance by id
   sc_cloud_computing_instance:
     token: "{{ sc_token }}"
     endpoint: "{{ sc_endpoint }}"
     instance_id: dQKnqxAR
     state: absent
-  register: test2
+  register: test1
 
-- name: Check Test2
+- name: Check Test1
   assert:
     that:
-      - test2 is not changed
+      - test1 is not changed
 
-- name: Test3, state=absent for absent instance by name
+- name: Test2, state=absent for absent instance by name
   sc_cloud_computing_instance:
     token: "{{ sc_token }}"
     endpoint: "{{ sc_endpoint }}"
     name: 603838e8-e844-11ea-a4e0-7f7652cefc07
+    state: absent
+  register: test2
+
+- name: Check test2
+  assert:
+    that:
+      - test2 is not changed
+
+- name: Test3, state=absent for absent instance by name with wrong region
+  sc_cloud_computing_instance:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    name: 603838e8-e844-11ea-a4e0-7f7652cefc08
+    region_id: 4242424242
     state: absent
   register: test3
 
@@ -42,20 +44,6 @@
   assert:
     that:
       - test3 is not changed
-
-- name: Test4, state=absent for absent instance by name with wrong region
-  sc_cloud_computing_instance:
-    token: "{{ sc_token }}"
-    endpoint: "{{ sc_endpoint }}"
-    name: 603838e8-e844-11ea-a4e0-7f7652cefc08
-    region_id: 4242424242
-    state: absent
-  register: test4
-
-- name: Check test4
-  assert:
-    that:
-      - test4 is not changed
 
 - name: Test prep, get region id
   sc_cloud_computing_regions_info:

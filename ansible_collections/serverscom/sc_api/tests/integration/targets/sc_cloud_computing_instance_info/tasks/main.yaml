@@ -5,31 +5,20 @@
     msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
   when: not sc_endpoint or not sc_token
 
-- name: Test invalid token
-  sc_cloud_computing_instance_info:
-    token: invalid
-    endpoint: '{{ sc_endpoint }}'
-    instance_id: 'no-no-no'
-  register: test1
-  failed_when:
-    - test1 is success
-    - sc_endpoint not in test1.api_url
-    - test1.status_code != 401
-
-- name: Test2, List for non-existing instance
+- name: Test1, List for non-existing instance
   sc_cloud_computing_instance_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     instance_id: 'M7e5Ba2v'
-  register: test2
+  register: test1
   failed_when: false
 
-- name: Check Test2
+- name: Check Test1
   assert:
     that:
-      - test2 is not changed
-      - "'v1/cloud_computing/instances/M7e5Ba2v' in test2.api_url"
-      - test2.status_code != 200
+      - test1 is not changed
+      - "'v1/cloud_computing/instances/M7e5Ba2v' in test1.api_url"
+      - test1.status_code != 200
 
 - name: Get Debian 12 image ID
   sc_cloud_computing_images_info:
@@ -59,29 +48,29 @@
     ipv4: false
   register: test_instance
 
-- name: Test3, Get instance info
+- name: Test2, Get instance info
   sc_cloud_computing_instance_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     instance_id: '{{ test_instance.id }}'
-  register: test3
+  register: test2
 
-- name: Check Test3
+- name: Check Test2
   assert:
     that:
-      - test3 is not changed
-      - test3.name == "sc-cloud-computing-instance-info-test"
-      - test3.status == "ACTIVE"
-      - test3.region_id == 2
-      - test3.flavor_id == "33227-1"
-      - test3.image_id == debian_12_image_id
-      - test3.labels.test_label == "test_value"
-      - test3.backup_copies == 0
-      - test3.gpn_enabled == true
-      - test3.ipv6_enabled == false
-      - test3.id == test_instance.id
-      - test3.private_ipv4_address == test_instance.private_ipv4_address
-      - test3.local_ipv4_address == test_instance.local_ipv4_address
+      - test2 is not changed
+      - test2.name == "sc-cloud-computing-instance-info-test"
+      - test2.status == "ACTIVE"
+      - test2.region_id == 2
+      - test2.flavor_id == "33227-1"
+      - test2.image_id == debian_12_image_id
+      - test2.labels.test_label == "test_value"
+      - test2.backup_copies == 0
+      - test2.gpn_enabled == true
+      - test2.ipv6_enabled == false
+      - test2.id == test_instance.id
+      - test2.private_ipv4_address == test_instance.private_ipv4_address
+      - test2.local_ipv4_address == test_instance.local_ipv4_address
 
 - name: Destroy test instance
   serverscom.sc_api.sc_cloud_computing_instance:

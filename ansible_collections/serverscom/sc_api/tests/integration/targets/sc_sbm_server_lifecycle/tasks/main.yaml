@@ -7,16 +7,6 @@
 
 - block:
     # Pre-server error tests (don't need a real server)
-    - name: Test invalid token for sc_sbm_server
-      serverscom.sc_api.sc_sbm_server:
-        token: invalid
-        state: absent
-        server_id: fakeID
-      register: test_create_auth
-      failed_when:
-        - test_create_auth is success
-        - test_create_auth.status_code != 401
-
     - name: Test delete non-existing server
       serverscom.sc_api.sc_sbm_server:
         state: absent

@@ -5,34 +5,26 @@
     msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
   when: not sc_endpoint or not sc_token
 
-- name: Test invalid token
-  sc_baremetal_servers_info:
-    token: invalid
-    endpoint: "{{ sc_endpoint }}"
-  register: test1
-  failed_when:
-    - test1 is success
-
-- name: Test2, retrieve list of servers
+- name: Test1, retrieve list of servers
   sc_baremetal_servers_info:
     token: "{{ sc_token }}"
     endpoint: "{{ sc_endpoint }}"
-  register: test2
+  register: test1
 
-- name: Check Test2
+- name: Check Test1
   assert:
     that:
-      - test2 is not changed
-      - test2.baremetal_servers|length > 0
-      - test2.baremetal_servers[0].configuration
-      - test2.baremetal_servers[0].id
-      - test2.baremetal_servers[0].location_code
-      - test2.baremetal_servers[0].location_id
-      - test2.baremetal_servers[0].operational_status
-      - test2.baremetal_servers[0].private_ipv4_address
-      - test2.baremetal_servers[0].public_ipv4_address
-      - test2.baremetal_servers[0].title
-      - test2.baremetal_servers[0].type
+      - test1 is not changed
+      - test1.baremetal_servers|length > 0
+      - test1.baremetal_servers[0].configuration
+      - test1.baremetal_servers[0].id
+      - test1.baremetal_servers[0].location_code
+      - test1.baremetal_servers[0].location_id
+      - test1.baremetal_servers[0].operational_status
+      - test1.baremetal_servers[0].private_ipv4_address
+      - test1.baremetal_servers[0].public_ipv4_address
+      - test1.baremetal_servers[0].title
+      - test1.baremetal_servers[0].type
 
 - block:
     - name: PUT test label
@@ -52,27 +44,27 @@
         - "{{ existing_server2_id }}"
         - "{{ existing_server3_id }}"
 
-    - name: Test3, retrieve list of servers by label
+    - name: Test2, retrieve list of servers by label
       sc_baremetal_servers_info:
         token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
         label_selector: "test_label==test_value"
-      register: test3
+      register: test2
 
-    - name: Check Test3
+    - name: Check Test2
       assert:
         that:
-          - test3 is not changed
-          - test3.baremetal_servers|length > 0
-          - test3.baremetal_servers[0].configuration
-          - test3.baremetal_servers[0].id
-          - test3.baremetal_servers[0].location_code
-          - test3.baremetal_servers[0].location_id
-          - test3.baremetal_servers[0].operational_status
-          - test3.baremetal_servers[0].private_ipv4_address
-          - test3.baremetal_servers[0].public_ipv4_address
-          - test3.baremetal_servers[0].title
-          - test3.baremetal_servers[0].type
+          - test2 is not changed
+          - test2.baremetal_servers|length > 0
+          - test2.baremetal_servers[0].configuration
+          - test2.baremetal_servers[0].id
+          - test2.baremetal_servers[0].location_code
+          - test2.baremetal_servers[0].location_id
+          - test2.baremetal_servers[0].operational_status
+          - test2.baremetal_servers[0].private_ipv4_address
+          - test2.baremetal_servers[0].public_ipv4_address
+          - test2.baremetal_servers[0].title
+          - test2.baremetal_servers[0].type
         fail_msg: "Test server not found by label"
 
   always:
@@ -92,16 +84,16 @@
         - "{{ existing_server2_id }}"
         - "{{ existing_server3_id }}"
 
-- name: Test4, retrieve list of servers by type
+- name: Test3, retrieve list of servers by type
   sc_baremetal_servers_info:
     token: "{{ sc_token }}"
     endpoint: "{{ sc_endpoint }}"
     type: "dedicated_server"
-  register: test4
+  register: test3
 
-- name: Check Test4
+- name: Check Test3
   assert:
     that:
-      - test4.baremetal_servers | map(attribute='type') | unique == ['dedicated_server']
+      - test3.baremetal_servers | map(attribute='type') | unique == ['dedicated_server']
     fail_msg: "One or more servers are not of type 'dedicated_server'"
     success_msg: "All servers are of type 'dedicated_server'"

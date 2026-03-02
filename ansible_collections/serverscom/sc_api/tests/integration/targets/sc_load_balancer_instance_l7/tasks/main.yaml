@@ -5,17 +5,6 @@
     msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
   when: (sc_endpoint | default('') | length == 0) or (sc_token | default('') | length == 0)
 
-- name: Test invalid token
-  serverscom.sc_api.sc_load_balancer_instance_l7:
-    token: invalid
-    state: absent
-    name: "test-lb-l7-instance-module"
-  register: test1
-  failed_when:
-    - test1 is success
-    - sc_endpoint not in test1.api_url
-    - test1.status_code != 401
-
 - name: L7 load balancer instance tests
   block:
     - name: Create L7 load balancer instance

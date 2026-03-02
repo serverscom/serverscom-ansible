@@ -19,19 +19,26 @@ jobs:
       - name: Lint
         run: yamllint .
 
-  quick_tests:
+  unit_and_sanity:
     runs-on: ubuntu-24.04
+    needs: lint
     strategy:
+      fail-fast: false
       matrix:
-        python_version:
-          - "3.13"
+        include:
+          - ansible_core: "2.18"
+            python_version: "3.13"
+          - ansible_core: "2.19"
+            python_version: "3.13"
+          - ansible_core: "2.19"
+            python_version: "3.14"
+          - ansible_core: "2.20"
+            python_version: "3.13"
+          - ansible_core: "2.20"
+            python_version: "3.14"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Report used token
-        run: echo ${{ secrets.SC_TOKEN }} | tail -c 5
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -39,12 +46,15 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Sanity tests with dependencies
+          pip install 'ansible-core~=${{ matrix.ansible_core }}.0' requests pytest
+      - name: Sanity tests
         run: ansible-test sanity --requirements --python ${{ matrix.python_version }}
         working-directory: ansible_collections/serverscom/sc_api
-      - name: Unit tests with dependencies
+      - name: Unit tests
         run: ansible-test units --requirements --python ${{ matrix.python_version }}
+        working-directory: ansible_collections/serverscom/sc_api
+      - name: Token-free integration tests
+        run: ansible-test integration --requirements --python ${{ matrix.python_version }} sc_no_token_tests
         working-directory: ansible_collections/serverscom/sc_api
       - name: Try-build by ansible-galaxy
         run: ansible-galaxy collection build
@@ -52,11 +62,13 @@ jobs:
 
   integration_tests_cloud:
     runs-on: ubuntu-24.04
-    needs: quick_tests
+    needs: unit_and_sanity
     concurrency:
       group: cloud
       cancel-in-progress: false
     steps:
+      - name: Report used token
+        run: echo ${{ secrets.SC_TOKEN }} | tail -c 5
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up Python
@@ -96,7 +108,7 @@ jobs:
 
   integration_tests_bm:
     runs-on: ubuntu-24.04
-    needs: quick_tests
+    needs: unit_and_sanity
     concurrency:
       group: BM
       cancel-in-progress: false
@@ -173,7 +185,7 @@ jobs:
 
   integration_tests_lb_instances:
     runs-on: ubuntu-24.04
-    needs: quick_tests
+    needs: unit_and_sanity
     concurrency:
       group: LB
       cancel-in-progress: false
@@ -210,7 +222,7 @@ jobs:
 
   integration_tests_rbs_volumes:
     runs-on: ubuntu-24.04
-    needs: quick_tests
+    needs: unit_and_sanity
     concurrency:
       group: RBS
       cancel-in-progress: false
@@ -247,7 +259,7 @@ jobs:
 
   integration_tests_sbm:
     runs-on: ubuntu-24.04
-    needs: quick_tests
+    needs: unit_and_sanity
     concurrency:
       group: SBM
       cancel-in-progress: false

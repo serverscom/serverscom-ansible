@@ -6,31 +6,24 @@
     msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
   when: not sc_endpoint or not sc_token
 
-- name: Test invalid token 1
-  sc_ssh_key:
-    token: invalid
-    endpoint: '{{ sc_endpoint }}'
-  register: test1
-  failed_when:
-    - test1 is success
-    - sc_endpoint not in test1.api_url
-    - test1.status_code != 401
-
-- name: Test invalid token 2
-  sc_ssh_keys_info:
-    token: invalid
-    endpoint: '{{ sc_endpoint }}'
-  register: test1_2
-  failed_when:
-    - test1_2 is success
-    - sc_endpoint not in test1.api_url
-    - test1_2.status_code != 401
-
-- name: Test2, Absent of absent key by name
+- name: Test1, Absent of absent key by name
   sc_ssh_key:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     name: key that should not exits
+    state: absent
+  register: test1
+
+- name: Check Test1
+  assert:
+    that:
+      - test1 is not changed
+
+- name: Test2, Absent of absent by fingerprint
+  sc_ssh_key:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    fingerprint: '2a:aa:58:61:88:b3:b0:d9:a5:cf:46:4d:75:b1:15:b7'
     state: absent
   register: test2
 
@@ -39,20 +32,7 @@
     that:
       - test2 is not changed
 
-- name: Test3, Absent of absent by fingerprint
-  sc_ssh_key:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
-    fingerprint: '2a:aa:58:61:88:b3:b0:d9:a5:cf:46:4d:75:b1:15:b7'
-    state: absent
-  register: test3
-
-- name: Check Test3
-  assert:
-    that:
-      - test3 is not changed
-
-- name: Test4, Register a new key in check mode
+- name: Test3, Register a new key in check mode
   sc_ssh_key:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
@@ -60,25 +40,95 @@
     name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
     state: present
   check_mode: true
-  register: test4
+  register: test3
 
-- name: Test4, try to remove it
+- name: Test3, try to remove it
   sc_ssh_key:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     public_key: '{{ lookup("file", "key1.pub") }}'
     name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
     state: absent
-  register: test4_try2
+  register: test3_try2
 
-- name: Check Test4 again
+- name: Check Test3 again
   assert:
     that:
-      - test4 is changed
-      - test4_try2 is not changed
+      - test3 is changed
+      - test3_try2 is not changed
 
 - block:
-    - name: Test5, Register a new key
+    - name: Test4, Register a new key
+      sc_ssh_key:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        public_key: '{{ lookup("file", "key1.pub") }}'
+        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
+        state: present
+      register: test4
+
+    - name: Test4, Register a new key second time
+      sc_ssh_key:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        public_key: '{{ lookup("file", "key1.pub") }}'
+        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
+        state: present
+      register: test4_try2
+
+    - name: Check Test4 again
+      assert:
+        that:
+          - test4 is changed
+          - test4_try2 is not changed
+
+    - name: Test4-info, get info about keys
+      sc_ssh_keys_info:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+      register: test4_keylist
+
+    - name: Check test4 keylist
+      assert:
+        that:
+          - "'1ea1c330-daee-11ea-ad4c-033b3ea18cbf' in test4_keylist.ssh_keys|string"
+
+    - name: Test4, Delete a new key in check_mode
+      sc_ssh_key:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        public_key: '{{ lookup("file", "key1.pub") }}'
+        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
+        state: absent
+      register: test4_del1
+      check_mode: true
+
+    - name: Test4, Delete a new key for real
+      sc_ssh_key:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        public_key: '{{ lookup("file", "key1.pub") }}'
+        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
+        state: absent
+      register: test4_del2
+
+    - name: Test4, Delete a new key for real second time
+      sc_ssh_key:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        public_key: '{{ lookup("file", "key1.pub") }}'
+        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
+        state: absent
+      register: test4_del3
+
+    - name: Check Test4 deletions
+      assert:
+        that:
+          - test4_del1 is changed
+          - test4_del2 is changed
+          - test4_del3 is not changed
+
+    - name: Test4.5, Register the previous key again
       sc_ssh_key:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
@@ -86,76 +136,6 @@
         name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
         state: present
       register: test5
-
-    - name: Test5, Register a new key second time
-      sc_ssh_key:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
-        public_key: '{{ lookup("file", "key1.pub") }}'
-        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
-        state: present
-      register: test5_try2
-
-    - name: Check Test5 again
-      assert:
-        that:
-          - test5 is changed
-          - test5_try2 is not changed
-
-    - name: Test5-info, get info about keys
-      sc_ssh_keys_info:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
-      register: test5_keylist
-
-    - name: Check test5 keylist
-      assert:
-        that:
-          - "'1ea1c330-daee-11ea-ad4c-033b3ea18cbf' in test5_keylist.ssh_keys|string"
-
-    - name: Test5, Delete a new key in check_mode
-      sc_ssh_key:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
-        public_key: '{{ lookup("file", "key1.pub") }}'
-        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
-        state: absent
-      register: test5_del1
-      check_mode: true
-
-    - name: Test5, Delete a new key for real
-      sc_ssh_key:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
-        public_key: '{{ lookup("file", "key1.pub") }}'
-        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
-        state: absent
-      register: test5_del2
-
-    - name: Test5, Delete a new key for real second time
-      sc_ssh_key:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
-        public_key: '{{ lookup("file", "key1.pub") }}'
-        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
-        state: absent
-      register: test5_del3
-
-    - name: Check Test5 deletions
-      assert:
-        that:
-          - test5_del1 is changed
-          - test5_del2 is changed
-          - test5_del3 is not changed
-
-    - name: Test5.5, Register the previous key again
-      sc_ssh_key:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
-        public_key: '{{ lookup("file", "key1.pub") }}'
-        name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
-        state: present
-      register: test6
 
   always:
     - name: Cleanup key1
@@ -169,7 +149,7 @@
 
 
 - block:
-    - name: Test6, Register key1
+    - name: Test5, Register key1
       sc_ssh_key:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
@@ -177,17 +157,17 @@
         name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
         state: present
 
-    - name: Test6, set a new key with the same name without replace option
+    - name: Test5, set a new key with the same name without replace option
       sc_ssh_key:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         public_key: '{{ lookup("file", "key2.pub") }}'
         name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
         state: present
-      register: test6
-      failed_when: "'Error' not in test6.msg"
+      register: test5
+      failed_when: "'Error' not in test5.msg"
 
-    - name: Test7, set a new key with the same name with replace option
+    - name: Test6, set a new key with the same name with replace option
       sc_ssh_key:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
@@ -195,23 +175,23 @@
         name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
         state: present
         replace: true
-      register: test7_replace
+      register: test6_replace
 
-    - name: Test7, try again without replace
+    - name: Test6, try again without replace
       sc_ssh_key:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         public_key: '{{ lookup("file", "key2.pub") }}'
         name: 1ea1c330-daee-11ea-ad4c-033b3ea18cbf
         state: present
-      register: test7_second
+      register: test6_second
 
 
-    - name: Check Test7
+    - name: Check Test6
       assert:
         that:
-          - test7_replace is changed
-          - test7_second is not changed
+          - test6_replace is changed
+          - test6_second is not changed
 
   always:
     - name: Cleanup keys

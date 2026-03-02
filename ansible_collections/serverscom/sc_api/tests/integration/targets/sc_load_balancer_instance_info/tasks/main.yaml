@@ -5,52 +5,40 @@
     msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
   when: (sc_endpoint | default('') | length == 0) or (sc_token | default('') | length == 0)
 
-- name: Test invalid token
-  sc_load_balancer_instance_info:
-    token: invalid
-    endpoint: "{{ sc_endpoint }}"
-    id: V13vaNd8
-    type: l4
-  register: test1
-  failed_when:
-    - test1 is success
-    - sc_endpoint not in test1.api_url
-    - test1.status_code != 401
-
-- name: Test2, Invalid ID
+- name: Test1, Invalid ID
   sc_load_balancer_instance_info:
     token: "{{ sc_token }}"
     endpoint: "{{ sc_endpoint }}"
     id: QQQQ
     type: l4
+  register: test1
+  failed_when:
+    - test1 is success
+    - sc_endpoint not in test1.api_url
+    - test1.msg != "Load balancer instance not found"
+
+- name: Test2, Invalid Type
+  sc_load_balancer_instance_info:
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
+    id: V13vaNd8
+    type: l8
   register: test2
   failed_when:
     - test2 is success
     - sc_endpoint not in test2.api_url
     - test2.msg != "Load balancer instance not found"
 
-- name: Test3, Invalid Type
-  sc_load_balancer_instance_info:
-    token: "{{ sc_token }}"
-    endpoint: "{{ sc_endpoint }}"
-    id: V13vaNd8
-    type: l8
-  register: test3
-  failed_when:
-    - test3 is success
-    - sc_endpoint not in test3.api_url
-    - test3.msg != "Load balancer instance not found"
-
-- name: Test4, Invalid ID, fail_on_absent==false
+- name: Test3, Invalid ID, fail_on_absent==false
   sc_load_balancer_instance_info:
     token: "{{ sc_token }}"
     endpoint: "{{ sc_endpoint }}"
     id: QQQQ
     fail_on_absent: false
-  register: test4
+  register: test3
   failed_when:
-    - test4.failed != false
-    - test4.status != "absent"
+    - test3.failed != false
+    - test3.status != "absent"
 
 - name: LB instance info tests
   block:
@@ -102,28 +90,28 @@
           environment: staging
       register: test_lb_instance
 
-    - name: Test5, Get LB instance by id
+    - name: Test4, Get LB instance by id
       sc_load_balancer_instance_info:
         token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
         id: "{{ test_lb_instance.id }}"
-      register: test5
+      register: test4
 
-    - name: Check Test5
+    - name: Check Test4
       assert:
         that:
-          - test5 is not changed
-          - (test5.created_at | string | length) > 0
-          - (test5.updated_at | string | length) > 0
-          - (test5.external_addresses | length) > 0
-          - (test5.domains | length) > 0
-          - (test5.upstream_zones | length) > 0
-          - (test5.vhost_zones | length) > 0
-          - (test5.id | string | length) > 0
-          - test5.location_id is defined
-          - (test5.name | string | length) > 0
-          - (test5.status | string | length) > 0
-          - (test5.type | string | length) > 0
+          - test4 is not changed
+          - (test4.created_at | string | length) > 0
+          - (test4.updated_at | string | length) > 0
+          - (test4.external_addresses | length) > 0
+          - (test4.domains | length) > 0
+          - (test4.upstream_zones | length) > 0
+          - (test4.vhost_zones | length) > 0
+          - (test4.id | string | length) > 0
+          - test4.location_id is defined
+          - (test4.name | string | length) > 0
+          - (test4.status | string | length) > 0
+          - (test4.type | string | length) > 0
   always:
     - name: Destroy test load balancer instance
       serverscom.sc_api.sc_load_balancer_instance_l7:
