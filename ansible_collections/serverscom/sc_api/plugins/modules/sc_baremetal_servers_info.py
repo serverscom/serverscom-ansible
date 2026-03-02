@@ -23,7 +23,7 @@ version_added: "1.1.0"
 author: "George Shuklin (@amarao)"
 short_description: Information about existing dedicated servers
 description: >
-    Retrive list of all existing dedicated baremetal servers.
+    retrieve list of all existing dedicated baremetal servers.
 
 notes:
   - Not to be confused with M(serverscom.sc_api.sc_dedicated_servers_info).
@@ -207,6 +207,8 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,
+)
+from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_dedicated_server import (
     ScBaremetalServersInfo,
 )
 

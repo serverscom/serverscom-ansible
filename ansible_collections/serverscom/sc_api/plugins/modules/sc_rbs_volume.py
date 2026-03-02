@@ -207,7 +207,9 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,
-    scRBSVolumeCreateUpdateDelete
+)
+from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_rbs import (
+    scRBSVolumeCreateUpdateDelete,
 )
 
 

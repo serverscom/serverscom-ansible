@@ -43,7 +43,7 @@ options:
       type: str
       description:
         - Hostname for the server.
-        - Module will retrive old server title if not specified.
+        - Module will retrieve old server title if not specified.
         - Translates to hostname in API.
 
     drives_layout_template:
@@ -133,7 +133,7 @@ options:
       type: int
       description:
         - id of the operating system to install on the server.
-        - Module will retrive and reuse old operating system if
+        - Module will retrieve and reuse old operating system if
           not specified.
         - Mutually exclusive with I(operating_system_regex).
 
@@ -419,6 +419,8 @@ from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,
+)
+from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_dedicated_server import (
     ScDedicatedServerReinstall,
 )
 
