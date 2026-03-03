@@ -8,6 +8,12 @@
     search_pattern: AMS7
   register: locations_result
 
+- name: Assert AMS7 location is available
+  assert:
+    that:
+      - locations_result.locations | selectattr('code', 'eq', 'AMS7') | list | length > 0
+    fail_msg: "AMS7 location not found in {{ locations_result.locations | map(attribute='code') | list }}"
+
 - name: Set AMS7 location facts
   set_fact:
     test_location_id: "{{ (locations_result.locations | selectattr('code', 'eq', 'AMS7') | first).id }}"
@@ -19,6 +25,12 @@
     search_pattern: DL-01
   register: flavors_result
 
+- name: Assert DL-01 flavor model is available
+  assert:
+    that:
+      - flavors_result.sbm_flavor_models | selectattr('name', 'match', '.*DL-01.*') | list | length > 0
+    fail_msg: "No DL-01 flavor model available in AMS7. Available: {{ flavors_result.sbm_flavor_models | map(attribute='name') | list }}"
+
 - name: Set DL-01 flavor model facts
   set_fact:
     test_flavor_model_id: "{{ (flavors_result.sbm_flavor_models | selectattr('name', 'match', '.*DL-01.*') | first).id }}"
@@ -29,6 +41,12 @@
     flavor_id: "{{ test_flavor_model_id }}"
     location_id: "{{ test_location_id }}"
   register: os_result
+
+- name: Assert OS list is not empty
+  assert:
+    that:
+      - os_result.os_list | length > 0
+    fail_msg: "No OS available for flavor {{ test_flavor_model_name }} in AMS7"
 
 - name: Set OS facts
   set_fact:
