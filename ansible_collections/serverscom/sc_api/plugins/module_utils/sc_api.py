@@ -78,6 +78,15 @@ class APIError409(APIError):
     pass
 
 
+class SCConnectionError(SCBaseError):
+    def __init__(self, msg, api_url):
+        self.msg = msg
+        self.api_url = api_url
+
+    def fail(self):
+        return {"failed": True, "msg": self.msg, "api_url": self.api_url}
+
+
 class ApiHelper:
     def __init__(self, token, endpoint):
         # pylint: disable=bad-option-value, import-outside-toplevel
@@ -110,7 +119,18 @@ class ApiHelper:
         self.request.headers["Authorization"] = f"Bearer {self.token}"
         self.request.headers["User-Agent"] = "ansible-module/sc_api/0.1"
         prep_request = self.request.prepare()
-        response = self.session.send(prep_request)
+        try:
+            response = self.session.send(prep_request)
+        except self.requests.exceptions.ConnectionError as e:
+            raise SCConnectionError(
+                msg=f"Connection error: {e}",
+                api_url=prep_request.url,
+            )
+        except self.requests.exceptions.Timeout as e:
+            raise SCConnectionError(
+                msg=f"Request timeout: {e}",
+                api_url=prep_request.url,
+            )
         correlation_id = response.headers.get("X-Correlation-ID")
         if response.status_code == 400:
             raise APIError400(
@@ -178,11 +198,7 @@ class ApiHelper:
                 self.start_request("GET", path, query_parameters)
                 return self.decode(self.send_request(good_codes=[200]))
 
-            except (
-                APIError,
-                self.requests.exceptions.Timeout,
-                self.requests.exceptions.ConnectionError,
-            ) as e:
+            except (APIError, SCConnectionError) as e:
                 if not retry_rules:
                     raise
                 if (
@@ -222,17 +238,13 @@ class ApiHelper:
     def make_multipage_request(self, path, query_parameters=None, retry_rules=None):
         """Used for GET request with expected pagination. Returns iterator?"""
         start = time.time()
-        transport_errors = (
-            self.requests.exceptions.Timeout,
-            self.requests.exceptions.ConnectionError,
-        )
         self.start_request("GET", path, query_parameters)
         while self.is_next():
             while True:
                 try:
                     response = self.send_request(good_codes=[200])
                     break
-                except (APIError,) + transport_errors as e:
+                except (APIError, SCConnectionError) as e:
                     if not retry_rules:
                         raise
                     if (
