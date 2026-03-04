@@ -161,15 +161,15 @@
         state: present
       register: test4_ipv4
 
-    - name: Test4, create ptr record for private ipv4
+    - name: Test4, create ptr record for public ipv6
       sc_cloud_computing_instance_ptr:
         token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
         domain: ptr2.example.com
-        ip: "{{ instance.private_ipv4_address }}"
+        ip: "{{ instance.public_ipv6_address }}"
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: present
-      register: test4_private
+      register: test4_ipv6
 
     - name: Test4, get ptrs after creation
       sc_cloud_computing_instance_ptr:
@@ -183,12 +183,12 @@
       assert:
         that:
           - test4_ipv4 is changed
-          - test4_private is changed
+          - test4_ipv6 is changed
           - test4_result.ptr_records | length == 2
           - "'ptr1.example.com' in test4_result.ptr_records | map(attribute='domain') | list"
           - "'ptr2.example.com' in test4_result.ptr_records | map(attribute='domain') | list"
           - "instance.public_ipv4_address in test4_result.ptr_records | map(attribute='ip') | list"
-          - "instance.private_ipv4_address in test4_result.ptr_records | map(attribute='ip') | list"
+          - "instance.public_ipv6_address in test4_result.ptr_records | map(attribute='ip') | list"
 
   always:
     - name: Tests cleanup
