@@ -2,25 +2,25 @@
 - name: Check if there are sc_token and sc_endpoint variables
   no_log: true
   fail:
-    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+    msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
   when: not sc_endpoint or not sc_token
 
-- name: Test3 prep, get regions
+- name: Tests prep, get regions
   sc_cloud_computing_regions_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
+    token: "{{ sc_token }}"
+    endpoint: "{{ sc_endpoint }}"
   register: regions
 
-- name: Testsuite2, create and delete ptr records
+- name: Tests, create and delete ptr records
   block:
-    - name: Testsuite2, prepare, create instance
+    - name: Tests prep, create instance
       sc_cloud_computing_instance:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
         state: present
-        region_id: '{{ regions.regions[0].id }}'
+        region_id: "{{ regions.regions[0].id }}"
         flavor_name: SSD.30
-        image_regexp: 'Ubuntu.+'
+        image_regexp: "Ubuntu.+"
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         backup_copies: 0
         gpn: true
@@ -29,20 +29,54 @@
         update_interval: 5
       register: instance
 
-    - name: Test2, create ptr records in check mode
+    - name: Test1, create ptr records in check mode
       sc_cloud_computing_instance_ptr:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
         domain: ptr1.example.com
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: present
       check_mode: true
-      register: test2_check_mode
+      register: test1_check_mode
+
+    - name: Test1, get ptrs
+      sc_cloud_computing_instance_ptr:
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
+        instance_name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
+        state: query
+      register: test1_result
+
+    - name: Check Test1
+      assert:
+        that:
+          - test1_check_mode is changed
+          - test1_result.ptr_records == []
+
+    - name: Test2, create ptr record for public IP
+      sc_cloud_computing_instance_ptr:
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
+        domain: ptr1.example.com
+        ip: "{{ instance.public_ipv4_address }}"
+        name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
+        state: present
+      register: test2
+
+    - name: Test2, create ptr record for public IP second time
+      sc_cloud_computing_instance_ptr:
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
+        domain: ptr1.example.com
+        ip: "{{ instance.public_ipv4_address }}"
+        name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
+        state: present
+      register: test2_second
 
     - name: Test2, get ptrs
       sc_cloud_computing_instance_ptr:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
         instance_name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: query
       register: test2_result
@@ -50,143 +84,109 @@
     - name: Check Test2
       assert:
         that:
-          - test2_check_mode is changed
-          - test2_result.ptr_records == []
+          - test2 is changed
+          - test2_result.ptr_records|length == 1
+          - test2_result.ptr_records[0].domain == 'ptr1.example.com'
+          - test2_result.ptr_records[0].ip == instance.public_ipv4_address
+          - test2_second is not changed
 
-    - name: Test3, create ptr record for public IP
+    - name: Test3, remove PTR in check_mode
       sc_cloud_computing_instance_ptr:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
         domain: ptr1.example.com
-        ip: '{{ instance.public_ipv4_address }}'
+        ip: "{{ instance.public_ipv4_address }}"
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
-        state: present
+        state: absent
+      check_mode: true
+      register: test3_check_mode
+
+    - name: Test3, get ptrs after check_mode
+      sc_cloud_computing_instance_ptr:
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
+        instance_name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
+        state: query
+      register: test3_result_after_check
+
+    - name: Test3, remove PTR
+      sc_cloud_computing_instance_ptr:
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
+        domain: ptr1.example.com
+        ip: "{{ instance.public_ipv4_address }}"
+        name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
+        state: absent
       register: test3
 
-    - name: Test3, create ptr record for public IP second time
+    - name: Test3, get ptrs after delete
       sc_cloud_computing_instance_ptr:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
-        domain: ptr1.example.com
-        ip: '{{ instance.public_ipv4_address }}'
-        name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
-        state: present
-      register: test3_second
-
-    - name: Test3, get ptrs
-      sc_cloud_computing_instance_ptr:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
         instance_name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: query
       register: test3_result
 
+    - name: Test3, remove PTR second time
+      sc_cloud_computing_instance_ptr:
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
+        domain: ptr1.example.com
+        ip: "{{ instance.public_ipv4_address }}"
+        name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
+        state: absent
+      register: test3_second
+
+    - name: Report
+      debug: var=test3_result
+
     - name: Check Test3
       assert:
         that:
+          - test3_check_mode is changed
           - test3 is changed
-          - test3_result.ptr_records|length == 1
-          - test3_result.ptr_records[0].domain == 'ptr1.example.com'
-          - test3_result.ptr_records[0].ip == instance.public_ipv4_address
           - test3_second is not changed
+          - test3_result_after_check.ptr_records|length == 1
+          - test3_result_after_check.ptr_records[0].domain == 'ptr1.example.com'
+          - test3_result_after_check.ptr_records[0].ip == instance.public_ipv4_address
+          - test3_result.ptr_records|length == 0
 
-    - name: Test4, Removal of PTR in check_mode
+    - name: Test4, create ptr record for ipv4
       sc_cloud_computing_instance_ptr:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
         domain: ptr1.example.com
-        ip: '{{ instance.public_ipv4_address }}'
+        ip: "{{ instance.public_ipv4_address }}"
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
-        state: absent
-      check_mode: true
-      register: test4_check_mode
+        state: present
+      register: test4_one
 
-    - name: Test4, get ptrs after check_mode
+    - name: Test4, create ptr record for ipv4 private
       sc_cloud_computing_instance_ptr:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
-        instance_name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
-        state: query
-      register: test4_result_after_check
-
-    - name: Test4, Removal of PTR
-      sc_cloud_computing_instance_ptr:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
-        domain: ptr1.example.com
-        ip: '{{ instance.public_ipv4_address }}'
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
+        domain: ptr2.example.com
+        ip: "{{ instance.public_ipv4_address }}"
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
-        state: absent
-      register: test4
+        state: present
+      register: test4_two
 
-    - name: Test4, get ptrs after delete
+    - name: Test4, get ptrs after creation
       sc_cloud_computing_instance_ptr:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
         instance_name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: query
       register: test4_result
 
-    - name: Test4, Removal of PTR second time
-      sc_cloud_computing_instance_ptr:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
-        domain: ptr1.example.com
-        ip: '{{ instance.public_ipv4_address }}'
-        name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
-        state: absent
-      register: test4_second
-
     - debug: var=test4_result
 
-    - name: Check Test4
-      assert:
-        that:
-          - test4_check_mode is changed
-          - test4 is changed
-          - test4_second is not changed
-          - test4_result_after_check.ptr_records|length == 1
-          - test4_result_after_check.ptr_records[0].domain == 'ptr1.example.com'
-          - test4_result_after_check.ptr_records[0].ip == instance.public_ipv4_address
-          - test4_result.ptr_records|length == 0
-
-
-    - name: Test5, create ptr record for ipv4
-      sc_cloud_computing_instance_ptr:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
-        domain: ptr1.example.com
-        ip: '{{ instance.public_ipv4_address }}'
-        name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
-        state: present
-      register: test5_one
-
-    - name: Test5, create ptr record for ipv4 private
-      sc_cloud_computing_instance_ptr:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
-        domain: ptr2.example.com
-        ip: '{{ instance.public_ipv4_address }}'
-        name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
-        state: present
-      register: test5_two
-
-    - name: Test5, get ptrs after creation
-      sc_cloud_computing_instance_ptr:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
-        instance_name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
-        state: query
-      register: test5_result
-
-    - debug: var=[test5_ipv4,test5_ipv6,test5_result]
-
   always:
-    - name: Testsuite2 cleanup
+    - name: Tests cleanup
       sc_cloud_computing_instance:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
         state: absent
-        region_id: '{{ regions.regions[0].id }}'
+        region_id: "{{ regions.regions[0].id }}"
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         wait: 600

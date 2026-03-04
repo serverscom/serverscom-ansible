@@ -45,7 +45,7 @@
           - test1.rbs_volumes[0].created_at
           - test1.rbs_volumes[0].updated_at
 
-    - name: Test2, None volumes found
+    - name: Test2, No volumes found
       serverscom.sc_api.sc_rbs_volume_info:
         endpoint: "{{ sc_endpoint }}"
         token: "{{ sc_token }}"

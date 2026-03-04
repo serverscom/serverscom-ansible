@@ -1,6 +1,5 @@
 ---
-# tests for real reinstallation. Are long as hell
-# about 40 minutes per task.
+# tests for real reinstallation. Takes about 40 minutes per task.
 - name: Check if there are sc_token and sc_endpoint variables
   no_log: true
   fail:
@@ -8,7 +7,7 @@
   when: not sc_endpoint or not sc_token
 
 
-- name: Test1, successfull reinstall in no-wait mode
+- name: Test1, successful reinstall in no-wait mode
   sc_dedicated_server_reinstall:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'

@@ -309,7 +309,7 @@
       register: test14
 
     - debug: var=test14
-    - name: Tesat14, check result
+    - name: Test14, check result
       assert:
         that:
           - test14.status == 'RESCUE'

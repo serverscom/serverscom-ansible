@@ -38,7 +38,7 @@
           - new_credentials.rbs_volume_credentials.username == original_credentials.rbs_volumes[0].username
           - new_credentials.rbs_volume_credentials.password != original_credentials.rbs_volumes[0].password
 
-    - name: Test2, None volumes found
+    - name: Test2, No volumes found
       serverscom.sc_api.sc_rbs_volume_credentials_reset:
         endpoint: "{{ sc_endpoint }}"
         token: "{{ sc_token }}"

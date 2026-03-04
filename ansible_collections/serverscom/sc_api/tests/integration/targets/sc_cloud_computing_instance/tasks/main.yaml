@@ -68,7 +68,7 @@
   register: flavor_info
   tags: always
 
-- name: Test5, create absent instance in check_mode
+- name: Test5, create instance new in check_mode
   tags: [test5]
   block:
     - name: Test5, create instance in check mode
@@ -338,7 +338,7 @@
 
 - name: Test9 image by regexp and flavor by name
   block:
-    - name: Test9 create instanace with image by regexp and flavor by name
+    - name: Test9 create instance with image by regexp and flavor by name
       sc_cloud_computing_instance:
         token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
@@ -384,7 +384,8 @@
         name: 95f41cea-00fc-11ed-bfa8-33691f518c37
         state: present
       register: test10_key
-    - name: Test10 create instanace with GP only and custom userdata
+
+    - name: Test10 create instance with GP only and custom userdata
       sc_cloud_computing_instance:
         token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
