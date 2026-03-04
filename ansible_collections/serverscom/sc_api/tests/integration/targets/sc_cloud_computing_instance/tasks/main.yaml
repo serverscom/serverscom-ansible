@@ -45,7 +45,7 @@
     that:
       - test3 is not changed
 
-- name: Test prep, get region id
+- name: Tests prep, get region id
   sc_cloud_computing_regions_info:
     token: "{{ sc_token }}"
     endpoint: "{{ sc_endpoint }}"
