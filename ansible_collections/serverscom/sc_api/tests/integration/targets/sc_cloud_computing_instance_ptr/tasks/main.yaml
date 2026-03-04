@@ -151,7 +151,7 @@
           - test3_result_after_check.ptr_records[0].ip == instance.public_ipv4_address
           - test3_result.ptr_records|length == 0
 
-    - name: Test4, create ptr record for ipv4
+    - name: Test4, create ptr record for public ipv4
       sc_cloud_computing_instance_ptr:
         token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
@@ -159,17 +159,17 @@
         ip: "{{ instance.public_ipv4_address }}"
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: present
-      register: test4_one
+      register: test4_ipv4
 
-    - name: Test4, create ptr record for ipv4 private
+    - name: Test4, create ptr record for private ipv4
       sc_cloud_computing_instance_ptr:
         token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
         domain: ptr2.example.com
-        ip: "{{ instance.public_ipv4_address }}"
+        ip: "{{ instance.private_ipv4_address }}"
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: present
-      register: test4_two
+      register: test4_private
 
     - name: Test4, get ptrs after creation
       sc_cloud_computing_instance_ptr:
@@ -179,7 +179,16 @@
         state: query
       register: test4_result
 
-    - debug: var=test4_result
+    - name: Check Test4
+      assert:
+        that:
+          - test4_ipv4 is changed
+          - test4_private is changed
+          - test4_result.ptr_records | length == 2
+          - "'ptr1.example.com' in test4_result.ptr_records | map(attribute='domain') | list"
+          - "'ptr2.example.com' in test4_result.ptr_records | map(attribute='domain') | list"
+          - "instance.public_ipv4_address in test4_result.ptr_records | map(attribute='ip') | list"
+          - "instance.private_ipv4_address in test4_result.ptr_records | map(attribute='ip') | list"
 
   always:
     - name: Tests cleanup
