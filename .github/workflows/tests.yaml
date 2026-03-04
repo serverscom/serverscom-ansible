@@ -21,7 +21,6 @@ jobs:
 
   unit_and_sanity:
     runs-on: ubuntu-24.04
-    needs: lint
     strategy:
       fail-fast: false
       matrix:
@@ -62,7 +61,9 @@ jobs:
 
   integration_tests_cloud:
     runs-on: ubuntu-24.04
-    needs: unit_and_sanity
+    needs:
+      - unit_and_sanity
+      - lint
     concurrency:
       group: cloud
       cancel-in-progress: false
@@ -108,7 +109,9 @@ jobs:
 
   integration_tests_bm:
     runs-on: ubuntu-24.04
-    needs: unit_and_sanity
+    needs:
+      - unit_and_sanity
+      - lint
     concurrency:
       group: BM
       cancel-in-progress: false
@@ -185,7 +188,9 @@ jobs:
 
   integration_tests_lb_instances:
     runs-on: ubuntu-24.04
-    needs: unit_and_sanity
+    needs:
+      - unit_and_sanity
+      - lint
     concurrency:
       group: LB
       cancel-in-progress: false
@@ -222,7 +227,9 @@ jobs:
 
   integration_tests_rbs_volumes:
     runs-on: ubuntu-24.04
-    needs: unit_and_sanity
+    needs:
+      - unit_and_sanity
+      - lint
     concurrency:
       group: RBS
       cancel-in-progress: false
@@ -259,7 +266,9 @@ jobs:
 
   integration_tests_sbm:
     runs-on: ubuntu-24.04
-    needs: unit_and_sanity
+    needs:
+      - unit_and_sanity
+      - lint
     concurrency:
       group: SBM
       cancel-in-progress: false
