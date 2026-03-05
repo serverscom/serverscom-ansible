@@ -7,9 +7,10 @@
 
 - name: Test1, List for non-existing region
   sc_cloud_computing_images_info:
-    token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     region_id: 424242
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: test1
   failed_when: test1.status_code!=404
 
@@ -22,15 +23,17 @@
 
 - name: Test2 prep, get regions
   sc_cloud_computing_regions_info:
-    token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: regions
 
 - name: Test2, Get image from any regions
   sc_cloud_computing_images_info:
-    token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     region_id: '{{ regions.regions[0].id }}'
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: test2
 
 - name: Check Test2

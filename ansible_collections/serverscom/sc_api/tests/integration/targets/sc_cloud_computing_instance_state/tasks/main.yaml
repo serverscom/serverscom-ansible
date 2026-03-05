@@ -9,12 +9,12 @@
   block:
     - name: prep
       sc_cloud_computing_regions_info:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: regions
     - name: Testsuite prepare, create instance
       sc_cloud_computing_instance:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         state: present
         region_id: '{{ regions.regions[0].id }}'
@@ -26,6 +26,8 @@
         ipv6: true
         wait: 600
         update_interval: 5
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: instance
 
     - name: Workaround
@@ -34,18 +36,20 @@
 
     - name: Test2, shutdown in check mode
       sc_cloud_computing_instance_state:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: shutdown
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       check_mode: true
       register: test2_check_mode
 
     - name: Test2, get instance
       sc_cloud_computing_instance_info:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         instance_name: 4839550e-edf5-11ea-8df4-4f25b3878e42
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test2_result
 
     - name: Check Test2
@@ -56,17 +60,19 @@
 
     - name: Test3, shutdown
       sc_cloud_computing_instance_state:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: shutdown
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test3
 
     - name: Test3, get instance
       sc_cloud_computing_instance_info:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         instance_name: 4839550e-edf5-11ea-8df4-4f25b3878e42
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test3_result
 
     - name: Check Test3
@@ -79,18 +85,20 @@
 
     - name: Test4, start in check mode
       sc_cloud_computing_instance_state:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: normal
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       check_mode: true
       register: test4
 
     - name: Test4, get instance
       sc_cloud_computing_instance_info:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         instance_name: 4839550e-edf5-11ea-8df4-4f25b3878e42
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test4_result
 
     - name: Check Test4
@@ -103,17 +111,19 @@
 
     - name: Test5, start
       sc_cloud_computing_instance_state:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: normal
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test5
 
     - name: Test5, get instance
       sc_cloud_computing_instance_info:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         instance_name: 4839550e-edf5-11ea-8df4-4f25b3878e42
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test5_result
 
     - name: Check Test5
@@ -126,18 +136,20 @@
 
     - name: Test6, rescue in check_mode
       sc_cloud_computing_instance_state:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: rescue
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       check_mode: true
       register: test6_check_mode
 
     - name: Test6, get instance
       sc_cloud_computing_instance_info:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         instance_name: 4839550e-edf5-11ea-8df4-4f25b3878e42
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test6_result
 
     - name: Check Test6
@@ -148,17 +160,19 @@
 
     - name: Test7, rescue
       sc_cloud_computing_instance_state:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: rescue
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test7
 
     - name: Test7, get instance
       sc_cloud_computing_instance_info:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         instance_name: 4839550e-edf5-11ea-8df4-4f25b3878e42
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test7_result
 
     - name: Check Test7
@@ -171,18 +185,20 @@
 
     - name: Test8, unrescue in check_mode
       sc_cloud_computing_instance_state:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: normal
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       check_mode: true
       register: test8
 
     - name: Test8, get instance
       sc_cloud_computing_instance_info:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         instance_name: 4839550e-edf5-11ea-8df4-4f25b3878e42
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test8_result
 
     - name: Check Test8
@@ -195,17 +211,19 @@
 
     - name: Test9, unrescue
       sc_cloud_computing_instance_state:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: normal
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test9
 
     - name: Test9, get instance
       sc_cloud_computing_instance_info:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         instance_name: 4839550e-edf5-11ea-8df4-4f25b3878e42
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test9_result
 
     - name: Check Test9
@@ -219,10 +237,11 @@
 
     - name: Test10, cycle states
       sc_cloud_computing_instance_state:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: '{{ item }}'
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test10
       loop:
         - shutdown
@@ -240,11 +259,12 @@
 
     - name: Test11, rescue with image_regexp
       sc_cloud_computing_instance_state:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         image_regexp: '.*Cent.+'
         state: '{{ item }}'
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test11
       loop:
         - rescue
@@ -252,11 +272,12 @@
 
     - name: Test12, fire-n-forget in checkmode
       sc_cloud_computing_instance_state:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: '{{ item }}'
         wait: 0
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test12
       check_mode: true
       loop:
@@ -274,11 +295,12 @@
 
     - name: Test13, fire-n-forget shutdown
       sc_cloud_computing_instance_state:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: shutdown
         wait: 0
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test13
 
     - name: Check Test13
@@ -290,9 +312,10 @@
 
     - name: Test13 wait for instance to shutdown
       sc_cloud_computing_instance_info:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test13_info
       until: test13_info.status == 'SWITCHED_OFF'
       delay: 10
@@ -300,12 +323,13 @@
 
     - name: Test14, rescue
       sc_cloud_computing_instance_state:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: rescue
         wait: 600
         update_interval: 10
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test14
 
     - debug: var=test14
@@ -316,20 +340,22 @@
 
     - name: Put instance back in normal state
       sc_cloud_computing_instance_state:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: normal
         wait: 600
         update_interval: 10
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
 
     - name: Test15 reboot instance
       sc_cloud_computing_instance_state:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         state: rebooted
         wait: 0
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test15
 
     - name: Test15, check result
@@ -340,9 +366,10 @@
 
     - name: Wait until instance finishes rebooting
       sc_cloud_computing_instance_info:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test15_info
       until: test15_info.status == 'ACTIVE'
       delay: 10
@@ -351,9 +378,10 @@
   always:
     - name: Testsuite cleanup
       sc_cloud_computing_instance:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         state: absent
         region_id: '{{ regions.regions[0].id }}'
         name: 4839550e-edf5-11ea-8df4-4f25b3878e42
         wait: 600
+      environment:
+        SC_TOKEN: '{{ sc_token }}'

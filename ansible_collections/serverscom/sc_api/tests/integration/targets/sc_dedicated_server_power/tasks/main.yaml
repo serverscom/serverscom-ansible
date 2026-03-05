@@ -7,18 +7,20 @@
 
 - name: Make sure that test server is powered on
   serverscom.sc_api.sc_dedicated_server_power:
-    token: "{{ sc_token }}"
     state: "on"
     server_id: "{{ existing_server1_id }}"
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: server_power_on
   failed_when:
     - server_power_on.power_status != "powered_on"
 
 - name: Power off server
   serverscom.sc_api.sc_dedicated_server_power:
-    token: "{{ sc_token }}"
     state: "off"
     server_id: "{{ existing_server1_id }}"
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: test1
 
 - name: Check Test1
@@ -29,9 +31,10 @@
 
 - name: Power off server (idempotency test)
   serverscom.sc_api.sc_dedicated_server_power:
-    token: "{{ sc_token }}"
     state: "off"
     server_id: "{{ existing_server1_id }}"
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: test2
 
 - name: Check Test2
@@ -42,9 +45,10 @@
 
 - name: Power on server
   serverscom.sc_api.sc_dedicated_server_power:
-    token: "{{ sc_token }}"
     state: "on"
     server_id: "{{ existing_server1_id }}"
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: test3
 
 - name: Check Test3
@@ -55,9 +59,10 @@
 
 - name: Power on server (idempotency test)
   serverscom.sc_api.sc_dedicated_server_power:
-    token: "{{ sc_token }}"
     state: "on"
     server_id: "{{ existing_server1_id }}"
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: test4
 
 - name: Check Test4
@@ -68,9 +73,10 @@
 
 - name: Power cycle server
   serverscom.sc_api.sc_dedicated_server_power:
-    token: "{{ sc_token }}"
     state: cycle
     server_id: "{{ existing_server1_id }}"
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: test5
 
 - name: Check Test5

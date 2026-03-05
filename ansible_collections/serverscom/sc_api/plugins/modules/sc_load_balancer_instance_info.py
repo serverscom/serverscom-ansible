@@ -373,7 +373,7 @@ EXAMPLES = """
 """  # noqa
 
 
-from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.basic import AnsibleModule, env_fallback
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,
@@ -388,7 +388,7 @@ __metaclass__ = type
 def main():
     module = AnsibleModule(
         argument_spec={
-            "token": {"type": "str", "no_log": True, "required": True},
+            "token": {"type": "str", "no_log": True, "required": True, "fallback": (env_fallback, ["SC_TOKEN"])},
             "endpoint": {"default": DEFAULT_API_ENDPOINT},
             "fail_on_absent": {"type": "bool", "default": True},
             "id": {"type": "str"},

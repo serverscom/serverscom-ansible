@@ -7,8 +7,9 @@
 
 - name: Test1, Get OS list for a specific server
   sc_baremetal_os_list:
-    token: "{{ sc_token }}"
     server_id: "{{ existing_server1_id }}"
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: test1
 
 - name: Check Test1
@@ -25,9 +26,10 @@
 
 - name: Test2, Get OS list by name regex
   sc_baremetal_os_list:
-    token: "{{ sc_token }}"
     server_id: "{{ existing_server1_id }}"
     os_name_regex: "^Ubuntu 24.04-server x86_64$"
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: test2
 
 - name: Check Test2
@@ -39,9 +41,10 @@
 
 - name: Test3, Get OS list with location_id and server_model_id
   sc_baremetal_os_list:
-    token: "{{ sc_token }}"
     location_id: 34
     server_model_id: 11940
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: test3
 
 - name: Check Test3
@@ -53,9 +56,10 @@
 
 - name: Test4, Get OS list with location_code and server_model_name
   sc_baremetal_os_list:
-    token: "{{ sc_token }}"
     location_code: "ams1"
     server_model_name: "Dell R730xd / 2xIntel Xeon E5-2680 v3 / 32 GB RAM / 4x600 GB SAS"
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: test4
 
 - name: Check Test4
@@ -67,9 +71,10 @@
 
 - name: Test5, None OS options found
   sc_baremetal_os_list:
-    token: "{{ sc_token }}"
     server_id: "{{ existing_server1_id }}"
     os_name_regex: "^Ubuntu 24.04-server arm64$"
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: test5
   failed_when:
     - test5 is success

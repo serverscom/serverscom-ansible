@@ -25,5 +25,6 @@ options:
         - Token to use.
         - You can create token for your account in https://portal.servers.com
           in Profile -> Public API section.
+        - If not set, the value of the C(SC_TOKEN) environment variable is used.
         - Value is not logged.
 """

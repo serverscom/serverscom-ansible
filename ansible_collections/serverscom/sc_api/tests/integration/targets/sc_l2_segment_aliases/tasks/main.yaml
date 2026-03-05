@@ -8,7 +8,6 @@
 - block:
     - name: Test prep, create public segment
       sc_l2_segment:
-        token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
         name: integration-test
         state: present
@@ -18,15 +17,18 @@
             mode: native
           - id: '{{ existing_server2_id }}'
             mode: native
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test_prep
       tags: create
 
     - name: Test1, remove aliases from segement without aliases
       sc_l2_segment_aliases:
-        token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
         name: integration-test
         count: 0
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test1_res
     - name: Test1 check results
       assert:
@@ -35,10 +37,11 @@
 
     - name: Test2, add aliases in check mode
       sc_l2_segment_aliases:
-        token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
         name: integration-test
         count: 2
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       check_mode: true
       register: test2_res
     - name: Test2 check results
@@ -48,10 +51,11 @@
 
     - name: Test3, add aliases for real
       sc_l2_segment_aliases:
-        token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
         name: integration-test
         count: 2
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test3_res
     - name: Test3 check results
       assert:
@@ -65,11 +69,12 @@
 
     - name: Test4, remove alias by ID
       sc_l2_segment_aliases:
-        token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
         name: integration-test
         aliases_absent:
           - "{{ test3_res.aliases[0].id }}"
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
 
       register: test4_res
     - name: Test4 check results
@@ -82,11 +87,12 @@
 
     - name: Test5, remove non-existing alias
       sc_l2_segment_aliases:
-        token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
         name: integration-test
         aliases_absent:
           - "{{ test3_res.aliases[0].id }}"  # should have been removed at test4
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test5_res
     - name: Test5 check results
       assert:
@@ -99,8 +105,9 @@
   always:
     - name: Test cleanup, Delete public segment
       sc_l2_segment:
-        token: "{{ sc_token }}"
         endpoint: "{{ sc_endpoint }}"
         name: integration-test
         state: absent
         type: public
+      environment:
+        SC_TOKEN: '{{ sc_token }}'

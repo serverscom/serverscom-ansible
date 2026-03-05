@@ -7,10 +7,11 @@
 
 - name: Test1, Delete non-existing segment by id
   sc_l2_segment:
-    token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     segment_id: '{{ non_existing_id }}'  # any valid but absent ID is good
     state: absent
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: test1
 
 - name: Check Test1
@@ -20,10 +21,11 @@
 
 - name: Test2, Delete non-existing segment by name
   sc_l2_segment:
-    token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     name: nonexisting
     state: absent
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: test2
 
 - name: Check Test2
@@ -35,14 +37,16 @@
 # Clean L2 segments with test servers as members
 - name: Get all L2 segments list
   serverscom.sc_api.sc_l2_segments_info:
-    token: "{{ sc_token }}"
     endpoint: '{{ sc_endpoint }}'
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: all_l2_segments
 
 - name: Get full info of all the L2 segments
   serverscom.sc_api.sc_l2_segment_info:
-    token: "{{ sc_token }}"
     id: "{{ item.id }}"
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   loop: "{{ all_l2_segments.l2_segments }}"
   register: sc_l2_segments_full_info
 
@@ -61,11 +65,12 @@
 
 - name: Remove segments with test members
   sc_l2_segment:
-    token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     name: "{{ item.l2_segment.name }}"
     state: absent
     type: private
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   loop: "{{ matched_segments }}"
   loop_control:
     label: "{{ item.l2_segment.name }}"
@@ -73,7 +78,6 @@
 - block:
     - name: Test3, Create segment in check mode
       sc_l2_segment:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: integration-test
         state: present
@@ -85,6 +89,8 @@
             mode: native
           - id: '{{ existing_server3_id }}'
             mode: native
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       check_mode: true
       register: test3
       loop:
@@ -101,7 +107,6 @@
 - block:
     - name: Test4, Create public segment for real
       sc_l2_segment:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: integration-test
         state: present
@@ -115,6 +120,8 @@
             mode: native
         labels:
           test_label: "test_value"
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test4
       tags: create
 
@@ -130,7 +137,6 @@
 
     - name: Test4a, Create public segment for real second time (idempotence)
       sc_l2_segment:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: integration-test
         state: present
@@ -144,6 +150,8 @@
             mode: native
         labels:
           test_label: "test_value"
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test4a
 
     - name: Check Test4a
@@ -158,11 +166,12 @@
 
     - name: Test5, Delete public segment in check mode
       sc_l2_segment:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: integration-test
         state: absent
         type: private
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       check_mode: true
       register: test5
 
@@ -173,7 +182,6 @@
 
     - name: Test6, Switch server type from native to trunk in check mode
       sc_l2_segment:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: integration-test
         state: present
@@ -185,6 +193,8 @@
             mode: trunk
           - id: '{{ existing_server3_id }}'
             mode: native
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       check_mode: true
       register: test6
 
@@ -197,7 +207,6 @@
 
     - name: Test7, Switch server type from native to trunk
       sc_l2_segment:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: integration-test
         state: present
@@ -209,6 +218,8 @@
             mode: trunk
           - id: '{{ existing_server3_id }}'
             mode: native
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test7
     - name: Check Test7
       assert:
@@ -220,13 +231,14 @@
 
     - name: Test8, Use member_absent
       sc_l2_segment:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: integration-test
         state: present
         type: private
         members_absent:
           - id: '{{ existing_server2_id }}'
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test8
     - name: Assert test8
       assert:
@@ -238,8 +250,9 @@
 
     - name: Try to use sc_l2_segments_info
       sc_l2_segments_info:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: segments
 
     - name: Test sc_l2_segments_info module
@@ -250,9 +263,10 @@
 
     - name: Try to use sc_l2_segment_info by id
       sc_l2_segment_info:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         id: '{{  test4.id }}'
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: segment_by_id
 
     - name: Check output by_id
@@ -267,9 +281,10 @@
 
     - name: Try to use sc_l2_segment_info by name
       sc_l2_segment_info:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: integration-test
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: segment_by_name
 
     - name: Check output by_name
@@ -285,11 +300,12 @@
   always:
     - name: Test9 and cleanup, Delete public segment for real
       sc_l2_segment:
-        token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: integration-test
         state: absent
         type: private
+      environment:
+        SC_TOKEN: '{{ sc_token }}'
       register: test9
     - name: Check Test9
       assert:

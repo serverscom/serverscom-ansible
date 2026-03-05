@@ -530,7 +530,7 @@ EXAMPLES = """
 """
 
 
-from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.basic import AnsibleModule, env_fallback
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,
@@ -546,7 +546,7 @@ __metaclass__ = type
 def main():
     module = AnsibleModule(
         argument_spec={
-            "token": {"no_log": True, "required": True, "type": "str"},
+            "token": {"no_log": True, "required": True, "type": "str", "fallback": (env_fallback, ["SC_TOKEN"])},
             "endpoint": {"default": DEFAULT_API_ENDPOINT},
             "state": {
                 "type": "str",

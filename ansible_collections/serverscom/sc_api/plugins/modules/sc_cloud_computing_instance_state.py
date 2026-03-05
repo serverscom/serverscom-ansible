@@ -267,7 +267,7 @@ EXAMPLES = """
 """  # noqa
 
 
-from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.basic import AnsibleModule, env_fallback
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     DEFAULT_API_ENDPOINT,
     SCBaseError,
@@ -283,7 +283,7 @@ def main():
     module = AnsibleModule(
         argument_spec={
             "endpoint": {"default": DEFAULT_API_ENDPOINT},
-            "token": {"type": "str", "no_log": True, "required": True},
+            "token": {"type": "str", "no_log": True, "required": True, "fallback": (env_fallback, ["SC_TOKEN"])},
             "state": {
                 "type": "str",
                 "choices": ["shutdown", "normal", "rescue", "rebooted"],

@@ -7,9 +7,10 @@
 
 - name: Test1, List for non-existing region
   sc_cloud_computing_flavors_info:
-    token: "{{ sc_token }}"
     endpoint: "{{ sc_endpoint }}"
     region_id: 424242
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: test1
   failed_when: test1.status_code!=404
 
@@ -25,15 +26,17 @@
 
 - name: Test2 prep get all regions
   sc_cloud_computing_regions_info:
-    token: "{{ sc_token }}"
     endpoint: "{{ sc_endpoint }}"
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: reg_info
 
 - name: Test2, Get flavors
   sc_cloud_computing_flavors_info:
-    token: "{{ sc_token }}"
     endpoint: "{{ sc_endpoint }}"
     region_id: "{{ reg_info.regions[0].id  }}"
+  environment:
+    SC_TOKEN: '{{ sc_token }}'
   register: test2
 
 - debug: var=test2
