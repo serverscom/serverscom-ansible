@@ -1,7 +1,7 @@
 # Getting started
 
 1. Install/configure venv using requirements.txt.
-2. Do not forget to update your python version in commands below.
+2. Do not forget to update your Python version in commands below.
 3. All ansible-test invocations should happen in `ansible_collections/serverscom/sc_api`.
    This is ansible-test requirement.
 4. Installing test dependencies: add `--requirements` to ansible-test during normal calls.
@@ -12,29 +12,68 @@ Running sanity checks:
 ansible-test sanity --requirements --python 3.13
 ```
 
-unit tests:
+Running unit tests:
 
 ```
 ansible-test units --requirements --python 3.13
 ```
 (if you get odd errors from pytest, don't forget --requirements)
 
-Both unit and sanity checks can work without secrets.
+Both unit and sanity checks can work without secrets. There is also a basic integration test, `sc_no_token_tests`, that works without a token and tests the integration between modules and Ansible.
 
-# Integration tests
+## Local debugging
 
-To run integration tests you need to generate your own config at
-`ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml`
-(this location is odd, but it's the single place where ansible-test permits any side
-causes into test playbooks)
+### Required software
 
-See example in `integration_config.yml.template`.
+- [just](https://github.com/casey/just) — command runner
+- [sops](https://github.com/getsops/sops) — encrypted secrets manager
+- GPG (GnuPG) — encryption backend for sops
 
-Please, pay attention,
-you need at least 3 baremetal servers to run tests for baremetal modules.
+### GPG key setup
 
-The main secret you get is SC_TOKEN, which is token to access servers.com API.
+If you don't have a GPG key, generate one:
 
-At the time of writing you could get one from here: https://portal.servers.com/profile/api-tokens
+```
+gpg --full-generate-key
+```
 
-Please be careful, some tests will cause significant financial spendings. They also will reinstall baremetal servers, so you should dedicate servers for those testing exlusively.
+Choose RSA (default), 4096 bits, and set expiration as needed.
+
+Find your key fingerprint:
+
+```
+gpg --list-keys --keyid-format long
+```
+
+The fingerprint is the long hex string on the `pub` line (e.g. `ABCD1234EFGH5678...`).
+
+### Initializing secrets
+
+Run `init-secrets` with your GPG fingerprint. This copies the integration
+config template, encrypts it with sops, and creates `.secrets/.sops.yaml`:
+
+```
+just init-secrets YOUR_GPG_FINGERPRINT
+```
+
+Get a token from https://portal.servers.com/. Be careful, some tests cause
+significant spending on baremetal servers!
+
+Edit the encrypted config to fill in your real `sc_token` and server IDs.
+
+```
+sops --config .secrets/.sops.yaml .secrets/integration_config.sops.yaml
+```
+
+### Running integration tests
+
+Use `just run` to execute commands with the decrypted integration config
+symlinked into place. The working directory is `ansible_collections/serverscom/sc_api`.
+
+To run a test for a single module:
+
+```
+just run ansible-test integration --requirements --python 3.13 sc_rbs_flavors_info
+```
+
+The decrypted config is removed automatically when the command finishes.

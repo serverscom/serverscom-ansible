@@ -1,15 +1,15 @@
 Ansible modules for Servers.com Public API
 ==========================================
 
-This Ansible collection contains modules to work with public API for servers.com. Documentation for the API is avaiable at https://developers.servers.com.
+This Ansible collection contains modules to work with the public API for servers.com. Documentation for the API is available at https://developers.servers.com.
 
 You need to have an active account in servers.com (https://portal.servers.com). Some operations (new servers and instances, etc) require payments.
 
 Requirements
 ============
-The modules tries to support Ansible 2.9 or higher, but actual tests are done using currently suppored versions of Ansible and Python.
+The modules try to support Ansible 2.9 or higher, but actual tests are done using currently supported versions of Ansible and Python.
 
-You need requests library for modules to work.
+You need the requests library for modules to work.
 
 Installation
 ============
@@ -37,12 +37,12 @@ ansible-galaxy collection build
 Usage
 =====
 
-1. You need to issue a public API token from https://portal.servers.com/#/profile/api-token. It's used as `token` parameter for all modules.
+1. You need to issue a public API token from https://portal.servers.com/#/profile/api-token. It's used as the `token` parameter for all modules.
 2. Configure `COLLECTION_PATH` (if you are using custom path for collections).
-3. Use modules by FQCN (Fully Qualified collection name), f.e. `serverscom.sc_api.sc_ssh_key`
+3. Use modules by FQCN (Fully Qualified Collection Name), e.g. `serverscom.sc_api.sc_ssh_key`
    or by using `collections:` keyword in the play.
 
-You can see documentation for individual modules by calling (after installation) `ansible-doc module_name`, f.e. `ansible-doc sc_ssh_key`.
+You can see documentation for individual modules by calling (after installation) `ansible-doc module_name`, e.g. `ansible-doc sc_ssh_key`.
 
 List of modules
 ===============
@@ -67,11 +67,11 @@ List of modules
 * `sc_cloud_computing_flavors_info` - List of flavors in a given region
 * `sc_cloud_computing_images_info` - List of available images for cloud computing
 * `sc_cloud_computing_instances_info` - List of cloud computing instances
-* `sc_cloud_computing_instance_info` - Information about specific cloud computing instance
+* `sc_cloud_computing_instance_info` - Information about a specific cloud computing instance
 * `sc_cloud_computing_instance` - Create/delete/reinstall/upgrade cloud computing instance
 * `sc_cloud_computing_instance_state` - Manage shutdown/rescue/reboot state for cloud computing instance
 * `sc_cloud_computing_instance_ptr` - Manage PTR records for cloud computing instances
-* `sc_cloud_computing_openstack_credentials` - Obtain credentials for Openstack API access
+* `sc_cloud_computing_openstack_credentials` - Obtain credentials for OpenStack API access
 
 **SSH Keys**
 
@@ -81,14 +81,14 @@ List of modules
 **L2 Segments (Network)**
 
 * `sc_l2_segments_info` - List of existing L2 segments
-* `sc_l2_segment_info` - Information about specific L2 segment
+* `sc_l2_segment_info` - Information about a specific L2 segment
 * `sc_l2_segment` - Creation/deletion/membership modification for L2 segments
 * `sc_l2_segment_aliases` - Add and remove IP addresses to/from L2 segments
 
 **Load Balancers**
 
 * `sc_load_balancer_instances_list` - List load balancer instances
-* `sc_load_balancer_instance_info` - Information about specific load balancer instance
+* `sc_load_balancer_instance_info` - Information about a specific load balancer instance
 * `sc_load_balancer_instance_l4` - Manage L4 (TCP/UDP) load balancing rules
 * `sc_load_balancer_instance_l7` - Manage L7 (HTTP/HTTPS) load balancing rules
 
