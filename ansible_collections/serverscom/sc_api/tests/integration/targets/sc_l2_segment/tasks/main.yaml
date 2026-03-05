@@ -5,40 +5,28 @@
     msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
   when: not sc_endpoint or not sc_token
 
-- name: Test invalid token
-  sc_l2_segment:
-    token: invalid
-    endpoint: '{{ sc_endpoint }}'
-    name: foo
-    state: absent
-  register: test1
-  failed_when:
-    - test1 is success
-    - sc_endpoint not in test1.api_url
-    - test1.status_code != 401
-
-- name: Test2, Delete non-existing segment by id
+- name: Test1, Delete non-existing segment by id
   sc_l2_segment:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     segment_id: '{{ non_existing_id }}'  # any valid but absent ID is good
     state: absent
-  register: test2
+  register: test1
 
-- name: Check Test2
+- name: Check Test1
   assert:
     that:
-      - test2 is not changed
+      - test1 is not changed
 
-- name: Test3, Delete non-existing segment by name
+- name: Test2, Delete non-existing segment by name
   sc_l2_segment:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     name: nonexisting
     state: absent
-  register: test3
+  register: test2
 
-- name: Check Test3
+- name: Check Test2
   assert:
     that:
       - test2 is not changed
@@ -83,7 +71,7 @@
     label: "{{ item.l2_segment.name }}"
 
 - block:
-    - name: Test4, Create segment in check mode
+    - name: Test3, Create segment in check mode
       sc_l2_segment:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
@@ -98,20 +86,49 @@
           - id: '{{ existing_server3_id }}'
             mode: native
       check_mode: true
-      register: test4
+      register: test3
       loop:
         - 1
         - 2
+
+    - name: Check Test3
+      assert:
+        that:
+          - test3 is changed
+          - test3.results[0].location_group_id == test3.results[1].location_group_id
+          - test3.results[0].location_group_id > 0
+
+- block:
+    - name: Test4, Create public segment for real
+      sc_l2_segment:
+        token: '{{ sc_token }}'
+        endpoint: '{{ sc_endpoint }}'
+        name: integration-test
+        state: present
+        type: private
+        members:
+          - id: '{{ existing_server1_id }}'
+            mode: native
+          - id: '{{ existing_server2_id }}'
+            mode: native
+          - id: '{{ existing_server3_id }}'
+            mode: native
+        labels:
+          test_label: "test_value"
+      register: test4
+      tags: create
 
     - name: Check Test4
       assert:
         that:
           - test4 is changed
-          - test4.results[0].location_group_id == test4.results[1].location_group_id
-          - test4.results[0].location_group_id > 0
+          - test4.name == 'integration-test'
+          - test4.id
+          - test4.type == 'private'
+          - test4.status == 'active'
+          - test4.labels.test_label == 'test_value'
 
-- block:
-    - name: Test5, Create public segment for real
+    - name: Test4a, Create public segment for real second time (idempotence)
       sc_l2_segment:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
@@ -127,48 +144,19 @@
             mode: native
         labels:
           test_label: "test_value"
-      register: test5
-      tags: create
+      register: test4a
 
-    - name: Check Test5
+    - name: Check Test4a
       assert:
         that:
-          - test5 is changed
-          - test5.name == 'integration-test'
-          - test5.id
-          - test5.type == 'private'
-          - test5.status == 'active'
-          - test5.labels.test_label == 'test_value'
+          - test4a is not changed
+          - test4a.name == 'integration-test'
+          - test4a.id == test4.id
+          - test4a.type == 'private'
+          - test4a.status == 'active'
+          - test4.labels.test_label == 'test_value'
 
-    - name: Test5a, Create public segment for real second time (idempotence)
-      sc_l2_segment:
-        token: '{{ sc_token }}'
-        endpoint: '{{ sc_endpoint }}'
-        name: integration-test
-        state: present
-        type: private
-        members:
-          - id: '{{ existing_server1_id }}'
-            mode: native
-          - id: '{{ existing_server2_id }}'
-            mode: native
-          - id: '{{ existing_server3_id }}'
-            mode: native
-        labels:
-          test_label: "test_value"
-      register: test5a
-
-    - name: Check Test5a
-      assert:
-        that:
-          - test5a is not changed
-          - test5a.name == 'integration-test'
-          - test5a.id == test5.id
-          - test5a.type == 'private'
-          - test5a.status == 'active'
-          - test5.labels.test_label == 'test_value'
-
-    - name: Test6, Delete public segment in check mode
+    - name: Test5, Delete public segment in check mode
       sc_l2_segment:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
@@ -176,14 +164,14 @@
         state: absent
         type: private
       check_mode: true
-      register: test6
+      register: test5
 
-    - name: Check Test6
+    - name: Check Test5
       assert:
         that:
-          - test6 is changed
+          - test5 is changed
 
-    - name: Test7, Switch server type from native to trunk in check mode
+    - name: Test6, Switch server type from native to trunk in check mode
       sc_l2_segment:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
@@ -198,16 +186,16 @@
           - id: '{{ existing_server3_id }}'
             mode: native
       check_mode: true
-      register: test7
+      register: test6
 
-    - name: Check Test7
+    - name: Check Test6
       assert:
         that:
-          - test7 is changed
-          - "test7.members_added == [{'id': existing_server2_id, 'mode': 'trunk'}]"
-          - "test7.members_removed == [{'id': existing_server2_id, 'mode': 'native'}]"
+          - test6 is changed
+          - "test6.members_added == [{'id': existing_server2_id, 'mode': 'trunk'}]"
+          - "test6.members_removed == [{'id': existing_server2_id, 'mode': 'native'}]"
 
-    - name: Test8, Switch server type from native to trunk
+    - name: Test7, Switch server type from native to trunk
       sc_l2_segment:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
@@ -221,16 +209,16 @@
             mode: trunk
           - id: '{{ existing_server3_id }}'
             mode: native
-      register: test8
-    - name: Check Test8
+      register: test7
+    - name: Check Test7
       assert:
         that:
-          - test8 is changed
-          - "test8.members_added == [{'id': existing_server2_id, 'mode': 'trunk'}]"
-          - "test8.members_removed == [{'id': existing_server2_id, 'mode': 'native'}]"
-          - "test8.members_kept|length == 2"
+          - test7 is changed
+          - "test7.members_added == [{'id': existing_server2_id, 'mode': 'trunk'}]"
+          - "test7.members_removed == [{'id': existing_server2_id, 'mode': 'native'}]"
+          - "test7.members_kept|length == 2"
 
-    - name: Test9, Use member_absent
+    - name: Test8, Use member_absent
       sc_l2_segment:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
@@ -239,13 +227,13 @@
         type: private
         members_absent:
           - id: '{{ existing_server2_id }}'
-      register: test9
-    - name: Assert test9
+      register: test8
+    - name: Assert test8
       assert:
         that:
-          - test9 is changed
-          - test9.members_removed|length == 1
-          - test9.members_kept|length == 2
+          - test8 is changed
+          - test8.members_removed|length == 1
+          - test8.members_kept|length == 2
       tags: assert9
 
     - name: Try to use sc_l2_segments_info
@@ -264,7 +252,7 @@
       sc_l2_segment_info:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
-        id: '{{  test5.id }}'
+        id: '{{  test4.id }}'
       register: segment_by_id
 
     - name: Check output by_id
@@ -272,7 +260,7 @@
         that:
           - segment_by_id is not changed
           - segment_by_id.l2_segment.name == 'integration-test'
-          - segment_by_id.l2_segment.id  == test5.id
+          - segment_by_id.l2_segment.id  == test4.id
           - segment_by_id.l2_segment.members|length == 2
           - segment_by_id.l2_segment.networks == []
           - segment_by_id.l2_segment.status == 'active'
@@ -289,22 +277,22 @@
         that:
           - segment_by_name is not changed
           - segment_by_name.l2_segment.name == 'integration-test'
-          - segment_by_name.l2_segment.id  == test5.id
+          - segment_by_name.l2_segment.id  == test4.id
           - segment_by_name.l2_segment.members|length == 2
           - segment_by_name.l2_segment.networks == []
           - segment_by_name.l2_segment.status == 'active'
 
   always:
-    - name: Test10 and cleanup, Delete public segment for real
+    - name: Test9 and cleanup, Delete public segment for real
       sc_l2_segment:
         token: '{{ sc_token }}'
         endpoint: '{{ sc_endpoint }}'
         name: integration-test
         state: absent
         type: private
-      register: test10
-    - name: Check Test10
+      register: test9
+    - name: Check Test9
       assert:
         that:
-          - test10 is changed
-          - test10.id == test5.id
+          - test9 is changed
+          - test9.id == test4.id

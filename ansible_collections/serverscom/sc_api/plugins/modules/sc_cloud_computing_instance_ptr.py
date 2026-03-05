@@ -64,11 +64,13 @@ options:
       type: str
       default: all
       description:
-        - IP address for PTR record.
+        - Public IP address for PTR record.
         - IP address must belong to instance.
-        - Reserved keyword C(all) can be used for automatically
-          use all instance IP addresses.
-        - Required for I(state)=C(present)
+        - Only public IP addresses support PTR records.
+          Private IP addresses cannot have PTR records.
+        - Reserved keyword C(all) can be used to automatically
+          set PTR for all public IP addresses of the instance.
+        - Required for I(state)=C(present).
 
     domain:
       type: str

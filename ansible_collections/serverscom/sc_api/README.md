@@ -7,7 +7,9 @@ You need to have an active account in servers.com (https://portal.servers.com). 
 
 Requirements
 ============
-You need ansible 2.9+, python 3.6 or newer and requests library to use those modules.
+The modules tries to support Ansible 2.9 or higher, but actual tests are done using currently suppored versions of Ansible and Python.
+
+You need requests library for modules to work.
 
 Installation
 ============
@@ -45,37 +47,69 @@ You can see documentation for individual modules by calling (after installation)
 List of modules
 ===============
 
+**Baremetal Servers**
+(Includes dedicated servers, SBM servers and kubernetes nodes)
+
 * `sc_baremetal_locations_info` - List of available baremetal locations
-* `sc_cloud_computing_regions_info`- List of cloud computing regions
 * `sc_baremetal_servers_info` - List of baremetal servers
-* `sc_baremetal_os_list` - List of the available OS options for the specific region and dedicated server model or server ID
+* `sc_baremetal_os_list` - List of the available OS options for a specific baremetal location and server model
+
+**Dedicated Servers**
+(also known as Enterprise Baremetal Servers)
+
 * `sc_dedicated_server_info` - Information about one dedicated server
-* `sc_dedicated_server_reinstall` - Reinstallation of servers
+* `sc_dedicated_server_reinstall` - Reinstallation of dedicated servers
+* `sc_dedicated_server_power` - Power management for dedicated baremetal servers
+
+**Cloud Computing**
+
+* `sc_cloud_computing_regions_info` - List of cloud computing regions
+* `sc_cloud_computing_flavors_info` - List of flavors in a given region
+* `sc_cloud_computing_images_info` - List of available images for cloud computing
+* `sc_cloud_computing_instances_info` - List of cloud computing instances
+* `sc_cloud_computing_instance_info` - Information about specific cloud computing instance
+* `sc_cloud_computing_instance` - Create/delete/reinstall/upgrade cloud computing instance
+* `sc_cloud_computing_instance_state` - Manage shutdown/rescue/reboot state for cloud computing instance
+* `sc_cloud_computing_instance_ptr` - Manage PTR records for cloud computing instances
+* `sc_cloud_computing_openstack_credentials` - Obtain credentials for Openstack API access
+
+**SSH Keys**
+
 * `sc_ssh_key` - SSH key management
 * `sc_ssh_keys_info` - List of registered SSH keys
-* `sc_cloud_computing_regions_info` - Lisf of cloud computing regions
-* `sc_cloud_computing_flavors_info` - List of flavors in a given region
-* `sc_cloud_computing_openstack_credentials` - Credentials to Openstack API
-* `sc_cloud_computing_instances_info` - List of cloud computing instances
-* `sc_cloud_computing_instance_info` - Information about specific instance
-* `sc_cloud_computing_images_info` - Information about images for cloud computing
-* `sc_cloud_computing_flavors_info` - Information about flavors for cloud computing
-* `sc_cloud_computing_instance` - Create/delete/reinstall/upgrade instance
-* `sc_cloud_computing_instance_ptr` - Manage PTR records for cloud computing instances
-* `sc_cloud_computing_instance_state` - Manage shutdown/rescue/rebooted state for instance
-* `sc_l2_segment_info` - information about L2 segment
-* `sc_l2_segments_info` - list of existing L2 segments
-* `sc_l2_segment` - Creation/delelition/membership modification for L2 segments
-* `sc_l2_segment_aliases` - Adding and removing IP addresses to/from L2 segments
-* `sc_sbm_server` - Create/delete SBM (Scalable Baremetal) servers
-* `sc_sbm_server_info` - Information about a Scalable Baremetal (SBM) server
+
+**L2 Segments (Network)**
+
+* `sc_l2_segments_info` - List of existing L2 segments
+* `sc_l2_segment_info` - Information about specific L2 segment
+* `sc_l2_segment` - Creation/deletion/membership modification for L2 segments
+* `sc_l2_segment_aliases` - Add and remove IP addresses to/from L2 segments
+
+**Load Balancers**
+
+* `sc_load_balancer_instances_list` - List load balancer instances
+* `sc_load_balancer_instance_info` - Information about specific load balancer instance
+* `sc_load_balancer_instance_l4` - Manage L4 (TCP/UDP) load balancing rules
+* `sc_load_balancer_instance_l7` - Manage L7 (HTTP/HTTPS) load balancing rules
+
+**RBS (Remote Block Storage)**
+
+* `sc_rbs_flavors_info` - List available RBS storage flavors
+* `sc_rbs_volume` - Create/delete RBS volumes
+* `sc_rbs_volume_info` - Information about RBS volumes
+* `sc_rbs_volume_credentials_reset` - Reset credentials for RBS volumes
+
+**SBM (Scalable Baremetal)**
+
 * `sc_sbm_servers_info` - List of SBM servers with optional filtering
+* `sc_sbm_server` - Create/delete SBM (Scalable Baremetal) servers
+* `sc_sbm_server_info` - Information about a specific SBM server
 * `sc_sbm_server_power` - Power on/off/cycle operations for SBM servers
 * `sc_sbm_server_reinstall` - Reinstall OS on SBM servers
-* `sc_sbm_server_ptr` - Manage PTR records for SBM servers
 * `sc_sbm_server_ptr_info` - Query PTR records for SBM servers
+* `sc_sbm_server_ptr` - Manage PTR records for SBM servers
 * `sc_sbm_server_labels` - Update labels on SBM servers
-* `sc_sbm_server_network` - Create/delete networks for SBM servers
 * `sc_sbm_server_networks_info` - List/get networks for SBM servers
+* `sc_sbm_server_network` - Create/delete networks for SBM servers
 * `sc_sbm_flavor_models_info` - List of available SBM flavor models per location
 * `sc_sbm_os_list` - List of the available OS options for SBM servers by location and flavor model

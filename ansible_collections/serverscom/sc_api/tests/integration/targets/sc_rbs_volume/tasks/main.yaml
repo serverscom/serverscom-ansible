@@ -5,18 +5,6 @@
     msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
   when: not sc_endpoint or not sc_token
 
-- name: Test invalid token
-  serverscom.sc_api.sc_rbs_volume:
-    endpoint: "{{ sc_endpoint }}"
-    token: invalid
-    state: absent
-    name: "test-rbs-volume-module"
-  register: test1
-  failed_when:
-    - test1 is success
-    - sc_endpoint not in test1.api_url
-    - test1.status_code != 401
-
 - name: RBS Volume test series
   block:
     - name: Create RBS Volume

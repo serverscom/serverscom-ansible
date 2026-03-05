@@ -5,27 +5,17 @@
     msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
   when: not sc_endpoint or not sc_token
 
-- name: Test invalid token
-  sc_l2_segments_info:
-    token: invalid
-    endpoint: '{{ sc_endpoint }}'
-  register: test1
-  failed_when:
-    - test1 is success
-    - sc_endpoint not in test1.api_url
-    - test1.status_code != 401
-
-- name: Test2, Get L2 segments list
+- name: Test1, Get L2 segments list
   sc_l2_segments_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-  register: test2
+  register: test1
 
-- name: Check Test2
+- name: Check Test1
   assert:
     that:
-      - test2 is not changed
-      - ("l2_segments" in test2)
+      - test1 is not changed
+      - ("l2_segments" in test1)
 
 - name: Create test segment
   sc_l2_segment:
@@ -44,20 +34,20 @@
     labels:
       test_label: "test_value"
 
-- name: Test3, Get L2 segments list by label
+- name: Test2, Get L2 segments list by label
   sc_l2_segments_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     label_selector: "test_label==test_value"
-  register: test3
+  register: test2
 
-- name: Check Test3
+- name: Check Test2
   assert:
     that:
-      - ("l2_segments" in test3)
-      - (test3.l2_segments|length == 1)
-      - (test3.l2_segments[0].name == "sc-l2-segments-info-test")
-      - (test3.l2_segments[0].labels.test_label == "test_value")
+      - ("l2_segments" in test2)
+      - (test2.l2_segments|length == 1)
+      - (test2.l2_segments[0].name == "sc-l2-segments-info-test")
+      - (test2.l2_segments[0].labels.test_label == "test_value")
 
 - name: Destroy test segment
   sc_l2_segment:

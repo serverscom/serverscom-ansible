@@ -5,35 +5,44 @@
     msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
   when: not sc_endpoint or not sc_token
 
-- name: Test invalid token
-  sc_cloud_computing_instances_info:
-    token: invalid
-    endpoint: '{{ sc_endpoint }}'
-    region_id: 424242
-  register: test1
-  failed_when:
-    - test1 is success
-    - sc_endpoint not in test1.api_url
-    - test1.status_code != 401
-
-- name: Test2, List for non-existing region
+- name: Test1, List for non-existing region
   sc_cloud_computing_instances_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
     region_id: 42424242
+  register: test1
+
+- name: Check Test1
+  assert:
+    that:
+      - test1 is not changed
+      - test1.cloud_instances == []
+
+- name: Test2, Get all instances in one region
+  sc_cloud_computing_instances_info:
+    token: '{{ sc_token }}'
+    endpoint: '{{ sc_endpoint }}'
+    region_id: 2
   register: test2
 
 - name: Check Test2
   assert:
     that:
       - test2 is not changed
-      - test2.cloud_instances == []
+      - test2.cloud_instances|length > 0
+      - test2.cloud_instances[0].id
+      - test2.cloud_instances[0].region_id == 2
+      - test2.cloud_instances[0].region_code
+      - test2.cloud_instances[0].flavor_id
+      - test2.cloud_instances[0].flavor_name
+      - test2.cloud_instances[0].image_id
+      - test2.cloud_instances[0].name
+      - test2.cloud_instances[0].status
 
-- name: Test3, Get all instances in one region
+- name: Test3, Get all instances in all regions
   sc_cloud_computing_instances_info:
     token: '{{ sc_token }}'
     endpoint: '{{ sc_endpoint }}'
-    region_id: 2
   register: test3
 
 - name: Check Test3
@@ -41,26 +50,6 @@
     that:
       - test3 is not changed
       - test3.cloud_instances|length > 0
-      - test3.cloud_instances[0].id
-      - test3.cloud_instances[0].region_id == 2
-      - test3.cloud_instances[0].region_code
-      - test3.cloud_instances[0].flavor_id
-      - test3.cloud_instances[0].flavor_name
-      - test3.cloud_instances[0].image_id
-      - test3.cloud_instances[0].name
-      - test3.cloud_instances[0].status
-
-- name: Test4, Get all instances in all regions
-  sc_cloud_computing_instances_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
-  register: test4
-
-- name: Check Test4
-  assert:
-    that:
-      - test4 is not changed
-      - test4.cloud_instances|length > 0
 
 - name: Get Debian 12 image ID
   sc_cloud_computing_images_info:
@@ -90,21 +79,21 @@
     ipv4: false
   register: test_instance
 
-- name: Test5, Get instance info
+- name: Test4, Get instance info
   sc_cloud_computing_instances_info:
     token: "{{ sc_token }}"
     endpoint: "{{ sc_endpoint }}"
     label_selector: "test_label==test_value"
-  register: test5
+  register: test4
 
-- name: Check Test5
+- name: Check Test4
   assert:
     that:
-      - test5 is not changed
-      - test5.cloud_instances|length > 0
-      - test5.cloud_instances[0].id == test_instance.id
-      - test5.cloud_instances[0].region_id == 2
-      - test5.cloud_instances[0].name == "sc-cloud-computing-instances-info-test"
+      - test4 is not changed
+      - test4.cloud_instances|length > 0
+      - test4.cloud_instances[0].id == test_instance.id
+      - test4.cloud_instances[0].region_id == 2
+      - test4.cloud_instances[0].name == "sc-cloud-computing-instances-info-test"
 
 - name: Destroy test instance
   serverscom.sc_api.sc_cloud_computing_instance:

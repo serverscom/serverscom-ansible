@@ -117,6 +117,21 @@ def test_make_get_request_retries_connection_error(api_helper, clock):
     assert clock.now == 1.0
 
 
+def test_make_get_request_connection_error_no_retry(api_helper, clock):
+    sequencer = SendSequencer(
+        [requests.exceptions.ConnectionError("Connection refused")]
+    )
+    api_helper.session.send = sequencer
+
+    with pytest.raises(sc_api.SCConnectionError) as exc_info:
+        api_helper.make_get_request("/path")
+
+    assert "Connection refused" in exc_info.value.msg
+    fail_dict = exc_info.value.fail()
+    assert fail_dict["failed"] is True
+    assert "api_url" in fail_dict
+
+
 def test_make_get_request_404_no_retry(api_helper, clock):
     sequencer = SendSequencer(
         [FakeResponse(404, {}), FakeResponse(200, {}, json_data={"ok": True})]
