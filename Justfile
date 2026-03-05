@@ -17,7 +17,7 @@ init-secrets gpg_fingerprint:
 run *args:
     sops --config {{ justfile_directory() / ".secrets/.sops.yaml" }} exec-file --no-fifo {{ encrypted_file }} 'just _run {} {{ args }}'
 
-[working-directory: "ansible_collections/serverscom/sc_api"]dd
+[working-directory: "ansible_collections/serverscom/sc_api"]
 _run tmpfile *args:
     ln -sf {{ tmpfile }} {{ integration_config }}
     {{ args }}
