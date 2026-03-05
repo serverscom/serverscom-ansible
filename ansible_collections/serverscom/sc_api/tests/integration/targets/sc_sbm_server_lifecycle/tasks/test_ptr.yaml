@@ -2,6 +2,9 @@
 - name: Test1, Query PTR for non-existing server
   serverscom.sc_api.sc_sbm_server_ptr_info:
     server_id: '{{ non_existing_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test1
   ignore_errors: true
 
@@ -13,11 +16,17 @@
 - name: Get SBM server info for PTR tests
   serverscom.sc_api.sc_sbm_server_info:
     server_id: '{{ test_sbm_server_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: sbm_server
 
 - name: Test2, Query PTR records
   serverscom.sc_api.sc_sbm_server_ptr_info:
     server_id: '{{ test_sbm_server_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test2
 
 - name: Check Test2
@@ -32,12 +41,18 @@
     domain: ptr-test.example.com
     ip: '{{ sbm_server.public_ipv4_address }}'
     state: present
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   check_mode: true
   register: test3
 
 - name: Test3 verify, Query PTR records after check_mode
   serverscom.sc_api.sc_sbm_server_ptr_info:
     server_id: '{{ test_sbm_server_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test3_verify
 
 - name: Check Test3
@@ -52,6 +67,9 @@
     domain: ptr-test.example.com
     ip: '{{ sbm_server.public_ipv4_address }}'
     state: present
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test4
 
 - name: Check Test4
@@ -66,6 +84,9 @@
     domain: ptr-test.example.com
     ip: '{{ sbm_server.public_ipv4_address }}'
     state: present
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test5
 
 - name: Check Test5
@@ -79,12 +100,18 @@
     domain: ptr-test.example.com
     ip: '{{ sbm_server.public_ipv4_address }}'
     state: absent
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   check_mode: true
   register: test6
 
 - name: Test6 verify, Query PTR records after check_mode delete
   serverscom.sc_api.sc_sbm_server_ptr_info:
     server_id: '{{ test_sbm_server_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test6_verify
 
 - name: Check Test6
@@ -99,6 +126,9 @@
     domain: ptr-test.example.com
     ip: '{{ sbm_server.public_ipv4_address }}'
     state: absent
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test7
 
 - name: Check Test7
@@ -113,6 +143,9 @@
     domain: ptr-test.example.com
     ip: '{{ sbm_server.public_ipv4_address }}'
     state: absent
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test8
 
 - name: Check Test8
@@ -126,6 +159,9 @@
     domain: ptr-hostname-test.example.com
     ip: '{{ sbm_server.public_ipv4_address }}'
     state: present
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test9
 
 - name: Check Test9
@@ -140,6 +176,9 @@
     domain: ptr-hostname-test.example.com
     ip: '{{ sbm_server.public_ipv4_address }}'
     state: absent
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test10
 
 - name: Check Test10
@@ -154,6 +193,9 @@
     state: present
     ip: '{{ sbm_server.public_ipv4_address }}'
     domain: test-exclusive.example.com
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test11
   ignore_errors: true
 

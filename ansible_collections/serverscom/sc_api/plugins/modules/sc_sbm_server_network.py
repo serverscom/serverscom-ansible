@@ -159,8 +159,8 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
 def main():
     module = AnsibleModule(
         argument_spec={
-            "token": {"type": "str", "no_log": True, "required": True, "fallback": (env_fallback, ["SC_TOKEN"])},
-            "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT},
+            "token": {"type": "str", "no_log": True, "required": True, "fallback": (env_fallback, ["SERVERSCOM_API_TOKEN", "SC_TOKEN"])},
+            "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT, "fallback": (env_fallback, ["SERVERSCOM_API_URL"])},
             "server_id": {"type": "str"},
             "hostname": {"type": "str"},
             "state": {

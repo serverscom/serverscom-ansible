@@ -444,8 +444,8 @@ __metaclass__ = type
 def main():
     module = AnsibleModule(
         argument_spec={
-            "token": {"no_log": True, "required": True, "type": "str", "fallback": (env_fallback, ["SC_TOKEN"])},
-            "endpoint": {"default": DEFAULT_API_ENDPOINT, "type": "str"},
+            "token": {"no_log": True, "required": True, "type": "str", "fallback": (env_fallback, ["SERVERSCOM_API_TOKEN", "SC_TOKEN"])},
+            "endpoint": {"default": DEFAULT_API_ENDPOINT, "type": "str", "fallback": (env_fallback, ["SERVERSCOM_API_URL"])},
             "state": {
                 "type": "str",
                 "choices": ["present", "absent"],

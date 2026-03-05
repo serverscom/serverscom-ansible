@@ -9,29 +9,29 @@
   block:
     - name: Create test volume
       serverscom.sc_api.sc_rbs_volume:
-        endpoint: "{{ sc_endpoint }}"
         name: rbs_ansible_modules_test_volume
         location_id: 45
         flavor_id: 17363  # Basic
         size: 50
         state: present
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
 
     - name: Get credentials for test volume
       serverscom.sc_api.sc_rbs_volume_info:
-        endpoint: "{{ sc_endpoint }}"
         search_pattern: rbs_ansible_modules_test_volume
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: original_credentials
 
     - name: Test1, Reset credentials for test volume
       serverscom.sc_api.sc_rbs_volume_credentials_reset:
-        endpoint: "{{ sc_endpoint }}"
         name: rbs_ansible_modules_test_volume
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: new_credentials
 
     - name: Check Test1
@@ -43,10 +43,10 @@
 
     - name: Test2, No volumes found
       serverscom.sc_api.sc_rbs_volume_credentials_reset:
-        endpoint: "{{ sc_endpoint }}"
         name: non_existent_volume_name
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test2
       failed_when:
         - test2 is success
@@ -54,18 +54,18 @@
   always:
     - name: Get test volumes
       serverscom.sc_api.sc_rbs_volume_info:
-        endpoint: "{{ sc_endpoint }}"
         location_id: 45
         search_pattern: "rbs_ansible_modules_test_volume"
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test_volumes
 
     - name: Remove test volumes if present
       serverscom.sc_api.sc_rbs_volume:
-        endpoint: "{{ sc_endpoint }}"
         volume_id: "{{ item.id }}"
         state: absent
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       loop: "{{ test_volumes.rbs_volumes }}"

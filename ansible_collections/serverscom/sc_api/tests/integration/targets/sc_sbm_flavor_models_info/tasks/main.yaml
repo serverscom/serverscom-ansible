@@ -9,6 +9,9 @@
     - name: Test1, List for non-existing location
       serverscom.sc_api.sc_sbm_flavor_models_info:
         location_id: 424242
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test1
       failed_when: test1.status_code != 404
 
@@ -20,11 +23,17 @@
 
     - name: Get locations to find valid location_id
       serverscom.sc_api.sc_baremetal_locations_info: {}
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: locations
 
     - name: Test2, Get SBM flavor models for first location
       serverscom.sc_api.sc_sbm_flavor_models_info:
         location_id: "{{ locations.locations[0].id }}"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test2
       when: locations.locations | length > 0
 
@@ -39,6 +48,9 @@
       serverscom.sc_api.sc_sbm_flavor_models_info:
         location_id: "{{ locations.locations[0].id }}"
         search_pattern: "{{ test2.sbm_flavor_models[0].name[:3] | default('SBM') }}"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test3
       when: locations.locations | length > 0 and test2.sbm_flavor_models | default([]) | length > 0
 
@@ -59,6 +71,9 @@
     - name: Test5, Get SBM flavor models using location_code
       serverscom.sc_api.sc_sbm_flavor_models_info:
         location_code: "{{ locations.locations[0].code }}"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test5
       when: locations.locations | length > 0
 
@@ -72,6 +87,9 @@
     - name: Test6, Get SBM flavor models with non-existing location_code
       serverscom.sc_api.sc_sbm_flavor_models_info:
         location_code: ZZZZZZ
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test6
       ignore_errors: true
 
@@ -85,6 +103,9 @@
       serverscom.sc_api.sc_sbm_flavor_models_info:
         location_id: 1
         location_code: AMS7
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test7
       ignore_errors: true
       when: locations.locations | length > 0
@@ -94,9 +115,3 @@
         that:
           - test7 is failed
       when: locations.locations | length > 0
-
-  module_defaults:
-    group/serverscom.sc_api.api:
-      endpoint: "{{ sc_endpoint }}"
-    environment:
-      SC_TOKEN: '{{ sc_token }}'

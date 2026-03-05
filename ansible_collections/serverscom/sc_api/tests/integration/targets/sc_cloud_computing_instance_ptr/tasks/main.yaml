@@ -7,16 +7,15 @@
 
 - name: Tests prep, get regions
   sc_cloud_computing_regions_info:
-    endpoint: "{{ sc_endpoint }}"
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: regions
 
 - name: Tests, create and delete ptr records
   block:
     - name: Tests prep, create instance
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: present
         region_id: "{{ regions.regions[0].id }}"
         flavor_name: SSD.30
@@ -28,27 +27,28 @@
         wait: 600
         update_interval: 5
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: instance
 
     - name: Test1, create ptr records in check mode
       sc_cloud_computing_instance_ptr:
-        endpoint: "{{ sc_endpoint }}"
         domain: ptr1.example.com
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: present
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       check_mode: true
       register: test1_check_mode
 
     - name: Test1, get ptrs
       sc_cloud_computing_instance_ptr:
-        endpoint: "{{ sc_endpoint }}"
         instance_name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: query
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test1_result
 
     - name: Check Test1
@@ -59,33 +59,33 @@
 
     - name: Test2, create ptr record for public IP
       sc_cloud_computing_instance_ptr:
-        endpoint: "{{ sc_endpoint }}"
         domain: ptr1.example.com
         ip: "{{ instance.public_ipv4_address }}"
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: present
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test2
 
     - name: Test2, create ptr record for public IP second time
       sc_cloud_computing_instance_ptr:
-        endpoint: "{{ sc_endpoint }}"
         domain: ptr1.example.com
         ip: "{{ instance.public_ipv4_address }}"
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: present
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test2_second
 
     - name: Test2, get ptrs
       sc_cloud_computing_instance_ptr:
-        endpoint: "{{ sc_endpoint }}"
         instance_name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: query
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test2_result
 
     - name: Check Test2
@@ -99,54 +99,54 @@
 
     - name: Test3, remove PTR in check_mode
       sc_cloud_computing_instance_ptr:
-        endpoint: "{{ sc_endpoint }}"
         domain: ptr1.example.com
         ip: "{{ instance.public_ipv4_address }}"
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: absent
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       check_mode: true
       register: test3_check_mode
 
     - name: Test3, get ptrs after check_mode
       sc_cloud_computing_instance_ptr:
-        endpoint: "{{ sc_endpoint }}"
         instance_name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: query
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test3_result_after_check
 
     - name: Test3, remove PTR
       sc_cloud_computing_instance_ptr:
-        endpoint: "{{ sc_endpoint }}"
         domain: ptr1.example.com
         ip: "{{ instance.public_ipv4_address }}"
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: absent
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test3
 
     - name: Test3, get ptrs after delete
       sc_cloud_computing_instance_ptr:
-        endpoint: "{{ sc_endpoint }}"
         instance_name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: query
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test3_result
 
     - name: Test3, remove PTR second time
       sc_cloud_computing_instance_ptr:
-        endpoint: "{{ sc_endpoint }}"
         domain: ptr1.example.com
         ip: "{{ instance.public_ipv4_address }}"
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: absent
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test3_second
 
     - name: Report
@@ -165,33 +165,33 @@
 
     - name: Test4, create ptr record for public ipv4
       sc_cloud_computing_instance_ptr:
-        endpoint: "{{ sc_endpoint }}"
         domain: ptr1.example.com
         ip: "{{ instance.public_ipv4_address }}"
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: present
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test4_ipv4
 
     - name: Test4, create ptr record for public ipv6
       sc_cloud_computing_instance_ptr:
-        endpoint: "{{ sc_endpoint }}"
         domain: ptr2.example.com
         ip: "{{ instance.public_ipv6_address }}"
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: present
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test4_ipv6
 
     - name: Test4, get ptrs after creation
       sc_cloud_computing_instance_ptr:
-        endpoint: "{{ sc_endpoint }}"
         instance_name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         state: query
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test4_result
 
     - name: Check Test4
@@ -208,10 +208,10 @@
   always:
     - name: Tests cleanup
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: absent
         region_id: "{{ regions.regions[0].id }}"
         name: 537eb44e-eced-11ea-8fef-3b4e87dd916a
         wait: 600
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'

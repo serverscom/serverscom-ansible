@@ -10,7 +10,8 @@
     state: "on"
     server_id: "{{ existing_server1_id }}"
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: server_power_on
   failed_when:
     - server_power_on.power_status != "powered_on"
@@ -20,7 +21,8 @@
     state: "off"
     server_id: "{{ existing_server1_id }}"
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test1
 
 - name: Check Test1
@@ -34,7 +36,8 @@
     state: "off"
     server_id: "{{ existing_server1_id }}"
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test2
 
 - name: Check Test2
@@ -48,7 +51,8 @@
     state: "on"
     server_id: "{{ existing_server1_id }}"
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test3
 
 - name: Check Test3
@@ -62,7 +66,8 @@
     state: "on"
     server_id: "{{ existing_server1_id }}"
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test4
 
 - name: Check Test4
@@ -76,7 +81,8 @@
     state: cycle
     server_id: "{{ existing_server1_id }}"
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test5
 
 - name: Check Test5

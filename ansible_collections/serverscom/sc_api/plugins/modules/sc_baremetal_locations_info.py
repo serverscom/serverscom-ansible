@@ -126,8 +126,8 @@ def main():
     module = AnsibleModule(
         argument_spec={
             "search_pattern": {"type": "str"},
-            "token": {"type": "str", "no_log": True, "required": True, "fallback": (env_fallback, ["SC_TOKEN"])},
-            "endpoint": {"default": DEFAULT_API_ENDPOINT},
+            "token": {"type": "str", "no_log": True, "required": True, "fallback": (env_fallback, ["SERVERSCOM_API_TOKEN", "SC_TOKEN"])},
+            "endpoint": {"default": DEFAULT_API_ENDPOINT, "fallback": (env_fallback, ["SERVERSCOM_API_URL"])},
             "required_features": {"type": "list", "elements": "str"},
         },
         supports_check_mode=True,

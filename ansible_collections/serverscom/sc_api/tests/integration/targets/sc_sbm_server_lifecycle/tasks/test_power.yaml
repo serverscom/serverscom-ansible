@@ -3,6 +3,9 @@
   serverscom.sc_api.sc_sbm_server_power:
     state: "on"
     server_id: "{{ non_existing_id }}"
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test1
   ignore_errors: true
 
@@ -16,6 +19,9 @@
   serverscom.sc_api.sc_sbm_server_power:
     state: "on"
     server_id: "{{ test_sbm_server_id }}"
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: server_power_on
   failed_when:
     - server_power_on.power_status != "powered_on"
@@ -24,6 +30,9 @@
   serverscom.sc_api.sc_sbm_server_power:
     state: "off"
     server_id: "{{ test_sbm_server_id }}"
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test2
 
 - name: Check Test2
@@ -36,6 +45,9 @@
   serverscom.sc_api.sc_sbm_server_power:
     state: "off"
     server_id: "{{ test_sbm_server_id }}"
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test3
 
 - name: Check Test3
@@ -48,6 +60,9 @@
   serverscom.sc_api.sc_sbm_server_power:
     state: "on"
     server_id: "{{ test_sbm_server_id }}"
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test4
 
 - name: Check Test4
@@ -60,6 +75,9 @@
   serverscom.sc_api.sc_sbm_server_power:
     state: "on"
     server_id: "{{ test_sbm_server_id }}"
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test5
 
 - name: Check Test5
@@ -72,6 +90,9 @@
   serverscom.sc_api.sc_sbm_server_power:
     state: cycle
     server_id: "{{ test_sbm_server_id }}"
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test6
 
 - name: Check Test6
@@ -84,12 +105,18 @@
   serverscom.sc_api.sc_sbm_server_power:
     state: "off"
     server_id: "{{ test_sbm_server_id }}"
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   check_mode: true
   register: test7
 
 - name: Verify server still powered on after check_mode
   serverscom.sc_api.sc_sbm_server_info:
     server_id: "{{ test_sbm_server_id }}"
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test7_verify
 
 - name: Check Test7
@@ -102,6 +129,9 @@
   serverscom.sc_api.sc_sbm_server_power:
     state: "off"
     hostname: '{{ test_hostname }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test8
 
 - name: Check Test8
@@ -114,6 +144,9 @@
   serverscom.sc_api.sc_sbm_server_power:
     state: "on"
     hostname: '{{ test_hostname }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test9
 
 - name: Check Test9
@@ -126,6 +159,9 @@
   serverscom.sc_api.sc_sbm_server_power:
     state: "cycle"
     hostname: '{{ test_hostname }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test10
 
 - name: Check Test10
@@ -138,6 +174,9 @@
     server_id: '{{ test_sbm_server_id }}'
     hostname: '{{ test_hostname }}'
     state: "on"
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test11
   ignore_errors: true
 

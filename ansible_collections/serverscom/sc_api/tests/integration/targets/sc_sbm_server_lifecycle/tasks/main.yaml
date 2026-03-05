@@ -11,6 +11,9 @@
       serverscom.sc_api.sc_sbm_server:
         state: absent
         server_id: "{{ non_existing_id }}"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test_delete_missing
 
     - name: Check delete non-existing is not changed
@@ -22,6 +25,9 @@
       serverscom.sc_api.sc_sbm_server:
         state: absent
         hostname: nonexistent-ci-sbm-test-xyz
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test_delete_hostname_missing
       ignore_errors: true
 
@@ -39,6 +45,9 @@
         flavor_name: DL-01
         hostname: ci-sbm-negative-test
         operating_system_name: 'Debian 13 64-bit'
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test_bad_location_code
       ignore_errors: true
 
@@ -55,6 +64,9 @@
         flavor_name: NONEXISTENT_FLAVOR_XYZ
         hostname: ci-sbm-negative-test
         operating_system_name: 'Debian 13 64-bit'
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test_bad_flavor_name
       ignore_errors: true
 
@@ -71,6 +83,9 @@
         flavor_name: DL-01
         hostname: ci-sbm-negative-test
         operating_system_name: 'NonexistentOS 99.99 64-bit'
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test_bad_os_name
       ignore_errors: true
 
@@ -91,9 +106,3 @@
         - include_tasks: test_power.yaml
       always:
         - include_tasks: cleanup.yaml
-
-  module_defaults:
-    group/serverscom.sc_api.api:
-      endpoint: "{{ sc_endpoint }}"
-    environment:
-      SC_TOKEN: '{{ sc_token }}'

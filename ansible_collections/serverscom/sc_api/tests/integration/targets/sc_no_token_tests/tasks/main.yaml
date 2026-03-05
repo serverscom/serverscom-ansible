@@ -649,11 +649,12 @@
       - "'api_url' in result"
       - "'module_stderr' not in result or 'Traceback' not in result.module_stderr|default('')"
 
-# SC_TOKEN environment variable tests
+# Environment variable tests (token and endpoint)
 
 - name: SC_TOKEN env var fallback works
-  serverscom.sc_api.sc_ssh_keys_info:
+  serverscom.sc_api.sc_baremetal_os_list:
     endpoint: "https://api.servers.com/v1"
+    server_id: "test123"
   environment:
     SC_TOKEN: dummy
   register: result
@@ -666,25 +667,61 @@
       - result.status_code == 401
       - "'token' in result.msg"
 
-- name: Token parameter takes precedence over SC_TOKEN env var
-  serverscom.sc_api.sc_ssh_keys_info:
-    token: dummy
+- name: SERVERSCOM_API_TOKEN env var fallback works
+  serverscom.sc_api.sc_baremetal_os_list:
     endpoint: "https://api.servers.com/v1"
+    server_id: "test123"
   environment:
-    SC_TOKEN: other_dummy
+    SERVERSCOM_API_TOKEN: dummy
   register: result
   ignore_errors: true
 
-- name: Verify token parameter precedence
+- name: Verify SERVERSCOM_API_TOKEN env var fallback reaches API
   assert:
     that:
       - result is failed
       - result.status_code == 401
       - "'token' in result.msg"
 
-- name: Missing both token parameter and SC_TOKEN env var
-  serverscom.sc_api.sc_ssh_keys_info:
+- name: SERVERSCOM_API_TOKEN takes precedence over SC_TOKEN
+  serverscom.sc_api.sc_baremetal_os_list:
     endpoint: "https://api.servers.com/v1"
+    server_id: "test123"
+  environment:
+    SERVERSCOM_API_TOKEN: dummy
+    SC_TOKEN: other_dummy
+  register: result
+  ignore_errors: true
+
+- name: Verify SERVERSCOM_API_TOKEN precedence over SC_TOKEN
+  assert:
+    that:
+      - result is failed
+      - result.status_code == 401
+      - "'token' in result.msg"
+
+- name: Token parameter wins over both env vars
+  serverscom.sc_api.sc_baremetal_os_list:
+    token: dummy
+    endpoint: "https://api.servers.com/v1"
+    server_id: "test123"
+  environment:
+    SERVERSCOM_API_TOKEN: other_dummy
+    SC_TOKEN: yet_another_dummy
+  register: result
+  ignore_errors: true
+
+- name: Verify token parameter precedence over env vars
+  assert:
+    that:
+      - result is failed
+      - result.status_code == 401
+      - "'token' in result.msg"
+
+- name: Missing both token parameter and env vars
+  serverscom.sc_api.sc_baremetal_os_list:
+    endpoint: "https://api.servers.com/v1"
+    server_id: "test123"
   register: result
   ignore_errors: true
 
@@ -693,3 +730,35 @@
     that:
       - result is failed
       - "'missing required arguments: token' in result.msg"
+
+- name: SERVERSCOM_API_URL works as endpoint fallback
+  serverscom.sc_api.sc_baremetal_os_list:
+    token: dummy
+    server_id: "test123"
+  environment:
+    SERVERSCOM_API_URL: "https://localhost:1"
+  register: result
+  ignore_errors: true
+
+- name: Verify SERVERSCOM_API_URL endpoint fallback
+  assert:
+    that:
+      - result is failed
+      - "'Connection error' in result.msg"
+
+- name: Endpoint parameter wins over SERVERSCOM_API_URL
+  serverscom.sc_api.sc_baremetal_os_list:
+    token: dummy
+    endpoint: "https://api.servers.com/v1"
+    server_id: "test123"
+  environment:
+    SERVERSCOM_API_URL: "https://localhost:1"
+  register: result
+  ignore_errors: true
+
+- name: Verify endpoint parameter precedence over SERVERSCOM_API_URL
+  assert:
+    that:
+      - result is failed
+      - result.status_code == 401
+      - "'token' in result.msg"

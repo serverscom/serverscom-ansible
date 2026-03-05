@@ -42,7 +42,9 @@ Usage
 
 1. You need to issue a public API token from https://portal.servers.com/#/profile/api-token. You need an R/W token for
    doing any changes or ordering new resources.
-   The token can be passed as environment variable (`SC_TOKEN`) or as module parameter `token` (if both are set, `token` wins).
+   The token can be passed as environment variable (`SERVERSCOM_API_TOKEN` or `SC_TOKEN`) or as module parameter `token`.
+   Precedence: `token` parameter > `SERVERSCOM_API_TOKEN` > `SC_TOKEN`.
+   The API endpoint can be overridden via `SERVERSCOM_API_URL` environment variable or `endpoint` parameter.
 2. Configure `COLLECTION_PATH` (if you are using custom path for collections).
 3. Use modules by FQCN (Fully Qualified Collection Name), e.g. `serverscom.sc_api.sc_ssh_key`
    or by using `collections:` keyword in the play.

@@ -7,11 +7,11 @@
 
 - name: Test1, Invalid ID
   sc_load_balancer_instance_info:
-    endpoint: "{{ sc_endpoint }}"
     id: QQQQ
     type: l4
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test1
   failed_when:
     - test1 is success
@@ -20,11 +20,11 @@
 
 - name: Test2, Invalid Type
   sc_load_balancer_instance_info:
-    endpoint: "{{ sc_endpoint }}"
     id: V13vaNd8
     type: l8
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test2
   failed_when:
     - test2 is success
@@ -33,11 +33,11 @@
 
 - name: Test3, Invalid ID, fail_on_absent==false
   sc_load_balancer_instance_info:
-    endpoint: "{{ sc_endpoint }}"
     id: QQQQ
     fail_on_absent: false
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test3
   failed_when:
     - test3.failed != false
@@ -91,15 +91,16 @@
         labels:
           environment: staging
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test_lb_instance
 
     - name: Test4, Get LB instance by id
       sc_load_balancer_instance_info:
-        endpoint: "{{ sc_endpoint }}"
         id: "{{ test_lb_instance.id }}"
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test4
 
     - name: Check Test4
@@ -123,4 +124,5 @@
         state: absent
         name: "test-sc-load-balancer-instance-info-module"
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'

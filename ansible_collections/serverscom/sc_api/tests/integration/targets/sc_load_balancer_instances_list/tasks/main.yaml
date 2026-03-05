@@ -35,14 +35,15 @@
         labels:
           test_label: "test_value"
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test_lb_instance
 
     - name: Test1, Get Load Balancer instances list
       sc_load_balancer_instances_list:
-        endpoint: "{{ sc_endpoint }}"
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test1
 
     - name: Check Test1
@@ -61,10 +62,10 @@
 
     - name: Test2, Get Load Balancer instances by name
       sc_load_balancer_instances_list:
-        endpoint: "{{ sc_endpoint }}"
         name: test-lb-l4-instances-list-module2
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test2
     - debug: var=test2
     - name: Check Test2
@@ -83,10 +84,10 @@
 
     - name: Test3, Get Load Balancer instances by type
       sc_load_balancer_instances_list:
-        endpoint: "{{ sc_endpoint }}"
         type: l4
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test3
 
     - name: Check Test3
@@ -105,10 +106,10 @@
 
     - name: Test4, Get Load Balancer instances by label
       sc_load_balancer_instances_list:
-        endpoint: "{{ sc_endpoint }}"
         label_selector: "test_label==test_value"
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test4
 
     - name: Check Test4
@@ -131,4 +132,5 @@
         state: absent
         name: "test-lb-l4-instances-list-module2"
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'

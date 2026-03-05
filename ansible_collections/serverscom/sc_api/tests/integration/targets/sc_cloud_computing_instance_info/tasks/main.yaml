@@ -7,10 +7,10 @@
 
 - name: Test1, List for non-existing instance
   sc_cloud_computing_instance_info:
-    endpoint: '{{ sc_endpoint }}'
     instance_id: 'M7e5Ba2v'
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test1
   failed_when: false
 
@@ -25,7 +25,8 @@
   sc_cloud_computing_images_info:
     region_id: 2
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: images_info
 
 - name: Store Debian 12 image ID
@@ -34,7 +35,6 @@
 
 - name: Create test instance
   sc_cloud_computing_instance:
-    endpoint: '{{ sc_endpoint }}'
     state: present
     region_id: 2   # Luxembourg
     flavor_id: "33227-1"   # RND.2-1024-10
@@ -48,15 +48,16 @@
     ipv6: false
     ipv4: false
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test_instance
 
 - name: Test2, Get instance info
   sc_cloud_computing_instance_info:
-    endpoint: '{{ sc_endpoint }}'
     instance_id: '{{ test_instance.id }}'
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test2
 
 - name: Check Test2
@@ -81,4 +82,5 @@
     instance_id: '{{ test_instance.id }}'
     state: absent
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'

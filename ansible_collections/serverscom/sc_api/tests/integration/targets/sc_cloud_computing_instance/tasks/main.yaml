@@ -7,11 +7,11 @@
 
 - name: Test1, state=absent of absent instance by id
   sc_cloud_computing_instance:
-    endpoint: "{{ sc_endpoint }}"
     instance_id: dQKnqxAR
     state: absent
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test1
 
 - name: Check Test1
@@ -21,11 +21,11 @@
 
 - name: Test2, state=absent for absent instance by name
   sc_cloud_computing_instance:
-    endpoint: "{{ sc_endpoint }}"
     name: 603838e8-e844-11ea-a4e0-7f7652cefc07
     state: absent
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test2
 
 - name: Check test2
@@ -35,12 +35,12 @@
 
 - name: Test3, state=absent for absent instance by name with wrong region
   sc_cloud_computing_instance:
-    endpoint: "{{ sc_endpoint }}"
     name: 603838e8-e844-11ea-a4e0-7f7652cefc08
     region_id: 4242424242
     state: absent
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test3
 
 - name: Check test3
@@ -50,27 +50,27 @@
 
 - name: Tests prep, get region id
   sc_cloud_computing_regions_info:
-    endpoint: "{{ sc_endpoint }}"
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: regions
   tags: always
 
 - name: Tests prep, Get image id
   sc_cloud_computing_images_info:
-    endpoint: "{{ sc_endpoint }}"
     region_id: "{{ regions.regions[0].id }}"
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: img_info
   tags: always
 
 - name: Tests prep, Get flavor id
   sc_cloud_computing_flavors_info:
-    endpoint: "{{ sc_endpoint }}"
     region_id: "{{ regions.regions[0].id }}"
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: flavor_info
   tags: always
 
@@ -79,7 +79,6 @@
   block:
     - name: Test5, create instance in check mode
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: present
         region_id: "{{ regions.regions[0].id }}"
         flavor_id: '{{ (flavor_info.cloud_flavors|sort(attribute="disk"))[0].id }}'
@@ -89,15 +88,16 @@
         gpn: true
         ipv6: true
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       check_mode: true
       register: test5
 
     - name: Test5, get list of instances
       sc_cloud_computing_instances_info:
-        endpoint: "{{ sc_endpoint }}"
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test5_instances
 
     - name: Check test5
@@ -109,13 +109,13 @@
   always:
     - name: Test5 Cleanup
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: absent
         name: ec354674-e844-11ea-ac53-83e1244f3049
         wait: 600
         update_interval: 5
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
 
 - name: Test6, normal state=present/state=absent testsuite with wait
   tags: [test6]
@@ -123,7 +123,6 @@
     - debug: var=img_info.cloud_images
     - name: Test6, create instance with wait
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: present
         region_id: "{{ regions.regions[0].id }}"
         flavor_id: '{{ (flavor_info.cloud_flavors|sort(attribute="disk"))[0].id }}'
@@ -135,14 +134,15 @@
         wait: 600
         update_interval: 5
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test6
 
     - name: Test6, get list of instances
       sc_cloud_computing_instances_info:
-        endpoint: "{{ sc_endpoint }}"
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test6_instances
 
     - name: Check test6
@@ -156,7 +156,6 @@
 
     - name: Test6, create the same instance second time
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: present
         region_id: "{{ regions.regions[0].id }}"
         flavor_id: '{{ (flavor_info.cloud_flavors|sort(attribute="disk"))[0].id }}'
@@ -168,12 +167,12 @@
         wait: 600
         update_interval: 5
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test6_second
 
     - name: Test6, create the same instance third time in check_mode
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: present
         region_id: "{{ regions.regions[0].id }}"
         flavor_id: '{{ (flavor_info.cloud_flavors|sort(attribute="disk"))[0].id }}'
@@ -185,7 +184,8 @@
         wait: 600
         update_interval: 5
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       check_mode: true
       register: test6_third
 
@@ -202,19 +202,18 @@
   always:
     - name: Test6 Cleanup
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: absent
         name: 52310c60-7446-482d-a30e-2bedeb515878
         wait: 600
         update_interval: 5
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
 
 - name: Test7, state=present without wait, state=absent with conflict wait
   block:
     - name: Test7, create instance without wait
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: present
         region_id: "{{ regions.regions[0].id }}"
         flavor_id: '{{ (flavor_info.cloud_flavors|sort(attribute="disk"))[0].id }}'
@@ -225,14 +224,15 @@
         ipv6: false
         wait: 0
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test7
 
     - name: Test7, get list of instances
       sc_cloud_computing_instances_info:
-        endpoint: "{{ sc_endpoint }}"
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test7_instances
 
     - name: Check Test7
@@ -245,12 +245,12 @@
 
     - name: Test7, try to delete non-active instance without retry_on_conflicts
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: absent
         name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
         retry_on_conflicts: false
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test7_conflict
       failed_when: false
 
@@ -261,19 +261,19 @@
 
     - name: Test7, try to delete non-active instance in check_mode
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: absent
         name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       check_mode: true
       register: test7_delete_check_mode
 
     - name: Test7, get list of instances after check_mode delete
       sc_cloud_computing_instances_info:
-        endpoint: "{{ sc_endpoint }}"
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test7_instances_check_mode_delete
 
     - name: Check Test7 after check_mode delete
@@ -284,20 +284,20 @@
 
     - name: Test7, try to delete instance
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: absent
         name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
         wait: 600
         update_interval: 5
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test7_delete
 
     - name: Test7, get list of instances after delete
       sc_cloud_computing_instances_info:
-        endpoint: "{{ sc_endpoint }}"
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test7_instances_after_delete
 
     - name: Check Test7, after delete
@@ -309,39 +309,39 @@
   always:
     - name: Test7 Cleanup
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: absent
         name: c4edd55c-8a79-4181-b880-917b8ee5cdf2
         wait: 600
         update_interval: 5
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
 
 - name: Test8 Invalid flavor/image
   block:
     - name: Test8, invalid flavor_name
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: present
         name: 15a0688b-44f6-41e2-971c-4e860c402373
         region_id: "{{ regions.regions[0].id }}"
         flavor_name: "dont.exist"
         image_id: "{{ (img_info.cloud_images | selectattr('allowed_flavors', 'equalto', []) | first).id }}"
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test8_flavor
       failed_when: false
 
     - name: Test8, invalid image_regexp
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: present
         name: 15a0688b-44f6-41e2-971c-4e860c402373
         region_id: "{{ regions.regions[0].id }}"
         flavor_id: '{{ (flavor_info.cloud_flavors|sort(attribute="disk"))[0].id }}'
         image_regexp: a.+dont.exist
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test8_image
       failed_when: false
 
@@ -354,34 +354,34 @@
   always:
     - name: Test8, cleanup
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: absent
         name: 15a0688b-44f6-41e2-971c-4e860c402373
         wait: 600
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
 
 - name: Test9 image by regexp and flavor by name
   block:
     - name: Test9 create instance with image by regexp and flavor by name
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: present
         name: 8d2779e6-eb72-11ea-970f-733ca983e4ca
         region_id: "{{ regions.regions[0].id }}"
         flavor_name: "SSD.30"
         image_regexp: "Ubuntu.+"
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test9_create
     - name: Test9, delete instance by id
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         instance_id: "{{ test9_create.id }}"
         wait: 600
         state: absent
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test9_delete
 
     - name: Check test9
@@ -395,28 +395,27 @@
   always:
     - name: Test9, cleanup
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: absent
         name: 8d2779e6-eb72-11ea-970f-733ca983e4ca
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
 
 - name: Test10, use of GP only with userdata
   tags: [test10]
   block:
     - name: Test10 preparation, register a new key
       sc_ssh_key:
-        endpoint: "{{ sc_endpoint }}"
         public_key: '{{ lookup("file", "key1.pub") }}'
         name: 95f41cea-00fc-11ed-bfa8-33691f518c37
         state: present
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test10_key
 
     - name: Test10 create instance with GP only and custom userdata
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: present
         name: d1b69136-00ed-11ed-a8dc-dbb69a235481
         region_id: "{{ regions.regions[0].id }}"
@@ -436,7 +435,8 @@
               - arches: [default]
                 uri: http://mirror.servers.com/ubuntu
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test10
 
     - name: Check test10
@@ -452,15 +452,15 @@
   always:
     - name: Test10, cleanup
       sc_cloud_computing_instance:
-        endpoint: "{{ sc_endpoint }}"
         state: absent
         name: d1b69136-00ed-11ed-a8dc-dbb69a235481
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
     - name: clean ssh key
       sc_ssh_key:
         name: 95f41cea-00fc-11ed-bfa8-33691f518c37
-        endpoint: "{{ sc_endpoint }}"
         state: absent
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'

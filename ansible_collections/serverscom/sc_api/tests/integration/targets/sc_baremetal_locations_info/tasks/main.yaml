@@ -7,9 +7,9 @@
 
 - name: Test1, Simple get
   sc_baremetal_locations_info:
-    endpoint: '{{ sc_endpoint }}'
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test1
 
 - name: Check Test1
@@ -23,10 +23,10 @@
 
 - name: Test2, Search for location
   sc_baremetal_locations_info:
-    endpoint: '{{ sc_endpoint }}'
     search_pattern: US
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test2
 
 - name: Check Test2
@@ -39,12 +39,12 @@
 
 - name: Test3, Filter by features
   sc_baremetal_locations_info:
-    endpoint: '{{ sc_endpoint }}'
     required_features:
       - disaggregated_public_ports
       - load_balancers_enabled
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test3
 
 - name: Check Test3

@@ -7,9 +7,9 @@
 
 - name: Test1, retrieve list of servers
   sc_baremetal_servers_info:
-    endpoint: "{{ sc_endpoint }}"
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test1
 
 - name: Check Test1
@@ -47,10 +47,10 @@
 
     - name: Test2, retrieve list of servers by label
       sc_baremetal_servers_info:
-        endpoint: "{{ sc_endpoint }}"
         label_selector: "test_label==test_value"
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test2
 
     - name: Check Test2
@@ -88,10 +88,10 @@
 
 - name: Test3, retrieve list of servers by type
   sc_baremetal_servers_info:
-    endpoint: "{{ sc_endpoint }}"
     type: "dedicated_server"
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test3
 
 - name: Check Test3

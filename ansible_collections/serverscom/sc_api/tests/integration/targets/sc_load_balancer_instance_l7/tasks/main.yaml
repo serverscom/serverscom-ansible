@@ -53,7 +53,8 @@
         labels:
           environment: staging
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test2
 
     - name: Check Test2
@@ -189,7 +190,8 @@
                 max_fails: 0
                 fail_timeout: 30
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test4
 
     - name: Check Test4
@@ -228,7 +230,8 @@
                 max_fails: 0
                 fail_timeout: 30
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test5
 
     - name: Check Test5
@@ -242,7 +245,8 @@
         state: absent
         id: "{{ test2.id }}"
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test6
 
     - name: Check Test6
@@ -256,4 +260,5 @@
         state: absent
         name: "test-lb-l7-instance-module"
       environment:
-        SC_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'

@@ -9,14 +9,14 @@
 
 - name: Test1, successful reinstall in no-wait mode
   sc_dedicated_server_reinstall:
-    endpoint: '{{ sc_endpoint }}'
     id: '{{ existing_server1_id }}'
     drives_layout_template: raid1-simple
     operating_system_id: 49
     hostname: reinstall
     wait: 0
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test1
 
 - name: Check Test1
@@ -29,10 +29,10 @@
 
 - name: Test1, wait until installation is done
   sc_dedicated_server_info:
-    endpoint: '{{ sc_endpoint }}'
     name: '{{ existing_server1_id }}'
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: info
   until: info.ready == 1
   delay: 30
@@ -40,7 +40,6 @@
 
 - name: Test2, reinstall with wait-mode with very short wait time
   sc_dedicated_server_reinstall:
-    endpoint: '{{ sc_endpoint }}'
     id: '{{ existing_server2_id }}'
     drives_layout_template: raid1-simple
     operating_system_id: 49
@@ -48,7 +47,8 @@
     wait: 10
     update_interval: 5
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test2
   failed_when: false
 
@@ -61,7 +61,6 @@
 
 - name: Test3, reinstall with wait-mode with raid1-template
   sc_dedicated_server_reinstall:
-    endpoint: '{{ sc_endpoint }}'
     id: '{{ existing_server3_id }}'
     drives_layout_template: raid1-simple
     hostname: raid1test
@@ -71,7 +70,8 @@
     ssh_keys:
       - f7:90:27:e6:97:5e:6d:ad:31:51:65:26:8d:82:ac:f9
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test3
 
 - name: Check Test3
@@ -82,10 +82,10 @@
 
 - name: wait until installation is done 2
   sc_dedicated_server_info:
-    endpoint: '{{ sc_endpoint }}'
     name: '{{ existing_server1_id }}'
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: info
   until: info.ready == 1
   delay: 30
@@ -93,7 +93,6 @@
 
 - name: Test4, reinstall with raid0_template and ambiguous OS regex
   sc_dedicated_server_reinstall:
-    endpoint: '{{ sc_endpoint }}'
     id: '{{ existing_server1_id }}'
     drives_layout_template: raid0-simple
     operating_system_regex: "^debian (.*)x86_64$"
@@ -102,7 +101,8 @@
     wait: 3600
     update_interval: 30
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test4
   failed_when:
     - test4 is success
@@ -117,7 +117,6 @@
 
 - name: Test5, reinstall with raid0_template and non-existing OS regex
   sc_dedicated_server_reinstall:
-    endpoint: '{{ sc_endpoint }}'
     id: '{{ existing_server1_id }}'
     drives_layout_template: raid0-simple
     operating_system_regex: "^Debian 6(.*)x86_64$"
@@ -126,7 +125,8 @@
     wait: 3600
     update_interval: 30
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test5
   failed_when:
     - test5 is success
@@ -143,7 +143,6 @@
 
 - name: Test6, reinstall with raid0_template and OS name
   sc_dedicated_server_reinstall:
-    endpoint: '{{ sc_endpoint }}'
     id: '{{ existing_server1_id }}'
     drives_layout_template: raid0-simple
     operating_system_regex: "^Debian 12 (.*)x86_64$"
@@ -152,7 +151,8 @@
     wait: 3600
     update_interval: 30
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test6
 
 - name: Check Test6
@@ -165,7 +165,6 @@
 
 - name: Test7, reinstall with no-raid_template and OS name
   sc_dedicated_server_reinstall:
-    endpoint: '{{ sc_endpoint }}'
     id: '{{ existing_server1_id }}'
     drives_layout_template: no-raid
     operating_system_regex: "^Debian 12 (.*)x86_64$"
@@ -174,7 +173,8 @@
     wait: 3600
     update_interval: 30
   environment:
-    SC_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test7
 
 - name: Check Test7

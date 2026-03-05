@@ -6,6 +6,9 @@
 - name: Get locations
   serverscom.sc_api.sc_baremetal_locations_info:
     search_pattern: AMS7
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: locations_result
 
 - name: Assert AMS7 location is available
@@ -23,6 +26,9 @@
   serverscom.sc_api.sc_sbm_flavor_models_info:
     location_id: "{{ test_location_id }}"
     search_pattern: DL-01
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: flavors_result
 
 - name: Assert DL-01 flavor model is available
@@ -40,6 +46,9 @@
   serverscom.sc_api.sc_sbm_os_list:
     flavor_id: "{{ test_flavor_model_id }}"
     location_id: "{{ test_location_id }}"
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: os_result
 
 - name: Assert OS list is not empty
@@ -62,6 +71,9 @@
     operating_system_regex: 'Debian 13'
     wait: 86400
     update_interval: 60
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: created_server
 
 - name: Set server ID fact

@@ -17,6 +17,7 @@ options:
       description:
         - Endpoint to use to connect to API.
         - Do not change until specifically asked to do otherwise.
+        - If not set, the value of the C(SERVERSCOM_API_URL) environment variable is used.
 
     token:
       type: str
@@ -25,6 +26,7 @@ options:
         - Token to use.
         - You can create token for your account in https://portal.servers.com
           in Profile -> Public API section.
-        - If not set, the value of the C(SC_TOKEN) environment variable is used.
+        - If not set, the value of the C(SERVERSCOM_API_TOKEN) or C(SC_TOKEN) environment variable is used
+          (C(SERVERSCOM_API_TOKEN) takes precedence).
         - Value is not logged.
 """
