@@ -4,11 +4,9 @@
 # GNU General Public License v3.0
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
-
 
 ANSIBLE_METADATA = {
     "metadata_version": "1.1",
@@ -108,16 +106,14 @@ EXAMPLES = """
       - load_balancers_enabled
 """  # noqa
 
-
-from ansible.module_utils.basic import AnsibleModule, env_fallback
+from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
-    DEFAULT_API_ENDPOINT,
+    AUTH_ARGS,
     SCBaseError,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_dedicated_server import (
     ScBaremetalLocationsInfo,
 )
-
 
 __metaclass__ = type
 
@@ -125,9 +121,8 @@ __metaclass__ = type
 def main():
     module = AnsibleModule(
         argument_spec={
+            **AUTH_ARGS,
             "search_pattern": {"type": "str"},
-            "token": {"type": "str", "no_log": True, "required": True, "fallback": (env_fallback, ["SERVERSCOM_API_TOKEN", "SC_TOKEN"])},
-            "endpoint": {"default": DEFAULT_API_ENDPOINT, "fallback": (env_fallback, ["SERVERSCOM_API_URL"])},
             "required_features": {"type": "list", "elements": "str"},
         },
         supports_check_mode=True,

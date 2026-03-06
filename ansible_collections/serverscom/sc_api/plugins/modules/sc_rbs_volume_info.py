@@ -141,9 +141,9 @@ EXAMPLES = """
       register: result
 """
 
-from ansible.module_utils.basic import AnsibleModule, env_fallback
+from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
-    DEFAULT_API_ENDPOINT,
+    AUTH_ARGS,
     SCBaseError,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_rbs import (
@@ -154,8 +154,7 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_rbs import (
 def main():
     module = AnsibleModule(
         argument_spec={
-            "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT, "required": False, "fallback": (env_fallback, ["SERVERSCOM_API_URL"])},
-            "token": {"type": "str", "no_log": True, "required": True, "fallback": (env_fallback, ["SERVERSCOM_API_TOKEN", "SC_TOKEN"])},
+            **AUTH_ARGS,
             "label_selector": {"type": "str", "required": False},
             "search_pattern": {"type": "str", "required": False},
             "location_id": {"type": "str", "required": False},

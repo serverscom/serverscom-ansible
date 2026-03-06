@@ -120,11 +120,13 @@ EXAMPLES = """
     var: result.os_list
 """
 
-from ansible.module_utils.basic import AnsibleModule, env_fallback
+from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
-    DEFAULT_API_ENDPOINT,
     ScApi,
     SCBaseError,
+)
+from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
+    AUTH_ARGS,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
     ScSbmOSList,
@@ -135,8 +137,7 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
 def main():
     module = AnsibleModule(
         argument_spec={
-            "token": {"type": "str", "no_log": True, "required": True, "fallback": (env_fallback, ["SERVERSCOM_API_TOKEN", "SC_TOKEN"])},
-            "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT, "fallback": (env_fallback, ["SERVERSCOM_API_URL"])},
+            **AUTH_ARGS,
             "location_id": {"type": "int"},
             "location_code": {"type": "str"},
             "flavor_id": {"type": "str"},

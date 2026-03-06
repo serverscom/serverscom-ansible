@@ -202,10 +202,9 @@ EXAMPLES = """
         state: absent
 """
 
-
-from ansible.module_utils.basic import AnsibleModule, env_fallback
+from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
-    DEFAULT_API_ENDPOINT,
+    AUTH_ARGS,
     SCBaseError,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_rbs import (
@@ -216,8 +215,7 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_rbs import (
 def main():
     module = AnsibleModule(
         argument_spec={
-            "endpoint": {"type": "str", "required": False, "default": DEFAULT_API_ENDPOINT, "fallback": (env_fallback, ["SERVERSCOM_API_URL"])},
-            "token": {"type": "str", "no_log": True, "required": True, "fallback": (env_fallback, ["SERVERSCOM_API_TOKEN", "SC_TOKEN"])},
+            **AUTH_ARGS,
             "name": {"type": "str", "required": False},
             "volume_id": {"type": "str", "required": False},
             "state": {

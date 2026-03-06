@@ -4,11 +4,9 @@
 # GNU General Public License v3.0
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
-
 
 ANSIBLE_METADATA = {
     "metadata_version": "1.1",
@@ -217,9 +215,8 @@ EXAMPLES = """
   retries: 60
 """
 
-from ansible.module_utils.basic import AnsibleModule, env_fallback
+from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
-    DEFAULT_API_ENDPOINT,
     ScApi,
     SCBaseError,
 )
@@ -228,6 +225,7 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
     resolve_sbm_server_id,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
+    AUTH_ARGS,
     ModuleError,
 )
 
@@ -235,8 +233,7 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
 def main():
     module = AnsibleModule(
         argument_spec={
-            "token": {"type": "str", "no_log": True, "required": True, "fallback": (env_fallback, ["SERVERSCOM_API_TOKEN", "SC_TOKEN"])},
-            "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT, "fallback": (env_fallback, ["SERVERSCOM_API_URL"])},
+            **AUTH_ARGS,
             "server_id": {"type": "str"},
             "hostname": {"type": "str"},
             "fail_on_absent": {"type": "bool", "default": True},
