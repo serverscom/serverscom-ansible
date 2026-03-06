@@ -5,6 +5,9 @@
 - name: Test1, Error on absent server
   serverscom.sc_api.sc_sbm_server_reinstall:
     server_id: '{{ non_existing_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test1
   failed_when: false
 
@@ -22,6 +25,9 @@
     ssh_key_name: should-not-exists
     operating_system_id: 42
     hostname: somename
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test2
   ignore_errors: true
 
@@ -37,6 +43,9 @@
     server_id: '{{ test_sbm_server_id }}'
     hostname: test-checkmode
     wait: 0
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   check_mode: true
   register: test3
 
@@ -49,6 +58,9 @@
 - name: Test3 verify, Get server info after check_mode
   serverscom.sc_api.sc_sbm_server_info:
     server_id: '{{ test_sbm_server_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test3_verify
 
 - name: Check Test3 verify - server not reinstalling
@@ -63,6 +75,9 @@
     operating_system_regex: 'NonExistentOS12345'
     hostname: test-server
     wait: 0
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test4
   ignore_errors: true
 
@@ -79,6 +94,9 @@
     hostname: test-server
     wait: 30
     update_interval: 60
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test5
   ignore_errors: true
 
@@ -94,6 +112,9 @@
     server_hostname: '{{ test_hostname }}'
     hostname: '{{ test_hostname }}'
     wait: 0
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   check_mode: true
   register: test6
 
@@ -110,6 +131,9 @@
     hostname: '{{ test_hostname }}'
     wait: 86400
     update_interval: 60
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test7
 
 - name: Check Test7
@@ -127,6 +151,9 @@
     operating_system_name: '{{ test_os_name }}'
     hostname: '{{ test_hostname }}'
     wait: 0
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test8
   ignore_errors: true
 
@@ -142,6 +169,9 @@
     operating_system_name: 'NonexistentOS 99.99 64-bit'
     hostname: '{{ test_hostname }}'
     wait: 0
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test9
   ignore_errors: true
 
@@ -158,6 +188,9 @@
     server_hostname: '{{ test_hostname }}'
     hostname: '{{ test_hostname }}'
     wait: 0
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test10
   ignore_errors: true
 

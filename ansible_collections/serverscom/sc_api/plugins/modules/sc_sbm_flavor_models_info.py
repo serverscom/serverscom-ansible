@@ -4,12 +4,9 @@
 # GNU General Public License v3.0
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-
 from __future__ import absolute_import, division, print_function
 
-
 __metaclass__ = type
-
 
 ANSIBLE_METADATA = {
     "metadata_version": "1.1",
@@ -108,12 +105,13 @@ EXAMPLES = """
   register: amd_flavors
 """
 
-
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
-    DEFAULT_API_ENDPOINT,
     ScApi,
     SCBaseError,
+)
+from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
+    AUTH_ARGS,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
     ScSbmFlavorModelsInfo,
@@ -124,8 +122,7 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
 def main():
     module = AnsibleModule(
         argument_spec={
-            "token": {"type": "str", "no_log": True, "required": True},
-            "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT},
+            **AUTH_ARGS,
             "location_id": {"type": "int"},
             "location_code": {"type": "str"},
             "search_pattern": {"type": "str"},

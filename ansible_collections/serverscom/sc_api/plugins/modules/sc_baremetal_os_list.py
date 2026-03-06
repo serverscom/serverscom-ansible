@@ -116,7 +116,7 @@ EXAMPLES = """
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
-    DEFAULT_API_ENDPOINT,
+    AUTH_ARGS,
     SCBaseError,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_dedicated_server import (
@@ -127,8 +127,7 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_dedicated_ser
 def main():
     module = AnsibleModule(
         argument_spec={
-            "token": {"type": "str", "no_log": True, "required": True},
-            "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT},
+            **AUTH_ARGS,
             "server_id": {"type": "str"},
             "location_id": {"type": "str"},
             "location_code": {"type": "str"},

@@ -32,13 +32,15 @@
   block:
     - name: Create L4 load balancer instance
       serverscom.sc_api.sc_load_balancer_instance_l4:
-        token: "{{ sc_token }}"
         state: present
         name: "test-lb-l4-instance-module"
         location_id: 32
         vhost_zones: "{{ vhost_zones }}"
         upstream_zones: "{{ upstream_zones }}"
         labels: "{{ labels }}"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test2
 
     # - name: Check Test2
@@ -82,7 +84,6 @@
 
     - name: Update L4 load balancer instance by id (add additional upstream)
       serverscom.sc_api.sc_load_balancer_instance_l4:
-        token: "{{ sc_token }}"
         state: present
         id: "{{ test2.id }}"
         upstream_zones:
@@ -104,6 +105,9 @@
                 max_conns: 63000
                 max_fails: 0
                 fail_timeout: 30
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test4
 
     - name: Check Test4
@@ -114,7 +118,6 @@
 
     - name: Update L4 load balancer instance by name (remove additional upstream)
       serverscom.sc_api.sc_load_balancer_instance_l4:
-        token: "{{ sc_token }}"
         state: present
         name: "test-lb-l4-instance-module"
         upstream_zones:
@@ -130,6 +133,9 @@
                 max_conns: 63000
                 max_fails: 0
                 fail_timeout: 30
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test5
 
     - name: Check Test5
@@ -140,9 +146,11 @@
 
     - name: Remove L4 LB 'test-lb-l4-instance-module' by id
       serverscom.sc_api.sc_load_balancer_instance_l4:
-        token: "{{ sc_token }}"
         state: absent
         id: "{{ test2.id }}"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test6
 
     - name: Check Test6
@@ -153,6 +161,8 @@
   always:
     - name: Destroy test L4 load balancer instance
       serverscom.sc_api.sc_load_balancer_instance_l4:
-        token: "{{ sc_token }}"
         state: absent
         name: "test-lb-l4-instance-module"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'

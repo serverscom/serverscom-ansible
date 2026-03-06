@@ -14,7 +14,6 @@ ANSIBLE_METADATA = {
     "supported_by": "community",
 }
 
-
 DOCUMENTATION = """
 ---
 module: sc_load_balancer_instance_l7
@@ -529,10 +528,9 @@ EXAMPLES = """
     id: "lb-instance-id"
 """
 
-
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
-    DEFAULT_API_ENDPOINT,
+    AUTH_ARGS,
     SCBaseError,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_load_balancer import (
@@ -546,8 +544,7 @@ __metaclass__ = type
 def main():
     module = AnsibleModule(
         argument_spec={
-            "token": {"no_log": True, "required": True, "type": "str"},
-            "endpoint": {"default": DEFAULT_API_ENDPOINT},
+            **AUTH_ARGS,
             "state": {
                 "type": "str",
                 "choices": ["present", "absent"],

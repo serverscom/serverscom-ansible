@@ -7,8 +7,9 @@
 
 - name: Test1, Get L2 segments list
   sc_l2_segments_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test1
 
 - name: Check Test1
@@ -19,8 +20,6 @@
 
 - name: Create test segment
   sc_l2_segment:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     name: sc-l2-segments-info-test
     state: present
     type: private
@@ -33,12 +32,16 @@
         mode: native
     labels:
       test_label: "test_value"
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
 
 - name: Test2, Get L2 segments list by label
   sc_l2_segments_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     label_selector: "test_label==test_value"
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test2
 
 - name: Check Test2
@@ -51,7 +54,8 @@
 
 - name: Destroy test segment
   sc_l2_segment:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     name: sc-l2-segments-info-test
     state: absent
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'

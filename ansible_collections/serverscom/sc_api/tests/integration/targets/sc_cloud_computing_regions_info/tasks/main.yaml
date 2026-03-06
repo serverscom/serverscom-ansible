@@ -7,8 +7,9 @@
 
 - name: Test1, Simple get
   sc_cloud_computing_regions_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test1
 
 - name: Check Test1
@@ -22,9 +23,10 @@
 
 - name: Test2, Search for location
   sc_cloud_computing_regions_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     search_pattern: WAS
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test2
 
 

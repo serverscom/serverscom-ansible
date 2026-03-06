@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, print_function
+from ansible.module_utils.basic import env_fallback
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
     SCBaseError,
     DEFAULT_API_ENDPOINT,
@@ -11,6 +12,20 @@ _ignored = DEFAULT_API_ENDPOINT  # to silence pylint warning, it is reimported
 
 CHANGED = True
 NOT_CHANGED = False
+
+AUTH_ARGS = {
+    "token": {
+        "type": "str",
+        "no_log": True,
+        "required": True,
+        "fallback": (env_fallback, ["SERVERSCOM_API_TOKEN", "SC_TOKEN"]),
+    },
+    "endpoint": {
+        "type": "str",
+        "default": DEFAULT_API_ENDPOINT,
+        "fallback": (env_fallback, ["SERVERSCOM_API_URL"]),
+    },
+}
 
 
 def _retry_rules_for_wait(max_wait, delay):

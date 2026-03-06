@@ -93,7 +93,7 @@ EXAMPLES = """
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
-    DEFAULT_API_ENDPOINT,
+    AUTH_ARGS,
     SCBaseError,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_rbs import (
@@ -104,8 +104,7 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_rbs import (
 def main():
     module = AnsibleModule(
         argument_spec={
-            "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT, "required": False},
-            "token": {"type": "str", "no_log": True, "required": True},
+            **AUTH_ARGS,
             "volume_id": {"type": "str", "required": False},
             "name": {"type": "str", "required": False},
             "wait": {"type": "int", "default": 600, "required": False},

@@ -8,6 +8,9 @@
 - block:
     - name: Test1, List all SBM servers
       serverscom.sc_api.sc_sbm_servers_info: {}
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test1
 
     - name: Check Test1
@@ -19,6 +22,9 @@
     - name: Test2, List SBM servers with search pattern
       serverscom.sc_api.sc_sbm_servers_info:
         search_pattern: "nonexistent-pattern-xyz"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test2
 
     - name: Check Test2
@@ -38,6 +44,9 @@
     - name: Test4, List SBM servers with label selector
       serverscom.sc_api.sc_sbm_servers_info:
         label_selector: "nonexistent-label=value"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test4
 
     - name: Check Test4
@@ -49,11 +58,17 @@
 
     - name: Get locations for location_code tests
       serverscom.sc_api.sc_baremetal_locations_info: {}
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: locations
 
     - name: Test5, List SBM servers with location_code filter
       serverscom.sc_api.sc_sbm_servers_info:
         location_code: "{{ locations.locations[0].code }}"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test5
       when: locations.locations | length > 0
 
@@ -68,6 +83,9 @@
       serverscom.sc_api.sc_sbm_servers_info:
         location_id: 1
         location_code: AMS7
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test6
       ignore_errors: true
 
@@ -75,8 +93,3 @@
       assert:
         that:
           - test6 is failed
-
-  module_defaults:
-    group/serverscom.sc_api.api:
-      token: "{{ sc_token }}"
-      endpoint: "{{ sc_endpoint }}"

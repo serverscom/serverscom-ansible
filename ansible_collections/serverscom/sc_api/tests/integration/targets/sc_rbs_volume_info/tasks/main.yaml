@@ -9,19 +9,21 @@
   block:
     - name: Create test volume
       serverscom.sc_api.sc_rbs_volume:
-        endpoint: "{{ sc_endpoint }}"
-        token: "{{ sc_token }}"
         name: rbs_ansible_modules_test_volume
         location_id: 45
         flavor_id: 17363  # Basic
         size: 50
         state: present
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
 
     - name: Test1, Get volume list for a specific location id
       serverscom.sc_api.sc_rbs_volume_info:
-        endpoint: "{{ sc_endpoint }}"
-        token: "{{ sc_token }}"
         location_id: 45
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test1
 
     - name: Check Test1
@@ -47,9 +49,10 @@
 
     - name: Test2, No volumes found
       serverscom.sc_api.sc_rbs_volume_info:
-        endpoint: "{{ sc_endpoint }}"
-        token: "{{ sc_token }}"
         search_pattern: "no_such_volume"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test2
 
     - name: Check Test2
@@ -59,9 +62,10 @@
 
     - name: Test3, Get volume list for a specific location code
       serverscom.sc_api.sc_rbs_volume_info:
-        endpoint: "{{ sc_endpoint }}"
-        token: "{{ sc_token }}"
         location_code: DFW5
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test3
 
     - name: Check Test3
@@ -71,9 +75,10 @@
 
     - name: Test4, Get volume list for a specific search pattern
       serverscom.sc_api.sc_rbs_volume_info:
-        endpoint: "{{ sc_endpoint }}"
-        token: "{{ sc_token }}"
         search_pattern:
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test4
 
     - name: Check Test4
@@ -84,16 +89,18 @@
   always:
     - name: Get test volumes
       serverscom.sc_api.sc_rbs_volume_info:
-        endpoint: "{{ sc_endpoint }}"
-        token: "{{ sc_token }}"
         location_id: 45
         search_pattern: "rbs_ansible_modules_test_volume"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test_volumes
 
     - name: Remove test volumes if present
       serverscom.sc_api.sc_rbs_volume:
-        endpoint: "{{ sc_endpoint }}"
-        token: "{{ sc_token }}"
         volume_id: "{{ item.id }}"
         state: absent
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       loop: "{{ test_volumes.rbs_volumes }}"
