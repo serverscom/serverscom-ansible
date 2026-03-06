@@ -33,10 +33,7 @@ There are two types of baremetal: Enterprise Baremetal (dedicated) and Scalable 
    Examples: `server_id` / `server_hostname` / `server_regex`, `flavor_id` / `flavor_name`, `location_id` / `location_code`
 
 ## Testing
-(all tests from directory `ansible_collections/serverscom/sc_api/`)
-- **Sanity** `ansible-test sanity --requirements --python 3.13`
-- **Unit** `ansible-test units --requirements --python 3.13`
-- **Non-secret integrations** ansible-test integration --requirements --python 3.13 sc_no_token_tests
+To run quick tests (sanity, unit, non-secret integration tests), run `just quick-tests`
 
 There are other slow and expensive integration tests, do not run them, you don't have access to secrets. Don't try to get access to them.
 
