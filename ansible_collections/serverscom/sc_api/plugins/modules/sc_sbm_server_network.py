@@ -4,12 +4,9 @@
 # GNU General Public License v3.0
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-
 from __future__ import absolute_import, division, print_function
 
-
 __metaclass__ = type
-
 
 ANSIBLE_METADATA = {
     "metadata_version": "1.1",
@@ -143,12 +140,13 @@ EXAMPLES = """
     network_id: 'net456'
 """
 
-
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
-    DEFAULT_API_ENDPOINT,
     ScApi,
     SCBaseError,
+)
+from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
+    AUTH_ARGS,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
     ScSbmServerNetwork,
@@ -159,8 +157,7 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
 def main():
     module = AnsibleModule(
         argument_spec={
-            "token": {"type": "str", "no_log": True, "required": True},
-            "endpoint": {"type": "str", "default": DEFAULT_API_ENDPOINT},
+            **AUTH_ARGS,
             "server_id": {"type": "str"},
             "hostname": {"type": "str"},
             "state": {

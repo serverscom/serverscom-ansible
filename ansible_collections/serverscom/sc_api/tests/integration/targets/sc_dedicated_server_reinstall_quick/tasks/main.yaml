@@ -9,10 +9,11 @@
 # should make a get to server before doing reinstall
 - name: Test1, Error on absent server with incomplete data
   sc_dedicated_server_reinstall:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     id: '{{ non_existing_id }}'
     drives_layout_template: raid1-simple
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test1
   failed_when: false
 
@@ -26,13 +27,14 @@
 # should make a get to server before doing reinstall
 - name: Test2, Error on absent ssh key
   sc_dedicated_server_reinstall:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     id: '{{ existing_server1_id }}'
     drives_layout_template: raid1-simple
     ssh_key_name: should-not-exists
     operating_system_id: '42'
     hostname: somename
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test2
   failed_when: false
 
@@ -44,14 +46,15 @@
 
 - name: Test3, Error on absent server with all information
   sc_dedicated_server_reinstall:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     id: '{{ non_existing_id }}'
     drives_layout_template: raid1-simple
     ssh_keys:
       - '58:e5:58:e9:38:10:82:57:d9:82:11:8c:f6:44:68:e8'
     operating_system_id: '42'
     hostname: somename
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test3
   failed_when: false
 

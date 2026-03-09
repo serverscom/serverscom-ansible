@@ -7,9 +7,10 @@
 
 - name: Test1, List for non-existing region
   sc_cloud_computing_instances_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     region_id: 42424242
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test1
 
 - name: Check Test1
@@ -20,9 +21,10 @@
 
 - name: Test2, Get all instances in one region
   sc_cloud_computing_instances_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     region_id: 2
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test2
 
 - name: Check Test2
@@ -41,8 +43,9 @@
 
 - name: Test3, Get all instances in all regions
   sc_cloud_computing_instances_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test3
 
 - name: Check Test3
@@ -53,8 +56,10 @@
 
 - name: Get Debian 12 image ID
   sc_cloud_computing_images_info:
-    token: "{{ sc_token }}"
     region_id: 2
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: images_info
 
 - name: Store Debian 12 image ID
@@ -63,8 +68,6 @@
 
 - name: Create test instance with labels
   sc_cloud_computing_instance:
-    token: "{{ sc_token }}"
-    endpoint: '{{ sc_endpoint }}'
     state: present
     region_id: 2   # Luxembourg
     flavor_id: "33227-1"   # RND.2-1024-10
@@ -77,13 +80,17 @@
     gpn: true
     ipv6: false
     ipv4: false
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test_instance
 
 - name: Test4, Get instance info
   sc_cloud_computing_instances_info:
-    token: "{{ sc_token }}"
-    endpoint: "{{ sc_endpoint }}"
     label_selector: "test_label==test_value"
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test4
 
 - name: Check Test4
@@ -97,6 +104,8 @@
 
 - name: Destroy test instance
   serverscom.sc_api.sc_cloud_computing_instance:
-    token: '{{ sc_token }}'
     instance_id: '{{ test_instance.id }}'
     state: absent
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'

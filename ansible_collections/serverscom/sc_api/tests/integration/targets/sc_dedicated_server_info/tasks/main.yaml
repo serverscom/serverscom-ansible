@@ -7,10 +7,11 @@
 
 - name: Test1, Absent server without failure
   sc_dedicated_server_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     fail_on_absent: false
     id: '{{ non_existing_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test1
 
 - name: Check Test1
@@ -22,10 +23,11 @@
 
 - name: Test2, Absent server with failure
   sc_dedicated_server_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     fail_on_absent: true
     id: '{{ non_existing_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test2
   ignore_errors: true
 
@@ -37,10 +39,11 @@
 
 - name: Test3, Information for real server
   sc_dedicated_server_info:
-    token: '{{ sc_token }}'
-    endpoint: '{{ sc_endpoint }}'
     fail_on_absent: false
     id: '{{ existing_server1_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test3
 - debug: var=test3
 - name: Check Test3

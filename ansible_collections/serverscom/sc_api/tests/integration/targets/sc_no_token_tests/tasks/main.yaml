@@ -648,3 +648,54 @@
       - "'Connection error' in result.msg"
       - "'api_url' in result"
       - "'module_stderr' not in result or 'Traceback' not in result.module_stderr|default('')"
+
+# Environment variable integration tests
+#
+# Precedence tests for env_fallback (SERVERSCOM_API_TOKEN vs SC_TOKEN,
+# parameter vs env var) are in unit tests: test_auth_args.py.
+# Integration tests here only cover behavior that needs a real module run.
+
+- name: Missing both token parameter and env vars
+  serverscom.sc_api.sc_baremetal_os_list:
+    endpoint: "https://api.servers.com/v1"
+    server_id: "test123"
+  register: result
+  ignore_errors: true
+
+- name: Verify missing token produces argument error
+  assert:
+    that:
+      - result is failed
+      - "'missing required arguments: token' in result.msg"
+
+- name: SERVERSCOM_API_URL works as endpoint fallback
+  serverscom.sc_api.sc_baremetal_os_list:
+    token: dummy
+    server_id: "test123"
+  environment:
+    SERVERSCOM_API_URL: "https://localhost:1"
+  register: result
+  ignore_errors: true
+
+- name: Verify SERVERSCOM_API_URL endpoint fallback
+  assert:
+    that:
+      - result is failed
+      - "'Connection error' in result.msg"
+
+- name: Endpoint parameter wins over SERVERSCOM_API_URL
+  serverscom.sc_api.sc_baremetal_os_list:
+    token: dummy
+    endpoint: "https://api.servers.com/v1"
+    server_id: "test123"
+  environment:
+    SERVERSCOM_API_URL: "https://localhost:1"
+  register: result
+  ignore_errors: true
+
+- name: Verify endpoint parameter precedence over SERVERSCOM_API_URL
+  assert:
+    that:
+      - result is failed
+      - result.status_code == 401
+      - "'token' in result.msg"

@@ -4,6 +4,9 @@
     server_id: '{{ non_existing_id }}'
     labels:
       env: test
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test1
   ignore_errors: true
 
@@ -18,12 +21,18 @@
     labels:
       environment: integration-test
       managed_by: ansible
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   check_mode: true
   register: test2
 
 - name: Test2 verify, Get server info to check labels unchanged
   serverscom.sc_api.sc_sbm_server_info:
     server_id: '{{ test_sbm_server_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test2_verify
 
 - name: Check Test2
@@ -38,6 +47,9 @@
     labels:
       environment: integration-test
       managed_by: ansible
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test3
 
 - name: Check Test3
@@ -53,6 +65,9 @@
     labels:
       environment: integration-test
       managed_by: ansible
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test4
 
 - name: Check Test4
@@ -64,6 +79,9 @@
   serverscom.sc_api.sc_sbm_server_labels:
     server_id: '{{ test_sbm_server_id }}'
     labels: {}
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test5
 
 - name: Check Test5
@@ -77,6 +95,9 @@
     hostname: '{{ test_hostname }}'
     labels:
       hostname_test: passed
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test6
 
 - name: Check Test6
@@ -89,6 +110,9 @@
   serverscom.sc_api.sc_sbm_server_labels:
     server_id: '{{ test_sbm_server_id }}'
     labels: {}
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test7
 
 - name: Check Test7
@@ -101,6 +125,9 @@
     server_id: '{{ test_sbm_server_id }}'
     hostname: '{{ test_hostname }}'
     labels: {}
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test8
   ignore_errors: true
 

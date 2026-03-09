@@ -4,12 +4,9 @@
 # GNU General Public License v3.0
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
-
 from __future__ import absolute_import, division, print_function
 
-
 __metaclass__ = type
-
 
 ANSIBLE_METADATA = {
     "metadata_version": "1.1",
@@ -92,10 +89,9 @@ EXAMPLES = """
     - debug: var=images.cloud_images
 """
 
-
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
-    DEFAULT_API_ENDPOINT,
+    AUTH_ARGS,
     SCBaseError,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_cloud_computing import (
@@ -108,8 +104,7 @@ __metaclass__ = type
 def main():
     module = AnsibleModule(
         argument_spec={
-            "token": {"type": "str", "no_log": True, "required": True},
-            "endpoint": {"default": DEFAULT_API_ENDPOINT},
+            **AUTH_ARGS,
             "region_id": {"type": "int", "required": True},
         },
         supports_check_mode=True,

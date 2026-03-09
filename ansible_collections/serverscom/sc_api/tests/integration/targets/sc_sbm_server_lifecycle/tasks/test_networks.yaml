@@ -2,6 +2,9 @@
 - name: Test1, List networks
   serverscom.sc_api.sc_sbm_server_networks_info:
     server_id: '{{ test_sbm_server_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test1
 
 - name: Check Test1
@@ -16,6 +19,9 @@
     server_id: '{{ test_sbm_server_id }}'
     family: ipv4
     interface_type: private
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test2
 
 - name: Check Test2
@@ -28,6 +34,9 @@
   serverscom.sc_api.sc_sbm_server_networks_info:
     server_id: '{{ test_sbm_server_id }}'
     network_id: '{{ test1.networks[0].id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test3
   when: test1.networks | length > 0
 
@@ -43,6 +52,9 @@
     server_id: '{{ test_sbm_server_id }}'
     state: present
     mask: 29
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   check_mode: true
   register: test4
 
@@ -56,6 +68,9 @@
     server_id: '{{ test_sbm_server_id }}'
     state: present
     mask: 29
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test5
 
 - name: Check Test5
@@ -69,6 +84,9 @@
     server_id: '{{ test_sbm_server_id }}'
     state: absent
     network_id: '{{ test5.id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test6
 
 - name: Check Test6
@@ -81,6 +99,9 @@
     server_id: '{{ test_sbm_server_id }}'
     state: absent
     network_id: '{{ test5.id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test7
 
 - name: Check Test7
@@ -91,6 +112,9 @@
 - name: Test8, List networks using hostname
   serverscom.sc_api.sc_sbm_server_networks_info:
     hostname: '{{ test_hostname }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test8
 
 - name: Check Test8
@@ -105,6 +129,9 @@
     hostname: '{{ test_hostname }}'
     state: present
     mask: 29
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test9
 
 - name: Check Test9
@@ -118,6 +145,9 @@
     hostname: '{{ test_hostname }}'
     state: absent
     network_id: '{{ test9.id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test10
 
 - name: Check Test10
@@ -131,6 +161,9 @@
     hostname: '{{ test_hostname }}'
     state: present
     mask: 29
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test11
   ignore_errors: true
 
@@ -143,6 +176,9 @@
   serverscom.sc_api.sc_sbm_server_networks_info:
     server_id: '{{ test_sbm_server_id }}'
     hostname: '{{ test_hostname }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test12
   ignore_errors: true
 

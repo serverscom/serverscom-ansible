@@ -8,11 +8,17 @@
 - block:
     - name: Get locations to find valid location
       serverscom.sc_api.sc_baremetal_locations_info: {}
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: locations
 
     - name: Get SBM flavor models for first location
       serverscom.sc_api.sc_sbm_flavor_models_info:
         location_id: "{{ locations.locations[0].id }}"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: flavors
       when: locations.locations | length > 0
 
@@ -20,6 +26,9 @@
       serverscom.sc_api.sc_sbm_os_list:
         location_id: "{{ locations.locations[0].id }}"
         flavor_id: "{{ flavors.sbm_flavor_models[0].id }}"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test1
       when: locations.locations | length > 0 and flavors.sbm_flavor_models | default([]) | length > 0
 
@@ -34,6 +43,9 @@
       serverscom.sc_api.sc_sbm_os_list:
         location_code: "{{ locations.locations[0].code }}"
         flavor_name: "{{ flavors.sbm_flavor_models[0].name }}"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test2
       when: locations.locations | length > 0 and flavors.sbm_flavor_models | default([]) | length > 0
 
@@ -49,6 +61,9 @@
         location_id: "{{ locations.locations[0].id }}"
         flavor_id: "{{ flavors.sbm_flavor_models[0].id }}"
         os_name_regex: "{{ test1.os_list[0].full_name[:5] | default('Linux') }}"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test3
       when: locations.locations | length > 0 and flavors.sbm_flavor_models | default([]) | length > 0 and test1.os_list | default([]) | length > 0
 
@@ -63,6 +78,9 @@
       serverscom.sc_api.sc_sbm_os_list:
         location_id: "{{ locations.locations[0].id }}"
         flavor_name: NONEXISTENT_FLAVOR_XYZ
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test4
       ignore_errors: true
       when: locations.locations | length > 0
@@ -78,6 +96,9 @@
       serverscom.sc_api.sc_sbm_os_list:
         location_code: ZZZZZZ_INVALID
         flavor_id: "1"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test5
       ignore_errors: true
 
@@ -92,6 +113,9 @@
         location_id: 1
         location_code: AMS7
         flavor_id: "1"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test6
       ignore_errors: true
 
@@ -105,6 +129,9 @@
         location_id: 1
         flavor_id: "1"
         flavor_name: "DL-01"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test7
       ignore_errors: true
 
@@ -112,8 +139,3 @@
       assert:
         that:
           - test7 is failed
-
-  module_defaults:
-    group/serverscom.sc_api.api:
-      token: "{{ sc_token }}"
-      endpoint: "{{ sc_endpoint }}"

@@ -20,6 +20,9 @@ ansible-galaxy collection install serverscom.sc_api
 ```
 
 From this repository:
+
+Download latest release from Github Releases, and install it:
+
 ```
 ansible-galaxy collection install https://github.com/serverscom/serverscom-ansible/... tar.gz
 ```
@@ -37,12 +40,23 @@ ansible-galaxy collection build
 Usage
 =====
 
-1. You need to issue a public API token from https://portal.servers.com/#/profile/api-token. It's used as the `token` parameter for all modules.
+1. You need to issue a public API token from https://portal.servers.com/#/profile/api-token. You need an R/W token for
+   doing any changes or ordering new resources.
+   The token can be passed as environment variable (`SERVERSCOM_API_TOKEN` or `SC_TOKEN`) or as module parameter `token`.
+   Precedence: `token` parameter > `SERVERSCOM_API_TOKEN` > `SC_TOKEN`.
+   The API endpoint can be overridden via `SERVERSCOM_API_URL` environment variable or `endpoint` parameter.
 2. Configure `COLLECTION_PATH` (if you are using custom path for collections).
 3. Use modules by FQCN (Fully Qualified Collection Name), e.g. `serverscom.sc_api.sc_ssh_key`
    or by using `collections:` keyword in the play.
 
 You can see documentation for individual modules by calling (after installation) `ansible-doc module_name`, e.g. `ansible-doc sc_ssh_key`.
+
+Notes:
+
+* Resources created with modules will be billed at current prices.
+* Requests to the API are rate-limited; contact support if you have high usage.
+
+You can see documentation for individual modules by calling (after installation) `ansible-doc module_name`, f.e. `ansible-doc sc_ssh_key`.
 
 List of modules
 ===============

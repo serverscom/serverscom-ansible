@@ -22,3 +22,8 @@ _run tmpfile *args:
     ln -sf {{ tmpfile }} {{ integration_config }}
     {{ args }}
     rm -f {{ integration_config }}
+
+[working-directory: "ansible_collections/serverscom/sc_api"]
+quick-tests:
+   ansible-test sanity --requirements --python 3.13
+   ansible-test units --requirements --python 3.13

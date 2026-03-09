@@ -3,6 +3,9 @@
   serverscom.sc_api.sc_sbm_server_info:
     fail_on_absent: false
     server_id: '{{ non_existing_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test1
 
 - name: Check Test1
@@ -16,6 +19,9 @@
   serverscom.sc_api.sc_sbm_server_info:
     fail_on_absent: true
     server_id: '{{ non_existing_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test2
   ignore_errors: true
 
@@ -29,6 +35,9 @@
   serverscom.sc_api.sc_sbm_server_info:
     fail_on_absent: false
     server_id: '{{ test_sbm_server_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test3
 
 - name: Check Test3
@@ -47,6 +56,9 @@
 - name: Test4, Check ready field logic
   serverscom.sc_api.sc_sbm_server_info:
     server_id: '{{ test_sbm_server_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test4
 
 - name: Check Test4 ready field
@@ -58,6 +70,9 @@
 - name: Test5, Get server info by hostname
   serverscom.sc_api.sc_sbm_server_info:
     hostname: '{{ test_hostname }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test5
 
 - name: Check Test5
@@ -71,6 +86,9 @@
   serverscom.sc_api.sc_sbm_server_info:
     hostname: nonexistent-ci-sbm-test-xyz
     fail_on_absent: false
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test6
 
 - name: Check Test6
@@ -84,6 +102,9 @@
   serverscom.sc_api.sc_sbm_server_info:
     hostname: nonexistent-ci-sbm-test-xyz
     fail_on_absent: true
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test7
   ignore_errors: true
 
@@ -97,6 +118,9 @@
   serverscom.sc_api.sc_sbm_server_info:
     server_id: '{{ test_sbm_server_id }}'
     hostname: '{{ test_hostname }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: test8
   ignore_errors: true
 

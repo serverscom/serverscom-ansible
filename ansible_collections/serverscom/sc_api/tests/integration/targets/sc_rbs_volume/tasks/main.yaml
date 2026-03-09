@@ -9,8 +9,6 @@
   block:
     - name: Create RBS Volume
       serverscom.sc_api.sc_rbs_volume:
-        endpoint: "{{ sc_endpoint }}"
-        token: "{{ sc_token }}"
         state: present
         name: "test-rbs-volume-module"
         location_id: 45
@@ -18,6 +16,9 @@
           environment: staging
         size: 50
         flavor_id: 17363  # Basic
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test2
 
     - name: Check Test2
@@ -42,8 +43,6 @@
 
     - name: Idempotency check (nothing changed)
       serverscom.sc_api.sc_rbs_volume:
-        token: "{{ sc_token }}"
-        endpoint: "{{ sc_endpoint }}"
         state: present
         name: "test-rbs-volume-module"
         location_id: 45
@@ -51,6 +50,9 @@
           environment: staging
         size: 50
         flavor_id: 17363  # Basic
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test3
 
     - name: Check Test3
@@ -60,11 +62,12 @@
 
     - name: Update RBS Volume by id (change size)
       serverscom.sc_api.sc_rbs_volume:
-        token: "{{ sc_token }}"
-        endpoint: "{{ sc_endpoint }}"
         state: present
         volume_id: "{{ test2.rbs_volume.id }}"
         size: 60
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test4
 
     - name: Check Test4
@@ -75,13 +78,14 @@
 
     - name: Update RBS Volume by name (change labels)
       serverscom.sc_api.sc_rbs_volume:
-        token: "{{ sc_token }}"
-        endpoint: "{{ sc_endpoint }}"
         state: present
         name: "test-rbs-volume-module"
         labels:
           environment: staging
           project: alpha
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test5
 
     - name: Check Test5
@@ -92,10 +96,11 @@
 
     - name: Remove RBS Volume by name
       serverscom.sc_api.sc_rbs_volume:
-        token: "{{ sc_token }}"
-        endpoint: "{{ sc_endpoint }}"
         state: absent
         name: "test-rbs-volume-module"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test6
 
     - name: Check Test6
@@ -106,8 +111,6 @@
 
     - name: Create RBS Volume
       serverscom.sc_api.sc_rbs_volume:
-        endpoint: "{{ sc_endpoint }}"
-        token: "{{ sc_token }}"
         state: present
         name: "test-rbs-volume-module"
         location_code: "DFW5"
@@ -115,14 +118,18 @@
           environment: staging
         size: 50
         flavor_name: Basic
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test7
 
     - name: Remove RBS Volume by id
       serverscom.sc_api.sc_rbs_volume:
-        token: "{{ sc_token }}"
-        endpoint: "{{ sc_endpoint }}"
         state: absent
         volume_id: "{{ test7.rbs_volume.id }}"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test7
 
     - name: Check Test7
@@ -133,10 +140,11 @@
 
     - name: Non-existing volume remove
       serverscom.sc_api.sc_rbs_volume:
-        token: "{{ sc_token }}"
-        endpoint: "{{ sc_endpoint }}"
         state: absent
         name: non-existing-volume
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test8
 
     - name: Check Test8
@@ -147,8 +155,6 @@
 
     - name: Create RBS Volume without wait
       serverscom.sc_api.sc_rbs_volume:
-        endpoint: "{{ sc_endpoint }}"
-        token: "{{ sc_token }}"
         state: present
         name: "test-rbs-volume-module"
         location_id: 45
@@ -157,11 +163,12 @@
         size: 50
         flavor_id: 17363  # Basic
         wait: 0
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
 
     - name: Wait for RBS Volume to be active
       serverscom.sc_api.sc_rbs_volume:
-        endpoint: "{{ sc_endpoint }}"
-        token: "{{ sc_token }}"
         state: present
         name: "test-rbs-volume-module"
         location_id: 45
@@ -170,6 +177,9 @@
         size: 50
         flavor_id: 17363  # Basic
         wait: 600
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
       register: test9
 
     - name: Check Test9
@@ -182,7 +192,8 @@
   always:
     - name: Remove test volume
       serverscom.sc_api.sc_rbs_volume:
-        endpoint: "{{ sc_endpoint }}"
-        token: "{{ sc_token }}"
         state: absent
         name: "test-rbs-volume-module"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
