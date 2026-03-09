@@ -293,6 +293,7 @@ jobs:
           sbm_flavor_models_info
           sbm_server_lifecycle
           sbm_servers_info
+          sbm_os_list
 
         working-directory: ansible_collections/serverscom/sc_api
       - name: Cleanup secrets
