@@ -87,17 +87,17 @@ jobs:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
         run: ansible-test integration --requirements --python 3.13
-          sc_ssh_key
-          sc_cloud_computing_flavors_info
-          sc_cloud_computing_regions_info
-          sc_cloud_computing_images_info
-          sc_cloud_computing_openstack_credentials
-          sc_cloud_computing_instance
-          sc_cloud_computing_instance_info
-          sc_cloud_computing_instance_ptr
-          sc_cloud_computing_instances_info
-          sc_cloud_computing_instance_state
-        # sc_cloud_computing_instance_reinstall  - broken and unfinished
+          ssh_key
+          cloud_computing_flavors_info
+          cloud_computing_regions_info
+          cloud_computing_images_info
+          cloud_computing_openstack_credentials
+          cloud_computing_instance
+          cloud_computing_instance_info
+          cloud_computing_instance_ptr
+          cloud_computing_instances_info
+          cloud_computing_instance_state
+        # cloud_computing_instance_reinstall  - broken and unfinished
 
         working-directory: ansible_collections/serverscom/sc_api
       - name: Cleanup secrets
@@ -133,14 +133,14 @@ jobs:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
         run: ansible-test integration --requirements --python 3.13
-          sc_ssh_key
-          sc_baremetal_locations_info
-          sc_baremetal_servers_info
-          sc_baremetal_os_list
-          sc_dedicated_server_info
-          sc_dedicated_server_reinstall_quick
-          sc_dedicated_server_reinstall_long
-          sc_dedicated_server_power
+          ssh_key
+          baremetal_locations_info
+          baremetal_servers_info
+          baremetal_os_list
+          dedicated_server_info
+          dedicated_server_reinstall_quick
+          dedicated_server_reinstall_long
+          dedicated_server_power
 
         working-directory: ansible_collections/serverscom/sc_api
       - name: Cleanup secrets
@@ -174,9 +174,9 @@ jobs:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
         run: ansible-test integration --requirements --python 3.13
-          sc_l2_segment
-          sc_l2_segment_aliases
-          sc_l2_segments_info
+          l2_segment
+          l2_segment_aliases
+          l2_segments_info
 
         working-directory: ansible_collections/serverscom/sc_api
       - name: Cleanup secrets
@@ -212,10 +212,10 @@ jobs:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
         run: ansible-test integration --requirements --python 3.13
-          sc_load_balancer_instance_info
-          sc_load_balancer_instance_l4
-          sc_load_balancer_instance_l7
-          sc_load_balancer_instances_list
+          load_balancer_instance_info
+          load_balancer_instance_l4
+          load_balancer_instance_l7
+          load_balancer_instances_list
 
         working-directory: ansible_collections/serverscom/sc_api
       - name: Cleanup secrets
@@ -251,10 +251,10 @@ jobs:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
         run: ansible-test integration --requirements --python 3.13
-          sc_rbs_flavors_info
-          sc_rbs_volume
-          sc_rbs_volume_info
-          sc_rbs_volume_credentials_reset
+          rbs_flavors_info
+          rbs_volume
+          rbs_volume_info
+          rbs_volume_credentials_reset
 
         working-directory: ansible_collections/serverscom/sc_api
       - name: Cleanup secrets
@@ -290,9 +290,9 @@ jobs:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
         run: ansible-test integration --requirements --python 3.13
-          sc_sbm_flavor_models_info
-          sc_sbm_server_lifecycle
-          sc_sbm_servers_info
+          sbm_flavor_models_info
+          sbm_server_lifecycle
+          sbm_servers_info
 
         working-directory: ansible_collections/serverscom/sc_api
       - name: Cleanup secrets
