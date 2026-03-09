@@ -1,0 +1,124 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+# (c) 2020, Servers.com
+# GNU General Public License v3.0
+# (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+from __future__ import absolute_import, division, print_function
+
+__metaclass__ = type
+
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
+
+DOCUMENTATION = """
+---
+module: cloud_computing_images_info
+version_added: "1.0.0"
+author: "George Shuklin (@amarao)"
+short_description: List of available images and snapshots
+description: >
+    Return list of all available images and snapshots in region.
+
+extends_documentation_fragment: serverscom.sc_api.api_auth
+
+options:
+    region_id:
+      type: int
+      required: true
+      description:
+        - Id of cloud computing region.
+        - Use I(serverscom.sc_api.sc_cloud_computing_regions_info) module
+          to retrieve list of available regions.
+"""
+
+RETURN = """
+cloud_images:
+  type: complex
+  description:
+    - List of available images
+  contains:
+    id:
+      type: str
+      description:
+        - Id of the image.
+    name:
+      type: str
+      description:
+        - Human-readable name of the image.
+    image_size:
+      type: int
+      description:
+        - Image size in bytes (compressed)
+
+    min_size:
+      type: int
+      description:
+        - Minimal size of the disk (flavor) to use image.
+
+    allowed_flavors:
+      type: list
+      elements: str
+      description:
+        - List of flavors allowed to run this image.
+        - Empy list means compatibility with any flavor.
+        - Mostly used for license-specific images.
+  returned: on success
+
+api_url:
+    description: URL for the failed request
+    returned: on failure
+    type: str
+
+status_code:
+    description: Status code for the request
+    returned: always
+    type: int
+"""
+
+EXAMPLES = """
+    - name: List all images in region
+      sc_cloud_computing_images_info:
+        token: '{{ sc_token }}'
+        region_id: 0
+      register: images
+
+    - debug: var=images.cloud_images
+"""
+
+from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
+    AUTH_ARGS,
+    SCBaseError,
+)
+from ansible_collections.serverscom.sc_api.plugins.module_utils.cloud_computing import (
+    ScCloudComputingImagesInfo,
+)
+
+__metaclass__ = type
+
+
+def main():
+    module = AnsibleModule(
+        argument_spec={
+            **AUTH_ARGS,
+            "region_id": {"type": "int", "required": True},
+        },
+        supports_check_mode=True,
+    )
+    try:
+        images = ScCloudComputingImagesInfo(
+            endpoint=module.params["endpoint"],
+            token=module.params["token"],
+            region_id=module.params["region_id"],
+        )
+        module.exit_json(**images.run())
+    except SCBaseError as e:
+        module.exit_json(**e.fail())
+
+
+if __name__ == "__main__":
+    main()

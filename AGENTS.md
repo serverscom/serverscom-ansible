@@ -11,19 +11,19 @@ There are two types of baremetal: Enterprise Baremetal (dedicated) and Scalable 
 
 - `plugins/modules/` - 40+ modules, thin wrappers that parse args and delegate to handler classes in module_utils
 - `plugins/module_utils/`, code is split per resource type.
-   - sc_api.py - API layer: `ApiHelper` (HTTP/auth/retry/pagination) → `ScApi` (high-level API methods) + `ScApiToolbox` (name/regex lookups)
+   - api.py - API layer: `ApiHelper` (HTTP/auth/retry/pagination) → `ScApi` (high-level API methods) + `ScApiToolbox` (name/regex lookups)
    - modules.py - Common code
-   - sc_sbm.py
-   - sc_cloud_computing.py
-   - sc_dedicated_server.py
-   - sc_l2_segment.py
-   - sc_load_balancer.py
-   - sc_rbs.py
-   - sc_ssh_key.py
-- **Doc fragments**: `plugins/doc_fragments/sc_api_auth.py` - shared `token`/`endpoint` docs with env var fallback documentation (used by all modules via `extends_documentation_fragment`)
+   - sbm.py
+   - cloud_computing.py
+   - dedicated_server.py
+   - l2_segment.py
+   - load_balancer.py
+   - rbs.py
+   - ssh_key.py
+- **Doc fragments**: `plugins/doc_fragments/api_auth.py` - shared `token`/`endpoint` docs with env var fallback documentation (used by all modules via `extends_documentation_fragment`)
 
 ## Key Patterns
-1. **Module naming**: `sc_<resource>` or `sc_<resource>_info` (info modules are read-only)
+1. **Module naming**: `<resource>` or `<resource>_info` (info modules are read-only). Old `sc_` prefixed names work as aliases via `plugin_routing` in `meta/runtime.yml`, only for old modules. New are created without an alias.
 2. **Module structure**: Each module creates a handler class instance and calls `.run()` inside `try/except SCBaseError`, using `e.fail()` on error
 3. **API client layers**: `ScApi` (API methods) → `ApiHelper` (HTTP, Bearer auth, retry, pagination) → `ScApiToolbox` (convenience lookups by name/regex)
 4. **Error handling**: `APIError400`, `APIError401`, `APIError404`, `APIError409`, `DecodeError` — all carry `correlation_id` and have `.fail()` returning structured dict

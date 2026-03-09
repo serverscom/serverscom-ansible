@@ -10,16 +10,16 @@ import mock
 import pytest
 from ansible.module_utils import basic
 
-from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_api import (
+from ansible_collections.serverscom.sc_api.plugins.module_utils.api import (
     DEFAULT_API_ENDPOINT,
 )
 
 
 __metaclass__ = type
 
-MODULE = "ansible_collections.serverscom.sc_api.plugins.modules.sc_ssh_keys_info"
+MODULE = "ansible_collections.serverscom.sc_api.plugins.modules.ssh_keys_info"
 HANDLER = MODULE.replace(".modules.", ".module_utils.").replace(
-    ".sc_ssh_keys_info", ".sc_ssh_key.ScSshKeysInfo"
+    ".ssh_keys_info", ".ssh_key.ScSshKeysInfo"
 )
 
 
@@ -30,7 +30,7 @@ def _set_module_args(args):
 
 
 def _run_module(monkeypatch, module_args, env=None):
-    """Run sc_ssh_keys_info.main() and return (token, endpoint) received by handler."""
+    """Run ssh_keys_info.main() and return (token, endpoint) received by handler."""
     env = env or {}
     for key, val in env.items():
         monkeypatch.setenv(key, val)
@@ -47,11 +47,11 @@ def _run_module(monkeypatch, module_args, env=None):
         HANDLER + ".run", return_value={"changed": False, "ssh_keys": []}
     ):
         from ansible_collections.serverscom.sc_api.plugins.modules import (
-            sc_ssh_keys_info,
+            ssh_keys_info,
         )
 
         with pytest.raises(SystemExit) as exc_info:
-            sc_ssh_keys_info.main()
+            ssh_keys_info.main()
         assert exc_info.value.code == 0, "Module failed unexpectedly"
 
     return captured["token"], captured["endpoint"]
@@ -141,8 +141,8 @@ def test_no_token_fails(monkeypatch):
 
     _set_module_args({})
 
-    from ansible_collections.serverscom.sc_api.plugins.modules import sc_ssh_keys_info
+    from ansible_collections.serverscom.sc_api.plugins.modules import ssh_keys_info
 
     with pytest.raises(SystemExit) as exc_info:
-        sc_ssh_keys_info.main()
+        ssh_keys_info.main()
     assert exc_info.value.code != 0
