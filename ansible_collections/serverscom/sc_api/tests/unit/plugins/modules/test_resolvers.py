@@ -8,7 +8,7 @@ import mock
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
     ModuleError,
 )
-from ansible_collections.serverscom.sc_api.plugins.module_utils.sc_sbm import (
+from ansible_collections.serverscom.sc_api.plugins.module_utils.sbm import (
     resolve_sbm_server_id,
     resolve_location_id,
     resolve_sbm_flavor_model_id,
