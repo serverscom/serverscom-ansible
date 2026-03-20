@@ -62,7 +62,7 @@
 
     - name: Test3, Get volume list for a specific location code
       serverscom.sc_api.sc_rbs_volume_info:
-        location_code: DFW5
+        location_code: "AMS7"
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
         SERVERSCOM_API_URL: '{{ sc_endpoint }}'
