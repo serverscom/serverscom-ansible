@@ -31,7 +31,7 @@
           - test2.rbs_volume.size == 50
           - test2.rbs_volume.status == "active"
           - test2.rbs_volume.labels.environment == "staging"
-          - test2.rbs_volume.location_id == 45
+          - test2.rbs_volume.location_id == 46
           - test2.rbs_volume.location_code == "DFW5"
           - test2.rbs_volume.flavor_id == 17363
           - test2.rbs_volume.ip_address
