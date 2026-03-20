@@ -15,7 +15,7 @@
         labels:
           environment: staging
         size: 50
-        flavor_id: 17363  # Basic
+        flavor_id: 18590  # Performance
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
         SERVERSCOM_API_URL: '{{ sc_endpoint }}'
