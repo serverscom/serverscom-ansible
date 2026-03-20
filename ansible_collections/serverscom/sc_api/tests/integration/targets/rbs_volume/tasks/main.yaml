@@ -11,7 +11,7 @@
       serverscom.sc_api.sc_rbs_volume:
         state: present
         name: "test-rbs-volume-module"
-        location_id: 45
+        location_id: 46
         labels:
           environment: staging
         size: 50
