@@ -11,11 +11,11 @@
       serverscom.sc_api.sc_rbs_volume:
         state: present
         name: "test-rbs-volume-module"
-        location_id: 45
+        location_id: 46
         labels:
           environment: staging
         size: 50
-        flavor_id: 17363  # Basic
+        flavor_id: 18590  # Performance
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
         SERVERSCOM_API_URL: '{{ sc_endpoint }}'
@@ -31,11 +31,11 @@
           - test2.rbs_volume.size == 50
           - test2.rbs_volume.status == "active"
           - test2.rbs_volume.labels.environment == "staging"
-          - test2.rbs_volume.location_id == 45
-          - test2.rbs_volume.location_code == "DFW5"
-          - test2.rbs_volume.flavor_id == 17363
+          - test2.rbs_volume.location_id == 46
+          - test2.rbs_volume.location_code == "AMS7"
+          - test2.rbs_volume.flavor_id == 18590
           - test2.rbs_volume.ip_address
-          - test2.rbs_volume.flavor_name == "Basic"
+          - test2.rbs_volume.flavor_name == "Performance"
           - test2.rbs_volume.iops
           - test2.rbs_volume.target_iqn
           - test2.rbs_volume.created_at
@@ -45,7 +45,7 @@
       serverscom.sc_api.sc_rbs_volume:
         state: present
         name: "test-rbs-volume-module"
-        location_id: 45
+        location_id: 46
         labels:
           environment: staging
         size: 50
@@ -113,11 +113,11 @@
       serverscom.sc_api.sc_rbs_volume:
         state: present
         name: "test-rbs-volume-module"
-        location_code: "DFW5"
+        location_code: "AMS7"
         labels:
           environment: staging
         size: 50
-        flavor_name: Basic
+        flavor_name: Performance
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
         SERVERSCOM_API_URL: '{{ sc_endpoint }}'
