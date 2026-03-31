@@ -10,8 +10,8 @@
     - name: Create test volume
       serverscom.sc_api.sc_rbs_volume:
         name: rbs_ansible_modules_test_volume
-        location_id: 45
-        flavor_id: 17363  # Basic
+        location_id: 46
+        flavor_id: 18590  # Performance
         size: 50
         state: present
       environment:
@@ -20,7 +20,7 @@
 
     - name: Test1, Get volume list for a specific location id
       serverscom.sc_api.sc_rbs_volume_info:
-        location_id: 45
+        location_id: 46
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
         SERVERSCOM_API_URL: '{{ sc_endpoint }}'
@@ -62,7 +62,7 @@
 
     - name: Test3, Get volume list for a specific location code
       serverscom.sc_api.sc_rbs_volume_info:
-        location_code: DFW5
+        location_code: "AMS7"
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
         SERVERSCOM_API_URL: '{{ sc_endpoint }}'
@@ -89,7 +89,7 @@
   always:
     - name: Get test volumes
       serverscom.sc_api.sc_rbs_volume_info:
-        location_id: 45
+        location_id: 46
         search_pattern: "rbs_ansible_modules_test_volume"
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
