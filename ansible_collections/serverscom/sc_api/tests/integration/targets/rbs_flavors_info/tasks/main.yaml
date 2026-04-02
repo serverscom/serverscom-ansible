@@ -22,7 +22,7 @@
 
 - name: Test2, Get flavors
   serverscom.sc_api.sc_rbs_flavors_info:
-    location_id: 45
+    location_id: 46
   environment:
     SERVERSCOM_API_TOKEN: '{{ sc_token }}'
     SERVERSCOM_API_URL: '{{ sc_endpoint }}'
