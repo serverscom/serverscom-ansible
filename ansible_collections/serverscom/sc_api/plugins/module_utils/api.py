@@ -1126,6 +1126,38 @@ class ScApi:
             good_codes=[202],
         )
 
+    def get_dedicated_server_features(self, server_id, retry_rules=None):
+        return self.api_helper.make_get_request(
+            path=f"/hosts/dedicated_servers/{server_id}/features",
+            retry_rules=retry_rules,
+        )
+
+    def post_dedicated_server_feature_activate(
+        self, server_id, feature_name, body=None
+    ):
+        return self.api_helper.make_post_request(
+            path=f"/hosts/dedicated_servers/{server_id}/features/{feature_name}/activate",
+            body=body,
+            query_parameters=None,
+            good_codes=[202],
+        )
+
+    def post_dedicated_server_feature_deactivate(self, server_id, feature_name):
+        return self.api_helper.make_post_request(
+            path=f"/hosts/dedicated_servers/{server_id}/features/{feature_name}/deactivate",
+            body=None,
+            query_parameters=None,
+            good_codes=[202],
+        )
+
+    def put_dedicated_server(self, server_id, body):
+        return self.api_helper.make_put_request(
+            path=f"/hosts/dedicated_servers/{server_id}",
+            body=body,
+            query_parameters=None,
+            good_codes=[200],
+        )
+
     def list_server_models(self, location_id, search_pattern=None):
         if search_pattern:
             query = {"search_pattern": search_pattern}

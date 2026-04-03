@@ -385,6 +385,149 @@ class ScDedicatedServerPower:
             raise ModuleError(f"Unknown state: {self.state}")
 
 
+class ScDedicatedServerIpxe:
+    TRANSITIONAL_STATUSES = ("activation", "deactivation")
+
+    def __init__(
+        self,
+        endpoint,
+        token,
+        server_id,
+        ipxe_type,
+        state,
+        ipxe_config,
+        wait,
+        update_interval,
+        checkmode,
+    ):
+        if wait and int(wait) < int(update_interval):
+            raise ModuleError(
+                f"Update interval ({update_interval}) is longer "
+                f"than wait time ({wait})"
+            )
+        self.api = ScApi(token, endpoint)
+        self.server_id = server_id
+        self.feature_name = f"{ipxe_type}_ipxe_boot"
+        self.state = state
+        self.ipxe_config = ipxe_config
+        self.wait = wait
+        self.update_interval = update_interval
+        self.checkmode = checkmode
+
+    def _get_feature_status(self, retry_rules=None):
+        features = self.api.get_dedicated_server_features(
+            self.server_id, retry_rules=retry_rules
+        )
+        for feature in features:
+            if feature.get("name") == self.feature_name:
+                return feature
+        raise ModuleError(
+            f"Feature '{self.feature_name}' not found for server {self.server_id}"
+        )
+
+    def wait_for_status(self, target_status):
+        start = time.time()
+        while True:
+            elapsed = time.time() - start
+            if elapsed > self.wait:
+                raise WaitError(
+                    msg=f"Timeout waiting for {self.feature_name} "
+                    f"to reach '{target_status}'",
+                    timeout=elapsed,
+                )
+            time.sleep(self.update_interval)
+            elapsed = time.time() - start
+            feature = self._get_feature_status(
+                retry_rules=_retry_rules_for_wait(
+                    max_wait=max(0, self.wait - elapsed),
+                    delay=self.update_interval,
+                )
+            )
+            status = feature.get("status")
+            if status == target_status:
+                return feature
+            if status not in self.TRANSITIONAL_STATUSES:
+                raise ModuleError(
+                    f"Unexpected status '{status}' for {self.feature_name}, "
+                    f"expected '{target_status}'"
+                )
+
+    def _ensure_present(self):
+        feature = self._get_feature_status()
+        status = feature.get("status")
+
+        if status == "activated":
+            if self.ipxe_config is not None:
+                server = self.api.get_dedicated_servers(self.server_id)
+                current_config = server.get("ipxe_config") or ""
+                if current_config == self.ipxe_config:
+                    return {"changed": False, "feature": feature}
+                if self.checkmode:
+                    return {"changed": True, "feature": feature}
+                self.api.put_dedicated_server(
+                    self.server_id, {"ipxe_config": self.ipxe_config}
+                )
+                return {"changed": True, "feature": feature}
+            return {"changed": False, "feature": feature}
+
+        if status in ("deactivated", "incompatible", "unavailable"):
+            if self.checkmode:
+                return {"changed": True, "feature": feature}
+            body = {}
+            if self.ipxe_config is not None:
+                body["ipxe_config"] = self.ipxe_config
+            self.api.post_dedicated_server_feature_activate(
+                self.server_id, self.feature_name, body=body or None
+            )
+            if self.wait:
+                feature = self.wait_for_status("activated")
+            return {"changed": True, "feature": feature}
+
+        if status == "activation":
+            if self.wait:
+                feature = self.wait_for_status("activated")
+            return {"changed": False, "feature": feature}
+
+        raise ModuleError(
+            f"Unexpected status '{status}' for {self.feature_name}"
+        )
+
+    def _ensure_absent(self):
+        feature = self._get_feature_status()
+        status = feature.get("status")
+
+        if status == "deactivated":
+            return {"changed": False, "feature": feature}
+
+        if status == "activated":
+            if self.checkmode:
+                return {"changed": True, "feature": feature}
+            self.api.post_dedicated_server_feature_deactivate(
+                self.server_id, self.feature_name
+            )
+            if self.wait:
+                feature = self.wait_for_status("deactivated")
+            return {"changed": True, "feature": feature}
+
+        if status == "deactivation":
+            if self.wait:
+                feature = self.wait_for_status("deactivated")
+            return {"changed": False, "feature": feature}
+
+        if status in ("incompatible", "unavailable"):
+            return {"changed": False, "feature": feature}
+
+        raise ModuleError(
+            f"Unexpected status '{status}' for {self.feature_name}"
+        )
+
+    def run(self):
+        if self.state == "present":
+            return self._ensure_present()
+        else:
+            return self._ensure_absent()
+
+
 class ScDedicatedOSList:
     def __init__(
         self,
