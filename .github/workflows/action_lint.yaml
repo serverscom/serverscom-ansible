@@ -15,6 +15,6 @@ jobs:
       options: --user=0 --entrypoint=/bin/sh
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: actionlint
         run: /usr/local/bin/actionlint .github/workflows/*
