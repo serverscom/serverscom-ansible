@@ -16,6 +16,7 @@ action_groups:
     - cloud_computing_openstack_credentials
     - cloud_computing_regions_info
     - dedicated_server_info
+    - dedicated_server_ipxe
     - dedicated_server_power
     - dedicated_server_rescue
     - dedicated_server_reinstall

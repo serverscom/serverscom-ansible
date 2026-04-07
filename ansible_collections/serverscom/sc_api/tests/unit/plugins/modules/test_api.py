@@ -204,6 +204,118 @@ def test_decode_error_includes_correlation_id(api_helper, clock):
     assert "decode-456" in exc_info.value.msg
 
 
+@pytest.fixture
+def sc_api_obj():
+    return sc_api.ScApi(token="token", endpoint="http://api")
+
+
+class TestGetDedicatedServerFeatures:
+    def test_returns_features_list(self, sc_api_obj, clock):
+        features = [
+            {"name": "public_ipxe_boot", "status": "deactivated"},
+            {"name": "private_ipxe_boot", "status": "activated"},
+        ]
+        sequencer = SendSequencer([FakeResponse(200, {}, json_data=features)])
+        sc_api_obj.api_helper.session.send = sequencer
+
+        result = sc_api_obj.get_dedicated_server_features("srv123")
+
+        assert result == features
+        assert sequencer.calls == 1
+
+    def test_passes_retry_rules(self, sc_api_obj, clock):
+        features = [{"name": "public_ipxe_boot", "status": "activated"}]
+        sequencer = SendSequencer([
+            FakeResponse(429, {}),
+            FakeResponse(200, {}, json_data=features),
+        ])
+        sc_api_obj.api_helper.session.send = sequencer
+        retry_rules = {"codes": {429}, "delay": 1, "max_wait": 10}
+
+        result = sc_api_obj.get_dedicated_server_features("srv123", retry_rules=retry_rules)
+
+        assert result == features
+        assert sequencer.calls == 2
+
+    def test_401_raises_error(self, sc_api_obj, clock):
+        sequencer = SendSequencer([FakeResponse(401, {})])
+        sc_api_obj.api_helper.session.send = sequencer
+
+        with pytest.raises(sc_api.APIError401):
+            sc_api_obj.get_dedicated_server_features("srv123")
+
+
+class TestPostDedicatedServerFeatureActivate:
+    def test_activate_without_body(self, sc_api_obj, clock):
+        feature = {"name": "public_ipxe_boot", "status": "activation"}
+        sequencer = SendSequencer([FakeResponse(202, {}, json_data=feature)])
+        sc_api_obj.api_helper.session.send = sequencer
+
+        result = sc_api_obj.post_dedicated_server_feature_activate("srv123", "public_ipxe_boot")
+
+        assert result == feature
+        assert sequencer.calls == 1
+
+    def test_activate_with_body(self, sc_api_obj, clock):
+        feature = {"name": "public_ipxe_boot", "status": "activation"}
+        sequencer = SendSequencer([FakeResponse(202, {}, json_data=feature)])
+        sc_api_obj.api_helper.session.send = sequencer
+
+        result = sc_api_obj.post_dedicated_server_feature_activate(
+            "srv123", "public_ipxe_boot", body={"ipxe_config": "#!ipxe\nchain http://example.com"}
+        )
+
+        assert result == feature
+
+    def test_401_raises_error(self, sc_api_obj, clock):
+        sequencer = SendSequencer([FakeResponse(401, {})])
+        sc_api_obj.api_helper.session.send = sequencer
+
+        with pytest.raises(sc_api.APIError401):
+            sc_api_obj.post_dedicated_server_feature_activate("srv123", "public_ipxe_boot")
+
+
+class TestPostDedicatedServerFeatureDeactivate:
+    def test_deactivate(self, sc_api_obj, clock):
+        feature = {"name": "public_ipxe_boot", "status": "deactivation"}
+        sequencer = SendSequencer([FakeResponse(202, {}, json_data=feature)])
+        sc_api_obj.api_helper.session.send = sequencer
+
+        result = sc_api_obj.post_dedicated_server_feature_deactivate("srv123", "public_ipxe_boot")
+
+        assert result == feature
+        assert sequencer.calls == 1
+
+    def test_401_raises_error(self, sc_api_obj, clock):
+        sequencer = SendSequencer([FakeResponse(401, {})])
+        sc_api_obj.api_helper.session.send = sequencer
+
+        with pytest.raises(sc_api.APIError401):
+            sc_api_obj.post_dedicated_server_feature_deactivate("srv123", "public_ipxe_boot")
+
+
+class TestPutDedicatedServer:
+    def test_update_ipxe_config(self, sc_api_obj, clock):
+        server = {"id": "srv123", "ipxe_config": "#!ipxe\nnew"}
+        sequencer = SendSequencer([FakeResponse(200, {}, json_data=server)])
+        sc_api_obj.api_helper.session.send = sequencer
+
+        status_code, result = sc_api_obj.put_dedicated_server(
+            "srv123", {"ipxe_config": "#!ipxe\nnew"}
+        )
+
+        assert status_code == 200
+        assert result == server
+        assert sequencer.calls == 1
+
+    def test_401_raises_error(self, sc_api_obj, clock):
+        sequencer = SendSequencer([FakeResponse(401, {})])
+        sc_api_obj.api_helper.session.send = sequencer
+
+        with pytest.raises(sc_api.APIError401):
+            sc_api_obj.put_dedicated_server("srv123", {"ipxe_config": "x"})
+
+
 def test_correlation_id_all_error_codes(api_helper, clock):
     headers = {"X-Correlation-ID": "test-corr"}
     error_map = {
