@@ -27,13 +27,12 @@ def _make_feature(name, status, ipxe_config=None):
     return f
 
 
-def _make_handler(ipxe_type="public", state="present", ipxe_config=None,
+def _make_handler(state="public", ipxe_config=None,
                   wait=0, update_interval=10, checkmode=False):
     return ScDedicatedServerIpxe(
         endpoint=ENDPOINT,
         token=TOKEN,
         server_id=SERVER_ID,
-        ipxe_type=ipxe_type,
         state=state,
         ipxe_config=ipxe_config,
         wait=wait,
@@ -45,7 +44,7 @@ def _make_handler(ipxe_type="public", state="present", ipxe_config=None,
 class TestActivate:
     def test_activate_public_ipxe(self):
         handler = _make_handler(
-            ipxe_type="public", state="present",
+            state="public",
             ipxe_config="#!ipxe\nchain http://boot.example.com",
         )
         features = [
@@ -68,7 +67,7 @@ class TestActivate:
 
     def test_activate_private_ipxe(self):
         handler = _make_handler(
-            ipxe_type="private", state="present",
+            state="private",
             ipxe_config="#!ipxe\nchain http://boot.example.com",
         )
         features = [
@@ -91,7 +90,7 @@ class TestActivate:
 
     def test_activate_with_ipxe_config(self):
         handler = _make_handler(
-            ipxe_type="public", state="present",
+            state="public",
             ipxe_config="#!ipxe\nchain http://boot.example.com"
         )
         features = [_make_feature("public_ipxe_boot", "deactivated")]
@@ -108,7 +107,7 @@ class TestActivate:
 
     def test_activate_already_active_same_config(self):
         handler = _make_handler(
-            ipxe_type="public", state="present",
+            state="public",
             ipxe_config="existing-config",
         )
         features = [
@@ -125,7 +124,7 @@ class TestActivate:
 
     def test_activate_already_active_with_config_update(self):
         handler = _make_handler(
-            ipxe_type="public", state="present",
+            state="public",
             ipxe_config="#!ipxe\nnew-config"
         )
         features = [
@@ -145,7 +144,7 @@ class TestActivate:
 
     def test_activate_already_active_config_unchanged(self):
         handler = _make_handler(
-            ipxe_type="public", state="present",
+            state="public",
             ipxe_config="same-config"
         )
         features = [
@@ -162,7 +161,7 @@ class TestActivate:
 
     def test_activate_from_incompatible(self):
         handler = _make_handler(
-            ipxe_type="public", state="present",
+            state="public",
             ipxe_config="#!ipxe\nchain http://boot.example.com",
         )
         features = [_make_feature("public_ipxe_boot", "incompatible")]
@@ -176,7 +175,7 @@ class TestActivate:
 
     def test_activate_from_unavailable(self):
         handler = _make_handler(
-            ipxe_type="public", state="present",
+            state="public",
             ipxe_config="#!ipxe\nchain http://boot.example.com",
         )
         features = [_make_feature("public_ipxe_boot", "unavailable")]
@@ -190,7 +189,7 @@ class TestActivate:
 
     def test_activate_already_in_activation(self):
         handler = _make_handler(
-            ipxe_type="public", state="present",
+            state="public",
             ipxe_config="#!ipxe\nchain http://boot.example.com",
             wait=0,
         )
@@ -205,9 +204,12 @@ class TestActivate:
 
 
 class TestDeactivate:
-    def test_deactivate_ipxe(self):
+    def test_deactivate_public_active(self):
         handler = _make_handler(state="absent")
-        features = [_make_feature("public_ipxe_boot", "activated")]
+        features = [
+            _make_feature("public_ipxe_boot", "activated"),
+            _make_feature("private_ipxe_boot", "deactivated"),
+        ]
         handler.api = mock.MagicMock()
         handler.api.get_dedicated_server_features.return_value = features
 
@@ -218,9 +220,28 @@ class TestDeactivate:
             SERVER_ID, "public_ipxe_boot"
         )
 
-    def test_deactivate_already_inactive(self):
+    def test_deactivate_private_active(self):
         handler = _make_handler(state="absent")
-        features = [_make_feature("public_ipxe_boot", "deactivated")]
+        features = [
+            _make_feature("public_ipxe_boot", "deactivated"),
+            _make_feature("private_ipxe_boot", "activated"),
+        ]
+        handler.api = mock.MagicMock()
+        handler.api.get_dedicated_server_features.return_value = features
+
+        result = handler.run()
+
+        assert result["changed"] is True
+        handler.api.post_dedicated_server_feature_deactivate.assert_called_once_with(
+            SERVER_ID, "private_ipxe_boot"
+        )
+
+    def test_deactivate_both_already_inactive(self):
+        handler = _make_handler(state="absent")
+        features = [
+            _make_feature("public_ipxe_boot", "deactivated"),
+            _make_feature("private_ipxe_boot", "deactivated"),
+        ]
         handler.api = mock.MagicMock()
         handler.api.get_dedicated_server_features.return_value = features
 
@@ -231,7 +252,10 @@ class TestDeactivate:
 
     def test_deactivate_already_in_deactivation(self):
         handler = _make_handler(state="absent", wait=0)
-        features = [_make_feature("public_ipxe_boot", "deactivation")]
+        features = [
+            _make_feature("public_ipxe_boot", "deactivation"),
+            _make_feature("private_ipxe_boot", "deactivated"),
+        ]
         handler.api = mock.MagicMock()
         handler.api.get_dedicated_server_features.return_value = features
 
@@ -242,7 +266,10 @@ class TestDeactivate:
 
     def test_deactivate_incompatible(self):
         handler = _make_handler(state="absent")
-        features = [_make_feature("public_ipxe_boot", "incompatible")]
+        features = [
+            _make_feature("public_ipxe_boot", "incompatible"),
+            _make_feature("private_ipxe_boot", "incompatible"),
+        ]
         handler.api = mock.MagicMock()
         handler.api.get_dedicated_server_features.return_value = features
 
@@ -252,7 +279,10 @@ class TestDeactivate:
 
     def test_deactivate_unavailable(self):
         handler = _make_handler(state="absent")
-        features = [_make_feature("public_ipxe_boot", "unavailable")]
+        features = [
+            _make_feature("public_ipxe_boot", "unavailable"),
+            _make_feature("private_ipxe_boot", "unavailable"),
+        ]
         handler.api = mock.MagicMock()
         handler.api.get_dedicated_server_features.return_value = features
 
@@ -260,11 +290,28 @@ class TestDeactivate:
 
         assert result["changed"] is False
 
+    def test_deactivate_feature_in_activation(self):
+        """If a feature is being activated, absent should wait then deactivate."""
+        handler = _make_handler(state="absent", wait=0)
+        features = [
+            _make_feature("public_ipxe_boot", "activation"),
+            _make_feature("private_ipxe_boot", "deactivated"),
+        ]
+        handler.api = mock.MagicMock()
+        handler.api.get_dedicated_server_features.return_value = features
+
+        result = handler.run()
+
+        assert result["changed"] is True
+        handler.api.post_dedicated_server_feature_deactivate.assert_called_once_with(
+            SERVER_ID, "public_ipxe_boot"
+        )
+
 
 class TestCheckMode:
     def test_activate_checkmode(self):
         handler = _make_handler(
-            state="present", checkmode=True,
+            state="public", checkmode=True,
             ipxe_config="#!ipxe\nchain http://boot.example.com",
         )
         features = [_make_feature("public_ipxe_boot", "deactivated")]
@@ -279,7 +326,7 @@ class TestCheckMode:
     def test_activate_checkmode_already_active_same_config(self):
         """In check mode with matching ipxe_config, changed=False."""
         handler = _make_handler(
-            state="present", checkmode=True,
+            state="public", checkmode=True,
             ipxe_config="existing-config",
         )
         features = [
@@ -296,7 +343,7 @@ class TestCheckMode:
 
     def test_activate_checkmode_with_different_config(self):
         handler = _make_handler(
-            state="present", checkmode=True, ipxe_config="new"
+            state="public", checkmode=True, ipxe_config="new"
         )
         features = [_make_feature("public_ipxe_boot", "activated")]
         handler.api = mock.MagicMock()
@@ -310,7 +357,10 @@ class TestCheckMode:
 
     def test_deactivate_checkmode(self):
         handler = _make_handler(state="absent", checkmode=True)
-        features = [_make_feature("public_ipxe_boot", "activated")]
+        features = [
+            _make_feature("public_ipxe_boot", "activated"),
+            _make_feature("private_ipxe_boot", "deactivated"),
+        ]
         handler.api = mock.MagicMock()
         handler.api.get_dedicated_server_features.return_value = features
 
@@ -321,7 +371,10 @@ class TestCheckMode:
 
     def test_deactivate_checkmode_already_inactive(self):
         handler = _make_handler(state="absent", checkmode=True)
-        features = [_make_feature("public_ipxe_boot", "deactivated")]
+        features = [
+            _make_feature("public_ipxe_boot", "deactivated"),
+            _make_feature("private_ipxe_boot", "deactivated"),
+        ]
         handler.api = mock.MagicMock()
         handler.api.get_dedicated_server_features.return_value = features
 
@@ -333,7 +386,7 @@ class TestCheckMode:
 class TestModeSwitch:
     def test_switch_public_to_private(self):
         handler = _make_handler(
-            ipxe_type="private", state="present",
+            state="private",
             ipxe_config="#!ipxe\nchain http://boot.example.com",
         )
         handler.api = mock.MagicMock()
@@ -363,7 +416,7 @@ class TestModeSwitch:
 
     def test_switch_private_to_public(self):
         handler = _make_handler(
-            ipxe_type="public", state="present",
+            state="public",
             ipxe_config="#!ipxe\nchain http://boot.example.com",
         )
         handler.api = mock.MagicMock()
@@ -402,7 +455,7 @@ class TestModeSwitch:
         mock_time.sleep = mock.MagicMock()
 
         handler = _make_handler(
-            ipxe_type="private", state="present",
+            state="private",
             ipxe_config="#!ipxe\ntest", wait=60, update_interval=5,
         )
         handler.api = mock.MagicMock()
@@ -442,7 +495,7 @@ class TestModeSwitch:
 
     def test_switch_opposite_in_deactivation_no_wait(self):
         handler = _make_handler(
-            ipxe_type="private", state="present",
+            state="private",
             ipxe_config="#!ipxe\ntest", wait=0,
         )
         handler.api = mock.MagicMock()
@@ -466,7 +519,7 @@ class TestModeSwitch:
 
     def test_switch_with_wait_zero(self):
         handler = _make_handler(
-            ipxe_type="private", state="present",
+            state="private",
             ipxe_config="#!ipxe\ntest", wait=0,
         )
         handler.api = mock.MagicMock()
@@ -493,7 +546,7 @@ class TestModeSwitch:
 
     def test_switch_checkmode(self):
         handler = _make_handler(
-            ipxe_type="private", state="present",
+            state="private",
             ipxe_config="#!ipxe\ntest", checkmode=True,
         )
         handler.api = mock.MagicMock()
@@ -519,7 +572,7 @@ class TestModeSwitch:
         mock_time.sleep = mock.MagicMock()
 
         handler = _make_handler(
-            ipxe_type="private", state="present",
+            state="private",
             ipxe_config="#!ipxe\ntest", wait=60, update_interval=5,
         )
         handler.api = mock.MagicMock()
@@ -565,7 +618,7 @@ class TestModeSwitch:
 
     def test_no_switch_when_opposite_deactivated(self):
         handler = _make_handler(
-            ipxe_type="private", state="present",
+            state="private",
             ipxe_config="#!ipxe\ntest",
         )
         handler.api = mock.MagicMock()
@@ -582,7 +635,7 @@ class TestModeSwitch:
 
     def test_no_switch_when_opposite_not_in_features(self):
         handler = _make_handler(
-            ipxe_type="private", state="present",
+            state="private",
             ipxe_config="#!ipxe\ntest",
         )
         handler.api = mock.MagicMock()
@@ -604,7 +657,7 @@ class TestWait:
         mock_time.sleep = mock.MagicMock()
 
         handler = _make_handler(
-            state="present", wait=60, update_interval=5,
+            state="public", wait=60, update_interval=5,
             ipxe_config="#!ipxe\nchain http://boot.example.com",
         )
         handler.api = mock.MagicMock()
@@ -628,8 +681,14 @@ class TestWait:
         handler = _make_handler(state="absent", wait=60, update_interval=5)
         handler.api = mock.MagicMock()
         handler.api.get_dedicated_server_features.side_effect = [
-            [_make_feature("public_ipxe_boot", "activated")],
+            # initial call in _ensure_absent
+            [
+                _make_feature("public_ipxe_boot", "activated"),
+                _make_feature("private_ipxe_boot", "deactivated"),
+            ],
+            # wait poll: deactivating
             [_make_feature("public_ipxe_boot", "deactivation")],
+            # wait poll: done
             [_make_feature("public_ipxe_boot", "deactivated")],
         ]
 
@@ -645,7 +704,7 @@ class TestWait:
         mock_time.sleep = mock.MagicMock()
 
         handler = _make_handler(
-            state="present", wait=600, update_interval=10,
+            state="public", wait=600, update_interval=10,
             ipxe_config="#!ipxe\nchain http://boot.example.com",
         )
         handler.api = mock.MagicMock()

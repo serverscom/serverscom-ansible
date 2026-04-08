@@ -24,10 +24,6 @@ description: >
     Activate or deactivate the public or private iPXE boot feature on a
     dedicated server. Optionally update the iPXE configuration script on an
     already activated feature.
-    When activating a feature while the opposite type is active (e.g.
-    switching from public to private), the module automatically deactivates
-    the opposite feature first, waits for it to finish, and then activates
-    the requested one.
 
 extends_documentation_fragment: serverscom.sc_api.api_auth
 
@@ -39,30 +35,26 @@ options:
       - ID of the dedicated server.
       - Use M(serverscom.sc_api.dedicated_server_info) to retrieve servers.
 
-  type:
-    type: str
-    required: true
-    choices: ['public', 'private']
-    description:
-      - Type of iPXE boot feature to manage.
-      - C(public) manages the public_ipxe_boot feature.
-      - C(private) manages the private_ipxe_boot feature.
-
   state:
     type: str
     required: true
-    choices: ['present', 'absent']
+    choices: ['absent', 'public', 'private']
     description:
       - Desired state of the iPXE boot feature.
-      - C(present) activates the feature (or updates iPXE config if already active).
-      - C(absent) deactivates the feature.
+      - C(public) activates the public_ipxe_boot feature (or updates iPXE
+        config if already active). Automatically deactivates private_ipxe_boot
+        if it is active.
+      - C(private) activates the private_ipxe_boot feature (or updates iPXE
+        config if already active). Automatically deactivates public_ipxe_boot
+        if it is active.
+      - C(absent) deactivates whichever iPXE boot feature is currently active.
 
   ipxe_config:
     type: str
     required: false
     description:
       - iPXE script content (max 64 KB).
-      - Required when I(state)=C(present).
+      - Required when I(state) is C(public) or C(private).
       - When the feature is already activated the configuration is updated via
         the server update endpoint.
 
@@ -104,47 +96,24 @@ EXAMPLES = """
   serverscom.sc_api.dedicated_server_ipxe:
     token: "{{ api_token }}"
     server_id: "0m592Zmn"
-    type: public
-    state: present
+    state: public
     ipxe_config: |
       #!ipxe
       chain http://boot.example.com/menu.ipxe
 
-- name: Activate private iPXE boot with custom config
+- name: Activate private iPXE boot
   serverscom.sc_api.dedicated_server_ipxe:
     token: "{{ api_token }}"
     server_id: "0m592Zmn"
-    type: private
-    state: present
+    state: private
     ipxe_config: |
       #!ipxe
       chain http://boot.example.com/menu.ipxe
 
-- name: Update iPXE config on already activated feature
+- name: Deactivate whichever iPXE boot is active
   serverscom.sc_api.dedicated_server_ipxe:
     token: "{{ api_token }}"
     server_id: "0m592Zmn"
-    type: public
-    state: present
-    ipxe_config: |
-      #!ipxe
-      chain http://boot.example.com/new-menu.ipxe
-
-- name: Switch from public to private iPXE boot
-  serverscom.sc_api.dedicated_server_ipxe:
-    token: "{{ api_token }}"
-    server_id: "0m592Zmn"
-    type: private
-    state: present
-    ipxe_config: |
-      #!ipxe
-      chain http://boot.example.com/private-menu.ipxe
-
-- name: Deactivate public iPXE boot
-  serverscom.sc_api.dedicated_server_ipxe:
-    token: "{{ api_token }}"
-    server_id: "0m592Zmn"
-    type: public
     state: absent
 """
 
@@ -163,14 +132,9 @@ def main():
         argument_spec={
             **AUTH_ARGS,
             "server_id": {"type": "str", "required": True},
-            "type": {
-                "type": "str",
-                "choices": ["public", "private"],
-                "required": True,
-            },
             "state": {
                 "type": "str",
-                "choices": ["present", "absent"],
+                "choices": ["absent", "public", "private"],
                 "required": True,
             },
             "ipxe_config": {"type": "str", "no_log": False},
@@ -178,7 +142,8 @@ def main():
             "update_interval": {"type": "int", "default": 10},
         },
         required_if=[
-            ["state", "present", ["ipxe_config"]],
+            ["state", "public", ["ipxe_config"]],
+            ["state", "private", ["ipxe_config"]],
         ],
         supports_check_mode=True,
     )
@@ -188,7 +153,6 @@ def main():
             endpoint=module.params["endpoint"],
             token=module.params["token"],
             server_id=module.params["server_id"],
-            ipxe_type=module.params["type"],
             state=module.params["state"],
             ipxe_config=module.params["ipxe_config"],
             wait=module.params["wait"],

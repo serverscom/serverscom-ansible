@@ -395,7 +395,6 @@ class ScDedicatedServerIpxe:
         endpoint,
         token,
         server_id,
-        ipxe_type,
         state,
         ipxe_config,
         wait,
@@ -409,10 +408,11 @@ class ScDedicatedServerIpxe:
             )
         self.api = ScApi(token, endpoint)
         self.server_id = server_id
-        self.feature_name = f"{ipxe_type}_ipxe_boot"
-        opposite_type = "private" if ipxe_type == "public" else "public"
-        self.opposite_feature_name = f"{opposite_type}_ipxe_boot"
         self.state = state
+        if state in ("public", "private"):
+            self.feature_name = f"{state}_ipxe_boot"
+            opposite = "private" if state == "public" else "public"
+            self.opposite_feature_name = f"{opposite}_ipxe_boot"
         self.ipxe_config = ipxe_config
         self.wait = wait
         self.update_interval = update_interval
@@ -476,45 +476,52 @@ class ScDedicatedServerIpxe:
                     f"expected '{target_status}'"
                 )
 
-    def _deactivate_opposite(self, opposite):
-        status = opposite.get("status")
+    def _deactivate_feature(self, feature_name, status):
+        """Deactivate a feature handling all possible statuses.
+
+        Returns (changed, feature) where changed indicates whether
+        a deactivation was initiated by us.
+        """
         if status in ("deactivated", "incompatible", "unavailable"):
-            return False
+            return False, None
         if status == "activated":
             self.api.post_dedicated_server_feature_deactivate(
-                self.server_id, self.opposite_feature_name
+                self.server_id, feature_name
             )
+            feature = None
             if self.wait:
-                self.wait_for_status(
-                    "deactivated",
-                    feature_name=self.opposite_feature_name,
+                feature = self.wait_for_status(
+                    "deactivated", feature_name=feature_name
                 )
-            return True
+            return True, feature
         if status == "activation":
             if self.wait:
                 self.wait_for_status(
-                    "activated",
-                    feature_name=self.opposite_feature_name,
+                    "activated", feature_name=feature_name
                 )
             self.api.post_dedicated_server_feature_deactivate(
-                self.server_id, self.opposite_feature_name
+                self.server_id, feature_name
             )
+            feature = None
             if self.wait:
-                self.wait_for_status(
-                    "deactivated",
-                    feature_name=self.opposite_feature_name,
+                feature = self.wait_for_status(
+                    "deactivated", feature_name=feature_name
                 )
-            return True
+            return True, feature
         if status == "deactivation":
+            feature = None
             if self.wait:
-                self.wait_for_status(
-                    "deactivated",
-                    feature_name=self.opposite_feature_name,
+                feature = self.wait_for_status(
+                    "deactivated", feature_name=feature_name
                 )
-            return True
+            return False, feature
         raise ModuleError(
-            f"Unexpected status '{status}' for "
-            f"{self.opposite_feature_name}"
+            f"Unexpected status '{status}' for {feature_name}"
+        )
+
+    def _deactivate_opposite(self, opposite):
+        self._deactivate_feature(
+            self.opposite_feature_name, opposite.get("status")
         )
 
     def _opposite_needs_deactivation(self, opposite):
@@ -570,36 +577,40 @@ class ScDedicatedServerIpxe:
         )
 
     def _ensure_absent(self):
-        feature = self._get_feature_status()
-        status = feature.get("status")
+        features = self.api.get_dedicated_server_features(self.server_id)
+        for feature_name in ("public_ipxe_boot", "private_ipxe_boot"):
+            feature = None
+            for f in features:
+                if f.get("name") == feature_name:
+                    feature = f
+                    break
+            if feature is None:
+                continue
 
-        if status == "deactivated":
-            return {"changed": False, "feature": feature}
+            status = feature.get("status")
 
-        if status == "activated":
+            if status in ("deactivated", "incompatible", "unavailable"):
+                continue
+
             if self.checkmode:
                 return {"changed": True, "feature": feature}
-            self.api.post_dedicated_server_feature_deactivate(
-                self.server_id, self.feature_name
+
+            changed, result_feature = self._deactivate_feature(
+                feature_name, status
             )
-            if self.wait:
-                feature = self.wait_for_status("deactivated")
-            return {"changed": True, "feature": feature}
+            return {
+                "changed": changed,
+                "feature": result_feature or feature,
+            }
 
-        if status == "deactivation":
-            if self.wait:
-                feature = self.wait_for_status("deactivated")
-            return {"changed": False, "feature": feature}
-
-        if status in ("incompatible", "unavailable"):
-            return {"changed": False, "feature": feature}
-
-        raise ModuleError(
-            f"Unexpected status '{status}' for {self.feature_name}"
-        )
+        # Both features are inactive or absent
+        for f in features:
+            if f.get("name") in ("public_ipxe_boot", "private_ipxe_boot"):
+                return {"changed": False, "feature": f}
+        return {"changed": False, "feature": {}}
 
     def run(self):
-        if self.state == "present":
+        if self.state in ("public", "private"):
             return self._ensure_present()
         else:
             return self._ensure_absent()
