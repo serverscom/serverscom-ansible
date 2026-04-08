@@ -220,11 +220,10 @@
     token: dummy
     endpoint: "https://api.servers.com/v1"
     server_id: "test123"
-    type: public
+    state: public
     ipxe_config: |
       #!ipxe
       chain http://boot.example.com/menu.ipxe
-    state: present
     wait: 0
   register: result
   ignore_errors: true
