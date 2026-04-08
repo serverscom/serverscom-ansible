@@ -10,8 +10,7 @@
 - name: Activate public iPXE boot
   serverscom.sc_api.dedicated_server_ipxe:
     server_id: "{{ existing_server1_id }}"
-    type: public
-    state: present
+    state: public
     ipxe_config: |
       #!ipxe
       chain http://boot.example.com/menu.ipxe
@@ -31,8 +30,7 @@
 - name: Activate public iPXE boot (idempotency)
   serverscom.sc_api.dedicated_server_ipxe:
     server_id: "{{ existing_server1_id }}"
-    type: public
-    state: present
+    state: public
     ipxe_config: |
       #!ipxe
       chain http://boot.example.com/menu.ipxe
@@ -53,11 +51,10 @@
 - name: Update iPXE config on activated public feature
   serverscom.sc_api.dedicated_server_ipxe:
     server_id: "{{ existing_server1_id }}"
-    type: public
-    state: present
+    state: public
     ipxe_config: |
       #!ipxe
-      chain http://boot.example.com/menu.ipxe
+      chain http://boot.example.com/updated-menu.ipxe
   environment:
     SERVERSCOM_API_TOKEN: '{{ sc_token }}'
     SERVERSCOM_API_URL: '{{ sc_endpoint }}'
@@ -66,15 +63,33 @@
 - name: Verify iPXE config update
   assert:
     that:
+      - update_config is changed
       - update_config.feature.name == "public_ipxe_boot"
       - update_config.feature.status == "activated"
 
-# --- Check mode for deactivation ---
-
-- name: Deactivate public iPXE boot (check mode)
+- name: Update iPXE config on activated public feature (idempotency)
   serverscom.sc_api.dedicated_server_ipxe:
     server_id: "{{ existing_server1_id }}"
-    type: public
+    state: public
+    ipxe_config: |
+      #!ipxe
+      chain http://boot.example.com/updated-menu.ipxe
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+  register: update_config_idem
+
+- name: Verify iPXE config update idempotency
+  assert:
+    that:
+      - update_config_idem is not changed
+      - update_config_idem.feature.status == "activated"
+
+# --- Check mode for deactivation ---
+
+- name: Deactivate iPXE boot (check mode)
+  serverscom.sc_api.dedicated_server_ipxe:
+    server_id: "{{ existing_server1_id }}"
     state: absent
     wait: 0
   environment:
@@ -88,12 +103,11 @@
     that:
       - deactivate_check is changed
 
-# --- Deactivate public iPXE boot ---
+# --- Deactivate iPXE boot ---
 
-- name: Deactivate public iPXE boot
+- name: Deactivate iPXE boot
   serverscom.sc_api.dedicated_server_ipxe:
     server_id: "{{ existing_server1_id }}"
-    type: public
     state: absent
     wait: 600
   environment:
@@ -101,17 +115,16 @@
     SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: deactivate_public
 
-- name: Verify deactivate public iPXE boot
+- name: Verify deactivate iPXE boot
   assert:
     that:
       - deactivate_public is changed
       - deactivate_public.feature.name == "public_ipxe_boot"
       - deactivate_public.feature.status == "deactivated"
 
-- name: Deactivate public iPXE boot (idempotency)
+- name: Deactivate iPXE boot (idempotency)
   serverscom.sc_api.dedicated_server_ipxe:
     server_id: "{{ existing_server1_id }}"
-    type: public
     state: absent
     wait: 0
   environment:
@@ -119,19 +132,17 @@
     SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: deactivate_public_idem
 
-- name: Verify deactivate public iPXE boot idempotency
+- name: Verify deactivate iPXE boot idempotency
   assert:
     that:
       - deactivate_public_idem is not changed
-      - deactivate_public_idem.feature.status == "deactivated"
 
 # --- Check mode for activation ---
 
 - name: Activate public iPXE boot (check mode)
   serverscom.sc_api.dedicated_server_ipxe:
     server_id: "{{ existing_server1_id }}"
-    type: public
-    state: present
+    state: public
     ipxe_config: |
       #!ipxe
       chain http://boot.example.com/menu.ipxe
@@ -150,7 +161,6 @@
 - name: Confirm feature is still deactivated after check mode
   serverscom.sc_api.dedicated_server_ipxe:
     server_id: "{{ existing_server1_id }}"
-    type: public
     state: absent
     wait: 0
   environment:
@@ -162,15 +172,13 @@
   assert:
     that:
       - after_check is not changed
-      - after_check.feature.status == "deactivated"
 
 # --- Switch mode: public -> private -> public ---
 
 - name: Activate public iPXE boot (setup for switch)
   serverscom.sc_api.dedicated_server_ipxe:
     server_id: "{{ existing_server1_id }}"
-    type: public
-    state: present
+    state: public
     ipxe_config: |
       #!ipxe
       chain http://boot.example.com/menu.ipxe
@@ -188,8 +196,7 @@
 - name: Switch from public to private iPXE boot
   serverscom.sc_api.dedicated_server_ipxe:
     server_id: "{{ existing_server1_id }}"
-    type: private
-    state: present
+    state: private
     ipxe_config: |
       #!ipxe
       chain http://boot.example.com/private-menu.ipxe
@@ -209,8 +216,7 @@
 - name: Switch to private iPXE boot (idempotency)
   serverscom.sc_api.dedicated_server_ipxe:
     server_id: "{{ existing_server1_id }}"
-    type: private
-    state: present
+    state: private
     ipxe_config: |
       #!ipxe
       chain http://boot.example.com/private-menu.ipxe
@@ -229,8 +235,7 @@
 - name: Switch from private back to public iPXE boot
   serverscom.sc_api.dedicated_server_ipxe:
     server_id: "{{ existing_server1_id }}"
-    type: public
-    state: present
+    state: public
     ipxe_config: |
       #!ipxe
       chain http://boot.example.com/menu.ipxe
@@ -247,11 +252,10 @@
       - switch_to_public.feature.name == "public_ipxe_boot"
       - switch_to_public.feature.status == "activated"
 
-- name: Switch to public iPXE boot (check mode)
+- name: Switch to private iPXE boot (check mode)
   serverscom.sc_api.dedicated_server_ipxe:
     server_id: "{{ existing_server1_id }}"
-    type: private
-    state: present
+    state: private
     ipxe_config: |
       #!ipxe
       chain http://boot.example.com/private-menu.ipxe
@@ -270,8 +274,7 @@
 - name: Confirm public is still activated after check mode switch
   serverscom.sc_api.dedicated_server_ipxe:
     server_id: "{{ existing_server1_id }}"
-    type: public
-    state: present
+    state: public
     ipxe_config: |
       #!ipxe
       chain http://boot.example.com/menu.ipxe
@@ -289,10 +292,9 @@
 
 # --- Cleanup ---
 
-- name: Deactivate public iPXE boot (cleanup)
+- name: Deactivate iPXE boot (cleanup)
   serverscom.sc_api.dedicated_server_ipxe:
     server_id: "{{ existing_server1_id }}"
-    type: public
     state: absent
     wait: 600
   environment:
