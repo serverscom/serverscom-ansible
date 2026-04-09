@@ -428,13 +428,11 @@ class ScDedicatedServerIpxe:
         return None
 
     def _get_feature_status(self, retry_rules=None):
-        feature = self._get_feature_by_name(
-            self.feature_name, retry_rules=retry_rules
-        )
+        feature = self._get_feature_by_name(self.feature_name, retry_rules=retry_rules)
         if feature is None:
             raise ModuleError(
-                f"Feature '{self.feature_name}' not found "
-                f"for server {self.server_id}"
+                f"Unexpected error, unable to find feature '{self.feature_name}' not found "
+                f"for server {self.server_id}, please contact support"
             )
         return feature
 
@@ -490,46 +488,32 @@ class ScDedicatedServerIpxe:
             )
             feature = None
             if self.wait:
-                feature = self.wait_for_status(
-                    "deactivated", feature_name=feature_name
-                )
+                feature = self.wait_for_status("deactivated", feature_name=feature_name)
             return True, feature
         if status == "activation":
             if self.wait:
-                self.wait_for_status(
-                    "activated", feature_name=feature_name
-                )
+                self.wait_for_status("activated", feature_name=feature_name)
             self.api.post_dedicated_server_feature_deactivate(
                 self.server_id, feature_name
             )
             feature = None
             if self.wait:
-                feature = self.wait_for_status(
-                    "deactivated", feature_name=feature_name
-                )
+                feature = self.wait_for_status("deactivated", feature_name=feature_name)
             return True, feature
         if status == "deactivation":
             feature = None
             if self.wait:
-                feature = self.wait_for_status(
-                    "deactivated", feature_name=feature_name
-                )
+                feature = self.wait_for_status("deactivated", feature_name=feature_name)
             return False, feature
-        raise ModuleError(
-            f"Unexpected status '{status}' for {feature_name}"
-        )
+        raise ModuleError(f"Unexpected status '{status}' for {feature_name}")
 
     def _deactivate_opposite(self, opposite):
-        self._deactivate_feature(
-            self.opposite_feature_name, opposite.get("status")
-        )
+        self._deactivate_feature(self.opposite_feature_name, opposite.get("status"))
 
     def _opposite_needs_deactivation(self, opposite):
         if opposite is None:
             return False
-        return opposite.get("status") in (
-            "activated", "activation", "deactivation"
-        )
+        return opposite.get("status") in ("activated", "activation", "deactivation")
 
     def _ensure_present(self):
         feature = self._get_feature_status()
@@ -572,9 +556,7 @@ class ScDedicatedServerIpxe:
                 feature = self.wait_for_status("activated")
             return {"changed": False, "feature": feature}
 
-        raise ModuleError(
-            f"Unexpected status '{status}' for {self.feature_name}"
-        )
+        raise ModuleError(f"Unexpected status '{status}' for {self.feature_name}")
 
     def _ensure_absent(self):
         features = self.api.get_dedicated_server_features(self.server_id)
@@ -595,9 +577,7 @@ class ScDedicatedServerIpxe:
             if self.checkmode:
                 return {"changed": True, "feature": feature}
 
-            changed, result_feature = self._deactivate_feature(
-                feature_name, status
-            )
+            changed, result_feature = self._deactivate_feature(feature_name, status)
             return {
                 "changed": changed,
                 "feature": result_feature or feature,
