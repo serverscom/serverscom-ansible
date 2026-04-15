@@ -1,0 +1,93 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
+  when: not sc_endpoint or not sc_token
+
+- name: Dedicated server rescue test series
+  block:
+    - name: Ensure server starts in normal mode
+      serverscom.sc_api.dedicated_server_rescue:
+        state: normal
+        server_id: "{{ existing_server1_id }}"
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+
+    - name: Activate rescue mode with password
+      serverscom.sc_api.dedicated_server_rescue:
+        state: rescue
+        server_id: "{{ existing_server1_id }}"
+        auth_methods:
+          - password
+        wait: 600
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+      register: test1
+
+    - name: Check Test1
+      assert:
+        that:
+          - test1 is changed
+          - test1.operational_status == "rescue_mode"
+
+    - name: Activate rescue mode again (idempotency)
+      serverscom.sc_api.dedicated_server_rescue:
+        state: rescue
+        server_id: "{{ existing_server1_id }}"
+        auth_methods:
+          - password
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+      register: test2
+
+    - name: Check Test2
+      assert:
+        that:
+          - test2 is not changed
+          - test2.operational_status == "rescue_mode"
+
+    - name: Deactivate rescue mode without waiting
+      serverscom.sc_api.dedicated_server_rescue:
+        state: normal
+        server_id: "{{ existing_server1_id }}"
+        wait: 0
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+      register: test3
+
+    - name: Check Test3
+      assert:
+        that:
+          - test3 is changed
+
+    - name: Deactivate rescue mode again with wait (waits for in-progress deactivation)
+      serverscom.sc_api.dedicated_server_rescue:
+        state: normal
+        server_id: "{{ existing_server1_id }}"
+        wait: 600
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+      register: test4
+
+    - name: Check Test4
+      assert:
+        that:
+          - test4 is not changed
+          - test4.operational_status == "normal"
+
+  always:
+    - name: Ensure server is back to normal mode
+      serverscom.sc_api.dedicated_server_rescue:
+        state: normal
+        server_id: "{{ existing_server1_id }}"
+        wait: 600
+      environment:
+        SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+        SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+      ignore_errors: true
