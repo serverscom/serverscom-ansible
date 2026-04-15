@@ -78,6 +78,10 @@ class APIError409(APIError):
     pass
 
 
+class APIError412(APIError):
+    pass
+
+
 class SCConnectionError(SCBaseError):
     def __init__(self, msg, api_url):
         self.msg = msg
@@ -160,6 +164,13 @@ class ApiHelper:
                 status_code=response.status_code,
                 api_url=prep_request.url,
                 msg=f"409 Conflict. {response.content}",
+                correlation_id=correlation_id,
+            )
+        if response.status_code == 412:
+            raise APIError412(
+                status_code=response.status_code,
+                api_url=prep_request.url,
+                msg=f"412 Precondition Failed. {response.content}",
                 correlation_id=correlation_id,
             )
         if response.status_code not in good_codes:
@@ -1121,6 +1132,33 @@ class ScApi:
     def post_dedicated_server_power_off(self, server_id):
         return self.api_helper.make_post_request(
             path=f"/hosts/dedicated_servers/{server_id}/power_off",
+            body=None,
+            query_parameters=None,
+            good_codes=[202],
+        )
+
+    def get_dedicated_server_features(self, server_id, retry_rules=None):
+        return self.api_helper.make_get_request(
+            path=f"/hosts/dedicated_servers/{server_id}/features",
+            retry_rules=retry_rules,
+        )
+
+    def post_dedicated_server_rescue_activate(
+        self, server_id, auth_methods, ssh_key_fingerprints=None
+    ):
+        body = {"auth_methods": auth_methods}
+        if ssh_key_fingerprints:
+            body["ssh_key_fingerprints"] = ssh_key_fingerprints
+        return self.api_helper.make_post_request(
+            path=f"/hosts/dedicated_servers/{server_id}/features/host_rescue_mode/activate",
+            body=body,
+            query_parameters=None,
+            good_codes=[202],
+        )
+
+    def post_dedicated_server_rescue_deactivate(self, server_id):
+        return self.api_helper.make_post_request(
+            path=f"/hosts/dedicated_servers/{server_id}/features/host_rescue_mode/deactivate",
             body=None,
             query_parameters=None,
             good_codes=[202],

@@ -4,6 +4,8 @@ import time
 
 from ansible_collections.serverscom.sc_api.plugins.module_utils.api import (
     APIError404,
+    APIError409,
+    APIError412,
     ScApi,
 )
 from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
@@ -468,3 +470,194 @@ class ScDedicatedOSList:
             raise ModuleError("No operating systems found matching the criteria")
 
         return {"changed": False, "os_list": os_list}
+
+
+class ScDedicatedServerRescue:
+    def __init__(
+        self,
+        endpoint,
+        token,
+        server_id,
+        state,
+        auth_methods,
+        ssh_key_fingerprints,
+        ssh_key_name,
+        wait,
+        update_interval,
+        checkmode,
+    ):
+        self.api = ScApi(token, endpoint)
+        self.server_id = server_id
+        self.state = state
+        self.auth_methods = auth_methods
+        self._validate_auth_methods(auth_methods, ssh_key_fingerprints, ssh_key_name)
+        self.ssh_key_fingerprints = self._resolve_ssh_keys(
+            ssh_key_fingerprints, ssh_key_name
+        )
+        self.wait = wait
+        self.update_interval = update_interval
+        self.checkmode = checkmode
+
+    @staticmethod
+    def _validate_auth_methods(auth_methods, ssh_key_fingerprints, ssh_key_name):
+        if not auth_methods:
+            return
+        valid_methods = {"password", "ssh_key"}
+        invalid = set(auth_methods) - valid_methods
+        if invalid:
+            raise ModuleError(
+                f"Invalid auth_methods: {', '.join(sorted(invalid))}. "
+                f"Valid values are: {', '.join(sorted(valid_methods))}"
+            )
+        if "ssh_key" in auth_methods and not ssh_key_fingerprints and not ssh_key_name:
+            raise ModuleError(
+                "ssh_key_fingerprints or ssh_key_name is required "
+                "when 'ssh_key' is in auth_methods."
+            )
+
+    def _resolve_ssh_keys(self, ssh_key_fingerprints, ssh_key_name):
+        if ssh_key_fingerprints:
+            return ssh_key_fingerprints
+        if not ssh_key_name:
+            return None
+        return [
+            self.api.toolbox.get_ssh_fingerprints_by_key_name(
+                ssh_key_name, must=True
+            )
+        ]
+
+    def _get_rescue_feature_status(self, retry_rules=None):
+        features = self.api.get_dedicated_server_features(
+            self.server_id, retry_rules=retry_rules
+        )
+        for feature in features:
+            if feature["name"] == "host_rescue_mode":
+                return feature["status"]
+        raise ModuleError(
+            f"host_rescue_mode feature not found for server {self.server_id}. "
+            "The server may not support rescue mode."
+        )
+
+    def _retry_on_api_error(self, action):
+        start = time.time()
+        while True:
+            try:
+                return action()
+            except APIError409 as e:
+                if '"INCOMPATIBLE_FEATURE_STATE"' not in e.msg:
+                    raise
+                if time.time() - start > self.wait:
+                    raise
+                time.sleep(self.update_interval)
+            except APIError412:
+                if time.time() - start > self.wait:
+                    raise
+                time.sleep(self.update_interval)
+
+    def _wait_for_feature_status(self, target_status):
+        start = time.time()
+        while True:
+            elapsed = time.time() - start
+            status = self._get_rescue_feature_status(
+                retry_rules=_retry_rules_for_wait(
+                    max_wait=max(0, self.wait - elapsed),
+                    delay=self.update_interval,
+                ),
+            )
+            if status == target_status:
+                return
+            if elapsed > self.wait:
+                raise WaitError(
+                    msg=f"Timeout waiting for rescue feature "
+                    f"status={target_status}, last={status}",
+                    timeout=elapsed,
+                )
+            time.sleep(self.update_interval)
+
+    def activate_rescue(self):
+        feature_status = self._get_rescue_feature_status()
+
+        if feature_status == "unavailable":
+            raise ModuleError(
+                f"Rescue mode is unavailable for server {self.server_id}."
+            )
+        if feature_status == "incompatible":
+            raise ModuleError(
+                f"Rescue mode is incompatible for server {self.server_id}."
+            )
+
+        if feature_status == "activated":
+            server = self.api.get_dedicated_servers(self.server_id)
+            server["changed"] = False
+            return server
+
+        if feature_status == "activation":
+            if self.wait:
+                self._wait_for_feature_status("activated")
+            server = self.api.get_dedicated_servers(self.server_id)
+            server["changed"] = False
+            return server
+
+        if self.checkmode:
+            server = self.api.get_dedicated_servers(self.server_id)
+            server["changed"] = True
+            return server
+
+        self._retry_on_api_error(
+            lambda: self.api.post_dedicated_server_rescue_activate(
+                self.server_id,
+                auth_methods=self.auth_methods,
+                ssh_key_fingerprints=self.ssh_key_fingerprints,
+            )
+        )
+
+        if self.wait:
+            self._wait_for_feature_status("activated")
+        server = self.api.get_dedicated_servers(self.server_id)
+        server["changed"] = True
+        return server
+
+    def deactivate_rescue(self):
+        feature_status = self._get_rescue_feature_status()
+
+        if feature_status == "unavailable":
+            raise ModuleError(
+                f"Rescue mode is unavailable for server {self.server_id}."
+            )
+
+        if feature_status == "deactivated":
+            server = self.api.get_dedicated_servers(self.server_id)
+            server["changed"] = False
+            return server
+
+        if feature_status == "deactivation":
+            if self.wait:
+                self._wait_for_feature_status("deactivated")
+            server = self.api.get_dedicated_servers(self.server_id)
+            server["changed"] = False
+            return server
+
+        if self.checkmode:
+            server = self.api.get_dedicated_servers(self.server_id)
+            server["changed"] = True
+            return server
+
+        self._retry_on_api_error(
+            lambda: self.api.post_dedicated_server_rescue_deactivate(
+                self.server_id
+            )
+        )
+
+        if self.wait:
+            self._wait_for_feature_status("deactivated")
+        server = self.api.get_dedicated_servers(self.server_id)
+        server["changed"] = True
+        return server
+
+    def run(self):
+        if self.state == "rescue":
+            return self.activate_rescue()
+        elif self.state == "normal":
+            return self.deactivate_rescue()
+        else:
+            raise ModuleError(f"Unknown state: {self.state}")

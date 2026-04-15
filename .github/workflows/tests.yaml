@@ -141,6 +141,7 @@ jobs:
           dedicated_server_reinstall_quick
           dedicated_server_reinstall_long
           dedicated_server_power
+          dedicated_server_rescue
 
         working-directory: ansible_collections/serverscom/sc_api
       - name: Cleanup secrets

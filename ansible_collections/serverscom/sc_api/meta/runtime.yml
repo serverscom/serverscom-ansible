@@ -17,6 +17,7 @@ action_groups:
     - cloud_computing_regions_info
     - dedicated_server_info
     - dedicated_server_power
+    - dedicated_server_rescue
     - dedicated_server_reinstall
     - l2_segment
     - l2_segment_aliases
