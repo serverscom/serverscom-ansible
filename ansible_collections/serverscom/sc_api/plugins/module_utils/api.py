@@ -1169,12 +1169,6 @@ class ScApi:
             good_codes=[200],
         )
 
-    def get_dedicated_server_features(self, server_id, retry_rules=None):
-        return self.api_helper.make_get_request(
-            path=f"/hosts/dedicated_servers/{server_id}/features",
-            retry_rules=retry_rules,
-        )
-
     def post_dedicated_server_rescue_activate(
         self, server_id, auth_methods, ssh_key_fingerprints=None
     ):
