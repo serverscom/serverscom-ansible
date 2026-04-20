@@ -70,6 +70,7 @@ List of modules
 * `dedicated_server_info` - Information about one dedicated server
 * `dedicated_server_reinstall` - Reinstallation of dedicated servers
 * `dedicated_server_power` - Power management for dedicated baremetal servers
+* `dedicated_server_ipxe` - Managing the iPXE feature for dedicated baremetal servers
 
 **Cloud Computing**
 
