@@ -7,3 +7,4 @@ ansible_collections/serverscom/sc_api/tests/integration/inventory
 ansible_collections/serverscom/sc_api/*.tar.gz
 output*
 .secrets/
+.claude/

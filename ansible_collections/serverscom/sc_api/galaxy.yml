@@ -1,12 +1,13 @@
 ---
 namespace: serverscom
 name: sc_api
-version: 1.1.0
+version: 1.1.1
 readme: README.md
 authors:
   - George Shuklin <george.shuklin@gmail.com>
   - Volodymyr Rudniev <rudnev.vv@gmail.com>
   - Aleksandr Chudinov <silentirk@me.com>
+  - Dmitrii Rebryshkin <dmitry.r@cyberflow.net>
 description: Collection of modules to work with Servers.com API
 license:
   - GPL-3.0-or-later
