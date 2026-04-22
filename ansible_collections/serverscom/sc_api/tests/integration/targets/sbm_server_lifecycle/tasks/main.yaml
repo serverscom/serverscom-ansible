@@ -42,7 +42,7 @@
       serverscom.sc_api.sc_sbm_server:
         state: present
         location_code: ZZZZZZ_INVALID
-        flavor_name: DL-01
+        flavor_name: "{{ sbm_test_flavor_name }}"
         hostname: ci-sbm-negative-test
         operating_system_name: 'Debian 13 64-bit'
       environment:
@@ -60,7 +60,7 @@
     - name: Test create with nonexistent flavor_name
       serverscom.sc_api.sc_sbm_server:
         state: present
-        location_code: AMS7
+        location_code: "{{ sbm_test_location_code }}"
         flavor_name: NONEXISTENT_FLAVOR_XYZ
         hostname: ci-sbm-negative-test
         operating_system_name: 'Debian 13 64-bit'
@@ -79,8 +79,8 @@
     - name: Test create with nonexistent os_name
       serverscom.sc_api.sc_sbm_server:
         state: present
-        location_code: AMS7
-        flavor_name: DL-01
+        location_code: "{{ sbm_test_location_code }}"
+        flavor_name: "{{ sbm_test_flavor_name }}"
         hostname: ci-sbm-negative-test
         operating_system_name: 'NonexistentOS 99.99 64-bit'
       environment:

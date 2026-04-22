@@ -82,7 +82,7 @@
     - name: Test6, Verify location_id and location_code are mutually exclusive
       serverscom.sc_api.sc_sbm_servers_info:
         location_id: 1
-        location_code: AMS7
+        location_code: "{{ sbm_test_location_code }}"
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
         SERVERSCOM_API_URL: '{{ sc_endpoint }}'
