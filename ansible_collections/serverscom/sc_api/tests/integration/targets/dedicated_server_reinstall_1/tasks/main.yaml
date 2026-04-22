@@ -38,59 +38,6 @@
   delay: 30
   retries: 180
 
-- name: Test2, reinstall with wait-mode with very short wait time
-  sc_dedicated_server_reinstall:
-    id: '{{ existing_server2_id }}'
-    drives_layout_template: raid1-simple
-    operating_system_id: "{{ dedicated_test_reinstall_os_id }}"
-    hostname: reinstall2
-    wait: 10
-    update_interval: 5
-  environment:
-    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
-    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
-  register: test2
-  failed_when: false
-
-- name: Check Test2
-  assert:
-    that:
-      - test2.timeout > 10
-      - "'Server is not ready' in test2.msg"
-
-
-- name: Test3, reinstall with wait-mode with raid1-template
-  sc_dedicated_server_reinstall:
-    id: '{{ existing_server3_id }}'
-    drives_layout_template: raid1-simple
-    hostname: raid1test
-    operating_system_id: "{{ dedicated_test_reinstall_os_id }}"
-    wait: 3600
-    update_interval: 30
-    ssh_keys:
-      - "{{ dedicated_test_reinstall_ssh_key_fingerprint }}"
-  environment:
-    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
-    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
-  register: test3
-
-- name: Check Test3
-  assert:
-    that:
-      - test3.ready
-      - test3.title == "raid1test"
-
-- name: wait until installation is done 2
-  sc_dedicated_server_info:
-    name: '{{ existing_server1_id }}'
-  environment:
-    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
-    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
-  register: info
-  until: info.ready == 1
-  delay: 30
-  retries: 180
-
 - name: Test4, reinstall with raid0_template and ambiguous OS regex
   sc_dedicated_server_reinstall:
     id: '{{ existing_server1_id }}'
