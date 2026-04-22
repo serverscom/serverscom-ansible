@@ -368,7 +368,7 @@
         state: present
         name: 8d2779e6-eb72-11ea-970f-733ca983e4ca
         region_id: "{{ regions.regions[0].id }}"
-        flavor_name: "SSD.30"
+        flavor_name: "{{ cloud_test_flavor_name }}"
         image_regexp: "Ubuntu.+"
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
@@ -421,7 +421,7 @@
         region_id: "{{ regions.regions[0].id }}"
         gpn: true
         ipv4: false
-        flavor_name: "SSD.30"
+        flavor_name: "{{ cloud_test_flavor_name }}"
         image_regexp: "Ubuntu.+"
         ssh_key_name: 95f41cea-00fc-11ed-bfa8-33691f518c37
         user_data: |

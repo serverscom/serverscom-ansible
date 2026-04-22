@@ -23,7 +23,7 @@
 
 - name: Test2, Search for location
   sc_cloud_computing_regions_info:
-    search_pattern: WAS
+    search_pattern: "{{ cloud_test_region_search_pattern }}"
   environment:
     SERVERSCOM_API_TOKEN: '{{ sc_token }}'
     SERVERSCOM_API_URL: '{{ sc_endpoint }}'
@@ -34,5 +34,5 @@
   assert:
     that:
       - test2.regions|length >= 1
-      - "'AMS1' not in test2|string"
-      - "'WAS1' in test2|string"
+      - "cloud_test_region_search_nomatch not in test2|string"
+      - "cloud_test_region_search_match in test2|string"
