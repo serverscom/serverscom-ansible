@@ -127,7 +127,7 @@
 - name: Test7, Reinstall server to Ubuntu 24.04 using operating_system_name
   serverscom.sc_api.sc_sbm_server_reinstall:
     server_id: '{{ test_sbm_server_id }}'
-    operating_system_name: 'Ubuntu 24.04-server x86_64'
+    operating_system_name: "{{ sbm_test_reinstall_os_name }}"
     hostname: '{{ test_hostname }}'
     wait: 86400
     update_interval: 60

@@ -5,44 +5,44 @@
 
 - name: Get locations
   serverscom.sc_api.sc_baremetal_locations_info:
-    search_pattern: AMS7
+    search_pattern: "{{ sbm_test_location_code }}"
   environment:
     SERVERSCOM_API_TOKEN: '{{ sc_token }}'
     SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: locations_result
 
-- name: Assert AMS7 location is available
+- name: Assert location is available
   assert:
     that:
-      - locations_result.locations | selectattr('code', 'eq', 'AMS7') | list | length > 0
-    fail_msg: "AMS7 location not found in {{ locations_result.locations | map(attribute='code') | list }}"
+      - locations_result.locations | selectattr('code', 'eq', sbm_test_location_code) | list | length > 0
+    fail_msg: "{{ sbm_test_location_code }} location not found in {{ locations_result.locations | map(attribute='code') | list }}"
 
-- name: Set AMS7 location facts
+- name: Set location facts
   set_fact:
-    test_location_id: "{{ (locations_result.locations | selectattr('code', 'eq', 'AMS7') | first).id }}"
-    test_location_code: AMS7
+    test_location_id: "{{ (locations_result.locations | selectattr('code', 'eq', sbm_test_location_code) | first).id }}"
+    test_location_code: "{{ sbm_test_location_code }}"
 
 - name: Get SBM flavor models for AMS7
   serverscom.sc_api.sc_sbm_flavor_models_info:
     location_id: "{{ test_location_id }}"
-    search_pattern: DL-01
+    search_pattern: "{{ sbm_test_flavor_name }}"
   environment:
     SERVERSCOM_API_TOKEN: '{{ sc_token }}'
     SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: flavors_result
 
-- name: Assert DL-01 flavor model is available
+- name: Assert flavor model is available
   assert:
     that:
-      - flavors_result.sbm_flavor_models | selectattr('name', 'match', '.*DL-01.*') | list | length > 0
-    fail_msg: "No DL-01 flavor model available in AMS7. Available: {{ flavors_result.sbm_flavor_models | map(attribute='name') | list }}"
+      - flavors_result.sbm_flavor_models | selectattr('name', 'match', '.*' ~ sbm_test_flavor_name ~ '.*') | list | length > 0
+    fail_msg: "No {{ sbm_test_flavor_name }} flavor model available in {{ sbm_test_location_code }}. Available: {{ flavors_result.sbm_flavor_models | map(attribute='name') | list }}"
 
-- name: Set DL-01 flavor model facts
+- name: Set flavor model facts
   set_fact:
-    test_flavor_model_id: "{{ (flavors_result.sbm_flavor_models | selectattr('name', 'match', '.*DL-01.*') | first).id }}"
-    test_flavor_model_name: "{{ (flavors_result.sbm_flavor_models | selectattr('name', 'match', '.*DL-01.*') | first).name }}"
+    test_flavor_model_id: "{{ (flavors_result.sbm_flavor_models | selectattr('name', 'match', '.*' ~ sbm_test_flavor_name ~ '.*') | first).id }}"
+    test_flavor_model_name: "{{ (flavors_result.sbm_flavor_models | selectattr('name', 'match', '.*' ~ sbm_test_flavor_name ~ '.*') | first).name }}"
 
-- name: Get available OS for DL-01 in AMS7
+- name: Get available OS for flavor in location
   serverscom.sc_api.sc_sbm_os_list:
     flavor_id: "{{ test_flavor_model_id }}"
     location_id: "{{ test_location_id }}"
@@ -55,7 +55,7 @@
   assert:
     that:
       - os_result.os_list | length > 0
-    fail_msg: "No OS available for flavor {{ test_flavor_model_name }} in AMS7"
+    fail_msg: "No OS available for flavor {{ test_flavor_model_name }} in {{ sbm_test_location_code }}"
 
 - name: Set OS facts
   set_fact:
@@ -68,7 +68,7 @@
     location_code: "{{ test_location_code }}"
     flavor_name: "{{ test_flavor_model_name }}"
     hostname: "{{ test_hostname }}"
-    operating_system_regex: 'Debian 13'
+    operating_system_regex: "{{ sbm_test_os_regex }}"
     wait: 86400
     update_interval: 60
   environment:
