@@ -37,5 +37,8 @@ To run quick tests (sanity, unit, non-secret integration tests), run `just quick
 
 There are other slow and expensive integration tests, do not run them, you don't have access to secrets. Don't try to get access to them.
 
+Integration tests should use variables to reference existing objects (defined in @integration_config.yml.template)
+
 Libraries: ansible-provided and requests.
 CI: Github Actions .github/workflows/tests.yaml
+
