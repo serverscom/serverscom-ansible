@@ -18,7 +18,7 @@
       sc_cloud_computing_instance:
         state: present
         region_id: '{{ regions.regions[0].id }}'
-        flavor_name: SSD.30
+        flavor_name: "{{ cloud_test_flavor_name }}"
         image_regexp: 'Ubuntu.+'
         name: '{{ instance_name }}'
         backup_copies: 0

@@ -21,7 +21,7 @@
 
 - name: Test2, Get all instances in one region
   sc_cloud_computing_instances_info:
-    region_id: 2
+    region_id: "{{ cloud_test_region_id }}"
   environment:
     SERVERSCOM_API_TOKEN: '{{ sc_token }}'
     SERVERSCOM_API_URL: '{{ sc_endpoint }}'
@@ -33,7 +33,7 @@
       - test2 is not changed
       - test2.cloud_instances|length > 0
       - test2.cloud_instances[0].id
-      - test2.cloud_instances[0].region_id == 2
+      - test2.cloud_instances[0].region_id == cloud_test_region_id
       - test2.cloud_instances[0].region_code
       - test2.cloud_instances[0].flavor_id
       - test2.cloud_instances[0].flavor_name
@@ -56,7 +56,7 @@
 
 - name: Get Debian 12 image ID
   sc_cloud_computing_images_info:
-    region_id: 2
+    region_id: "{{ cloud_test_region_id }}"
   environment:
     SERVERSCOM_API_TOKEN: '{{ sc_token }}'
     SERVERSCOM_API_URL: '{{ sc_endpoint }}'
@@ -69,11 +69,11 @@
 - name: Create test instance with labels
   sc_cloud_computing_instance:
     state: present
-    region_id: 2   # Luxembourg
-    flavor_id: "33227-1"   # RND.2-1024-10
+    region_id: "{{ cloud_test_region_id }}"
+    flavor_id: "{{ cloud_test_flavor_id }}"
     image_id: "{{ debian_12_image_id }}"
     name: "sc-cloud-computing-instances-info-test"
-    ssh_key_fingerprint: "9b:08:4d:a5:6d:45:26:72:2c:e0:9a:ee:bf:7d:03:a6"
+    ssh_key_fingerprint: "{{ cloud_test_ssh_key_fingerprint }}"
     labels:
       test_label: "test_value"
     backup_copies: 0
@@ -99,7 +99,7 @@
       - test4 is not changed
       - test4.cloud_instances|length > 0
       - test4.cloud_instances[0].id == test_instance.id
-      - test4.cloud_instances[0].region_id == 2
+      - test4.cloud_instances[0].region_id == cloud_test_region_id
       - test4.cloud_instances[0].name == "sc-cloud-computing-instances-info-test"
 
 - name: Destroy test instance

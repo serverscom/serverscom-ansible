@@ -23,7 +23,7 @@
 
 - name: Get Debian 12 image ID
   sc_cloud_computing_images_info:
-    region_id: 2
+    region_id: "{{ cloud_test_region_id }}"
   environment:
     SERVERSCOM_API_TOKEN: '{{ sc_token }}'
     SERVERSCOM_API_URL: '{{ sc_endpoint }}'
@@ -36,11 +36,11 @@
 - name: Create test instance
   sc_cloud_computing_instance:
     state: present
-    region_id: 2   # Luxembourg
-    flavor_id: "33227-1"   # RND.2-1024-10
+    region_id: "{{ cloud_test_region_id }}"
+    flavor_id: "{{ cloud_test_flavor_id }}"
     image_id: "{{ debian_12_image_id }}"
     name: "sc-cloud-computing-instance-info-test"
-    ssh_key_fingerprint: "9b:08:4d:a5:6d:45:26:72:2c:e0:9a:ee:bf:7d:03:a6"
+    ssh_key_fingerprint: "{{ cloud_test_ssh_key_fingerprint }}"
     labels:
       test_label: "test_value"
     backup_copies: 0
@@ -66,8 +66,8 @@
       - test2 is not changed
       - test2.name == "sc-cloud-computing-instance-info-test"
       - test2.status == "ACTIVE"
-      - test2.region_id == 2
-      - test2.flavor_id == "33227-1"
+      - test2.region_id == cloud_test_region_id
+      - test2.flavor_id == cloud_test_flavor_id
       - test2.image_id == debian_12_image_id
       - test2.labels.test_label == "test_value"
       - test2.backup_copies == 0
