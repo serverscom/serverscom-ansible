@@ -8,10 +8,6 @@ name: Test and build
       - "*.md"
   workflow_dispatch:
 
-env:
-  ANSIBLE_FORCE_COLOR: "1"
-  PYADDOPTS: "--color=yes"
-
 jobs:
   lint:
     runs-on: ubuntu-24.04
@@ -51,13 +47,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install 'ansible-core~=${{ matrix.ansible_core }}.0' requests pytest
       - name: Sanity tests
-        run: ansible-test sanity --requirements --python ${{ matrix.python_version }}
+        run: ansible-test sanity --requirements --python ${{ matrix.python_version }} --color yes
         working-directory: ansible_collections/serverscom/sc_api
       - name: Unit tests
-        run: ansible-test units --requirements --python ${{ matrix.python_version }}
+        run: ansible-test units --requirements --python ${{ matrix.python_version }} --color yes
         working-directory: ansible_collections/serverscom/sc_api
       - name: Token-free integration tests
-        run: ansible-test integration --requirements --python ${{ matrix.python_version }} sc_no_token_tests
+        run: ansible-test integration --requirements --python ${{ matrix.python_version }} sc_no_token_tests --color yes
         working-directory: ansible_collections/serverscom/sc_api
       - name: Try-build by ansible-galaxy
         run: ansible-galaxy collection build
@@ -90,7 +86,7 @@ jobs:
         env:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
-        run: ansible-test integration --requirements --python 3.13
+        run: ansible-test integration --requirements --python 3.13 --color yes
           ssh_key
           cloud_computing_flavors_info
           cloud_computing_regions_info
@@ -136,7 +132,7 @@ jobs:
         env:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests (server1)
-        run: ansible-test integration --requirements --python 3.13
+        run: ansible-test integration --requirements --python 3.13 --color yes
           ssh_key
           baremetal_locations_info
           dedicated_server_reinstall_quick
@@ -176,7 +172,7 @@ jobs:
         env:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests (server2)
-        run: ansible-test integration --requirements --python 3.13
+        run: ansible-test integration --requirements --python 3.13 --color yes
           baremetal_servers_info
           dedicated_server_reinstall_2
           dedicated_server_rescue
@@ -214,7 +210,7 @@ jobs:
         env:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests (server3)
-        run: ansible-test integration --requirements --python 3.13
+        run: ansible-test integration --requirements --python 3.13 --color yes
           baremetal_os_list
           dedicated_server_info
           dedicated_server_reinstall_3
@@ -254,7 +250,7 @@ jobs:
         env:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
-        run: ansible-test integration --requirements --python 3.13
+        run: ansible-test integration --requirements --python 3.13 --color yes
           l2_segment
           l2_segment_aliases
           l2_segments_info
@@ -292,7 +288,7 @@ jobs:
         env:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
-        run: ansible-test integration --requirements --python 3.13
+        run: ansible-test integration --requirements --python 3.13 --color yes
           load_balancer_instance_info
           load_balancer_instance_l4
           load_balancer_instance_l7
@@ -331,7 +327,7 @@ jobs:
         env:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
-        run: ansible-test integration --requirements --python 3.13
+        run: ansible-test integration --requirements --python 3.13 --color yes
           rbs_flavors_info
           rbs_volume
           rbs_volume_info
@@ -370,7 +366,7 @@ jobs:
         env:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
-        run: ansible-test integration --requirements --python 3.13
+        run: ansible-test integration --requirements --python 3.13 --color yes
           sbm_flavor_models_info
           sbm_server_lifecycle
           sbm_servers_info
