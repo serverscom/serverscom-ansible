@@ -111,7 +111,7 @@
     - name: Test6, Verify location_id and location_code are mutually exclusive
       serverscom.sc_api.sc_sbm_os_list:
         location_id: 1
-        location_code: AMS7
+        location_code: "{{ sbm_test_location_code }}"
         flavor_id: "1"
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
@@ -128,7 +128,7 @@
       serverscom.sc_api.sc_sbm_os_list:
         location_id: 1
         flavor_id: "1"
-        flavor_name: "DL-01"
+        flavor_name: "{{ sbm_test_flavor_name }}"
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
         SERVERSCOM_API_URL: '{{ sc_endpoint }}'
