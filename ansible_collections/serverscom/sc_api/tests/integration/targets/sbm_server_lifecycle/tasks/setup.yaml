@@ -7,8 +7,8 @@
   serverscom.sc_api.sc_baremetal_locations_info:
     search_pattern: "{{ sbm_test_location_code }}"
   environment:
-    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
-    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+    SERVERSCOM_API_TOKEN: "{{ sc_token }}"
+    SERVERSCOM_API_URL: "{{ sc_endpoint }}"
   register: locations_result
 
 - name: Assert location is available
@@ -22,13 +22,13 @@
     test_location_id: "{{ (locations_result.locations | selectattr('code', 'eq', sbm_test_location_code) | first).id }}"
     test_location_code: "{{ sbm_test_location_code }}"
 
-- name: Get SBM flavor models for AMS7
+- name: Get SBM flavor models
   serverscom.sc_api.sc_sbm_flavor_models_info:
     location_id: "{{ test_location_id }}"
     search_pattern: "{{ sbm_test_flavor_name }}"
   environment:
-    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
-    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+    SERVERSCOM_API_TOKEN: "{{ sc_token }}"
+    SERVERSCOM_API_URL: "{{ sc_endpoint }}"
   register: flavors_result
 
 - name: Assert flavor model is available
@@ -47,8 +47,8 @@
     flavor_id: "{{ test_flavor_model_id }}"
     location_id: "{{ test_location_id }}"
   environment:
-    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
-    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+    SERVERSCOM_API_TOKEN: "{{ sc_token }}"
+    SERVERSCOM_API_URL: "{{ sc_endpoint }}"
   register: os_result
 
 - name: Assert OS list is not empty
@@ -72,8 +72,8 @@
     wait: 86400
     update_interval: 60
   environment:
-    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
-    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+    SERVERSCOM_API_TOKEN: "{{ sc_token }}"
+    SERVERSCOM_API_URL: "{{ sc_endpoint }}"
   register: created_server
 
 - name: Set server ID fact
