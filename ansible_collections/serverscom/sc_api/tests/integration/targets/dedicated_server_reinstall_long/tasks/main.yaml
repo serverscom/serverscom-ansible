@@ -11,7 +11,7 @@
   sc_dedicated_server_reinstall:
     id: '{{ existing_server1_id }}'
     drives_layout_template: raid1-simple
-    operating_system_id: 49
+    operating_system_id: "{{ dedicated_test_reinstall_os_id }}"
     hostname: reinstall
     wait: 0
   environment:
@@ -42,7 +42,7 @@
   sc_dedicated_server_reinstall:
     id: '{{ existing_server2_id }}'
     drives_layout_template: raid1-simple
-    operating_system_id: 49
+    operating_system_id: "{{ dedicated_test_reinstall_os_id }}"
     hostname: reinstall2
     wait: 10
     update_interval: 5
@@ -64,11 +64,11 @@
     id: '{{ existing_server3_id }}'
     drives_layout_template: raid1-simple
     hostname: raid1test
-    operating_system_id: 49
+    operating_system_id: "{{ dedicated_test_reinstall_os_id }}"
     wait: 3600
     update_interval: 30
     ssh_keys:
-      - f7:90:27:e6:97:5e:6d:ad:31:51:65:26:8d:82:ac:f9
+      - "{{ dedicated_test_reinstall_ssh_key_fingerprint }}"
   environment:
     SERVERSCOM_API_TOKEN: '{{ sc_token }}'
     SERVERSCOM_API_URL: '{{ sc_endpoint }}'
@@ -97,7 +97,7 @@
     drives_layout_template: raid0-simple
     operating_system_regex: "^debian (.*)x86_64$"
     hostname: raid0test
-    ssh_key_name: amarao
+    ssh_key_name: "{{ dedicated_test_reinstall_ssh_key_name }}"
     wait: 3600
     update_interval: 30
   environment:
@@ -121,7 +121,7 @@
     drives_layout_template: raid0-simple
     operating_system_regex: "^Debian 6(.*)x86_64$"
     hostname: raid0test
-    ssh_key_name: amarao
+    ssh_key_name: "{{ dedicated_test_reinstall_ssh_key_name }}"
     wait: 3600
     update_interval: 30
   environment:
@@ -147,7 +147,7 @@
     drives_layout_template: raid0-simple
     operating_system_regex: "^Debian 12 (.*)x86_64$"
     hostname: raid0test
-    ssh_key_name: amarao
+    ssh_key_name: "{{ dedicated_test_reinstall_ssh_key_name }}"
     wait: 3600
     update_interval: 30
   environment:
@@ -169,7 +169,7 @@
     drives_layout_template: no-raid
     operating_system_regex: "^Debian 12 (.*)x86_64$"
     hostname: noraidtest
-    ssh_key_name: amarao
+    ssh_key_name: "{{ dedicated_test_reinstall_ssh_key_name }}"
     wait: 3600
     update_interval: 30
   environment:
