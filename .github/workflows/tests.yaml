@@ -8,6 +8,10 @@ name: Test and build
       - "*.md"
   workflow_dispatch:
 
+env:
+  ANSIBLE_FORCE_COLOR: "1"
+  PYADDOPTS: "--color=yes"
+
 jobs:
   lint:
     runs-on: ubuntu-24.04
