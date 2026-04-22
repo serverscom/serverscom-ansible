@@ -40,7 +40,7 @@
 - name: Test3, Information for real server
   sc_dedicated_server_info:
     fail_on_absent: false
-    id: '{{ existing_server1_id }}'
+    id: '{{ existing_server3_id }}'
   environment:
     SERVERSCOM_API_TOKEN: '{{ sc_token }}'
     SERVERSCOM_API_URL: '{{ sc_endpoint }}'
@@ -50,7 +50,7 @@
   assert:
     that:
       - test3 is success
-      - test3.id == existing_server1_id
+      - test3.id == existing_server3_id
       - test3.configuration|length > 0
       - test3.configuration_details|length > 0
       - test3.found

@@ -1,0 +1,28 @@
+---
+# Reinstall tests for server3: full-wait reinstall with raid1 template.
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+  when: not sc_endpoint or not sc_token
+
+- name: Test1, reinstall with wait-mode with raid1-template
+  sc_dedicated_server_reinstall:
+    id: '{{ existing_server3_id }}'
+    drives_layout_template: raid1-simple
+    hostname: raid1test
+    operating_system_id: "{{ dedicated_test_reinstall_os_id }}"
+    wait: 3600
+    update_interval: 30
+    ssh_keys:
+      - "{{ dedicated_test_reinstall_ssh_key_fingerprint }}"
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+  register: test1
+
+- name: Check Test1
+  assert:
+    that:
+      - test1.ready
+      - test1.title == "raid1test"
