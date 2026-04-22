@@ -5,3 +5,44 @@ existing_server2_id: 3dzAvZmK
 existing_server3_id: bdkMlWpL
 non_existing_id: gd0EL519
 sc_token: "${SC_TOKEN}"
+
+# RBS (Block Storage) tests
+rbs_test_location_id: 46
+rbs_test_location_code: AMS7
+rbs_test_flavor_id: 18590
+rbs_test_flavor_name: Performance
+
+# Load Balancer tests
+lb_test_location_id: 32
+lb_test_upstream_ip1: "10.33.180.116"
+lb_test_upstream_ip2: "10.33.180.196"
+lb_test_network: "192.168.1.0/24"
+
+# Cloud Computing tests
+cloud_test_region_id: 2
+cloud_test_flavor_id: "33227-1"
+cloud_test_flavor_name: SSD.30
+cloud_test_ssh_key_fingerprint: "9b:08:4d:a5:6d:45:26:72:2c:e0:9a:ee:bf:7d:03:a6"
+cloud_test_region_search_pattern: WAS
+cloud_test_region_search_match: WAS1
+cloud_test_region_search_nomatch: AMS1
+
+# Baremetal tests
+baremetal_test_location_search_pattern: US
+baremetal_test_location_search_match: DFW1
+baremetal_test_location_search_nomatch: AMS1
+baremetal_test_os_location_id: 34
+baremetal_test_os_location_code: ams1
+baremetal_test_os_server_model_id: 11940
+baremetal_test_os_server_model_name: "Dell R730xd / 2xIntel Xeon E5-2680 v3 / 32 GB RAM / 4x600 GB SAS"
+
+# Dedicated server reinstall tests
+dedicated_test_reinstall_os_id: 49
+dedicated_test_reinstall_ssh_key_fingerprint: "f7:90:27:e6:97:5e:6d:ad:31:51:65:26:8d:82:ac:f9"
+dedicated_test_reinstall_ssh_key_name: amarao
+
+# SBM (Scalable Baremetal) tests
+sbm_test_location_code: AMS7
+sbm_test_flavor_name: DL-01
+sbm_test_os_regex: "Debian 13"
+sbm_test_reinstall_os_name: "Ubuntu 24.04-server x86_64"

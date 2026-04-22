@@ -10,8 +10,8 @@
     - name: Create test volume
       serverscom.sc_api.sc_rbs_volume:
         name: rbs_ansible_modules_test_volume
-        location_id: 46
-        flavor_id: 18590  # Performance
+        location_id: "{{ rbs_test_location_id }}"
+        flavor_id: "{{ rbs_test_flavor_id }}"
         size: 50
         state: present
       environment:
@@ -54,7 +54,7 @@
   always:
     - name: Get test volumes
       serverscom.sc_api.sc_rbs_volume_info:
-        location_id: 46
+        location_id: "{{ rbs_test_location_id }}"
         search_pattern: "rbs_ansible_modules_test_volume"
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
