@@ -23,7 +23,7 @@
 
 - name: Test2, Search for location
   sc_baremetal_locations_info:
-    search_pattern: US
+    search_pattern: "{{ baremetal_test_location_search_pattern }}"
   environment:
     SERVERSCOM_API_TOKEN: '{{ sc_token }}'
     SERVERSCOM_API_URL: '{{ sc_endpoint }}'
@@ -34,8 +34,8 @@
     that:
       - test2.locations|length >= 1
       - test2.locations[0]
-      - "'AMS1' not in test2|string"
-      - "'DFW1' in test2|string"
+      - "baremetal_test_location_search_nomatch not in test2|string"
+      - "baremetal_test_location_search_match in test2|string"
 
 - name: Test3, Filter by features
   sc_baremetal_locations_info:

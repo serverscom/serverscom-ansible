@@ -43,8 +43,8 @@
 
 - name: Test3, Get OS list with location_id and server_model_id
   sc_baremetal_os_list:
-    location_id: 34
-    server_model_id: 11940
+    location_id: "{{ baremetal_test_os_location_id }}"
+    server_model_id: "{{ baremetal_test_os_server_model_id }}"
   environment:
     SERVERSCOM_API_TOKEN: '{{ sc_token }}'
     SERVERSCOM_API_URL: '{{ sc_endpoint }}'
@@ -59,8 +59,8 @@
 
 - name: Test4, Get OS list with location_code and server_model_name
   sc_baremetal_os_list:
-    location_code: "ams1"
-    server_model_name: "Dell R730xd / 2xIntel Xeon E5-2680 v3 / 32 GB RAM / 4x600 GB SAS"
+    location_code: "{{ baremetal_test_os_location_code }}"
+    server_model_name: "{{ baremetal_test_os_server_model_name }}"
   environment:
     SERVERSCOM_API_TOKEN: '{{ sc_token }}'
     SERVERSCOM_API_URL: '{{ sc_endpoint }}'

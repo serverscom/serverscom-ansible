@@ -22,7 +22,7 @@
     that:
       - test1 is not changed
       - test1.status_code == 404
-      - "'v1/hosts/dedicated_servers/gd0EL519' in test1.api_url"
+      - "'v1/hosts/dedicated_servers/' ~ non_existing_id in test1.api_url"
 
 # should make a get to server before doing reinstall
 - name: Test2, Error on absent ssh key
