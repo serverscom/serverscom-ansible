@@ -11,7 +11,7 @@
       serverscom.sc_api.sc_load_balancer_instance_l4:
         state: present
         name: "test-lb-l4-instances-list-module2"
-        location_id: 32
+        location_id: "{{ lb_test_location_id }}"
         vhost_zones:
           - id: "vhost-zone1"
             ports: [80, 443]
@@ -26,7 +26,7 @@
             hc_interval: 5
             hc_jitter: 5
             upstreams:
-              - ip: 10.33.180.116
+              - ip: "{{ lb_test_upstream_ip1 }}"
                 port: 3000
                 weight: 1
                 max_conns: 63000

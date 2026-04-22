@@ -49,7 +49,7 @@
       serverscom.sc_api.sc_load_balancer_instance_l7:
         state: present
         name: "test-sc-load-balancer-instance-info-module"
-        location_id: 32
+        location_id: "{{ lb_test_location_id }}"
         store_logs: false
         geoip: false
         vhost_zones:
@@ -67,7 +67,7 @@
                 redirect: false
             real_ip_header:
               name: "real_ip"
-              networks: ["192.168.1.0/24"]
+              networks: ["{{ lb_test_network }}"]
         upstream_zones:
           - id: "upstream-zone1"
             hc_interval: 5
@@ -82,7 +82,7 @@
             hc_passes: 3
             grpc: false
             upstreams:
-              - ip: 10.33.180.116
+              - ip: "{{ lb_test_upstream_ip1 }}"
                 port: 3000
                 weight: 1
                 max_conns: 63000

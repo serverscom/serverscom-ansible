@@ -11,7 +11,7 @@
       serverscom.sc_api.sc_load_balancer_instance_l7:
         state: present
         name: "test-lb-l7-instance-module"
-        location_id: 32
+        location_id: "{{ lb_test_location_id }}"
         store_logs: false
         geoip: false
         vhost_zones:
@@ -29,7 +29,7 @@
                 redirect: false
             real_ip_header:
               name: "real_ip"
-              networks: ["192.168.1.0/24"]
+              networks: ["{{ lb_test_network }}"]
         upstream_zones:
           - id: "upstream-zone1"
             hc_interval: 5
@@ -44,7 +44,7 @@
             hc_passes: 3
             grpc: false
             upstreams:
-              - ip: 10.33.180.116
+              - ip: "{{ lb_test_upstream_ip1 }}"
                 port: 3000
                 weight: 1
                 max_conns: 63000
@@ -72,7 +72,7 @@
           - test2.geoip_enabled == false
           - (test2.id | string | length) > 0
           - test2.labels.environment == "staging"
-          - test2.location_id == 32
+          - test2.location_id == lb_test_location_id
           - test2.name == "test-lb-l7-instance-module"
           - test2.redirect_http == false
           - (test2.proxy_protocol_enabled | default(false)) == false
@@ -98,7 +98,7 @@
           - test2.vhost_zones[0].ports == [80]
           - (test2.vhost_zones[0].proxy_request_headers | length) == 0
           - test2.vhost_zones[0].real_ip_header.name == "real_ip"
-          - test2.vhost_zones[0].real_ip_header.networks == ["192.168.1.0/24"]
+          - test2.vhost_zones[0].real_ip_header.networks == [lb_test_network]
           - test2.vhost_zones[0].ssl == false
 
     # - name: Idempotency check (nothing changed)
@@ -106,7 +106,7 @@
     #     token: "{{ sc_token }}"
     #     state: present
     #     name: "test-lb-l7-instance-module"
-    #     location_id: 32
+    #     location_id: "{{ lb_test_location_id }}"
     #     store_logs: false
     #     geoip: false
     #     vhost_zones:
@@ -124,7 +124,7 @@
     #             redirect: false
     #         real_ip_header:
     #           name: "real_ip"
-    #           networks: ["192.168.1.0/24"]
+    #           networks: ["{{ lb_test_network }}"]
     #     upstream_zones:
     #       - id: "upstream-zone1"
     #         hc_interval: 5
@@ -139,7 +139,7 @@
     #         hc_passes: 3
     #         grpc: false
     #         upstreams:
-    #           - ip: 10.33.180.116
+    #           - ip: "{{ lb_test_upstream_ip1 }}"
     #             port: 3000
     #             weight: 1
     #             max_conns: 63000
@@ -173,17 +173,17 @@
                 redirect: false
             real_ip_header:
               name: "real_ip"
-              networks: ["192.168.1.0/24"]
+              networks: ["{{ lb_test_network }}"]
         upstream_zones:
           - id: "upstream-zone1"
             upstreams:
-              - ip: 10.33.180.116
+              - ip: "{{ lb_test_upstream_ip1 }}"
                 port: 3000
                 weight: 1
                 max_conns: 63000
                 max_fails: 0
                 fail_timeout: 30
-              - ip: 10.33.180.196
+              - ip: "{{ lb_test_upstream_ip2 }}"
                 port: 3000
                 weight: 1
                 max_conns: 63000
@@ -219,11 +219,11 @@
                 redirect: false
             real_ip_header:
               name: "real_ip"
-              networks: ["192.168.1.0/24"]
+              networks: ["{{ lb_test_network }}"]
         upstream_zones:
           - id: "upstream-zone1"
             upstreams:
-              - ip: 10.33.180.196
+              - ip: "{{ lb_test_upstream_ip2 }}"
                 port: 3000
                 weight: 1
                 max_conns: 63000
