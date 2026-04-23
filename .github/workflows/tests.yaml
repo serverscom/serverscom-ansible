@@ -176,6 +176,7 @@ jobs:
           baremetal_servers_info
           dedicated_server_reinstall_2
           dedicated_server_rescue
+          dedicated_server_reinstall_raid0
 
         working-directory: ansible_collections/serverscom/sc_api
       - name: Cleanup secrets
@@ -215,6 +216,7 @@ jobs:
           dedicated_server_info
           dedicated_server_reinstall_3
           dedicated_server_ipxe
+          dedicated_server_reinstall_noraid
 
         working-directory: ansible_collections/serverscom/sc_api
       - name: Cleanup secrets

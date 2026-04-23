@@ -1,0 +1,40 @@
+---
+# Reinstall test for server2: raid0 template with OS regex.
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: 'You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml'
+  when: not sc_endpoint or not sc_token
+
+- name: Wait until server is ready
+  sc_dedicated_server_info:
+    name: '{{ existing_server2_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+  register: info
+  until: info.ready == 1
+  delay: 30
+  retries: 180
+
+- name: Test1, reinstall with raid0_template and OS regex
+  sc_dedicated_server_reinstall:
+    id: '{{ existing_server2_id }}'
+    drives_layout_template: raid0-simple
+    operating_system_regex: "^Debian 12 (.*)x86_64$"
+    hostname: raid0test
+    ssh_key_name: "{{ dedicated_test_reinstall_ssh_key_name }}"
+    wait: 3600
+    update_interval: 30
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+  register: test1
+
+- name: Check Test1
+  assert:
+    that:
+      - test1 is changed
+      - test1.id == existing_server2_id
+      - test1.power_status == "powered_on"
+      - test1.title == "raid0test"
