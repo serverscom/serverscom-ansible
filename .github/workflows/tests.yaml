@@ -47,13 +47,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install 'ansible-core~=${{ matrix.ansible_core }}.0' requests pytest
       - name: Sanity tests
-        run: ansible-test sanity --requirements --python ${{ matrix.python_version }}
+        run: ansible-test sanity --requirements --python ${{ matrix.python_version }} --color yes
         working-directory: ansible_collections/serverscom/sc_api
       - name: Unit tests
-        run: ansible-test units --requirements --python ${{ matrix.python_version }}
+        run: ansible-test units --requirements --python ${{ matrix.python_version }} --color yes
         working-directory: ansible_collections/serverscom/sc_api
       - name: Token-free integration tests
-        run: ansible-test integration --requirements --python ${{ matrix.python_version }} sc_no_token_tests
+        run: ansible-test integration --requirements --python ${{ matrix.python_version }} sc_no_token_tests --color yes
         working-directory: ansible_collections/serverscom/sc_api
       - name: Try-build by ansible-galaxy
         run: ansible-galaxy collection build
@@ -86,7 +86,7 @@ jobs:
         env:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
-        run: ansible-test integration --requirements --python 3.13
+        run: ansible-test integration --requirements --python 3.13 --color yes
           ssh_key
           cloud_computing_flavors_info
           cloud_computing_regions_info
@@ -107,13 +107,13 @@ jobs:
           sync
           sync
 
-  integration_tests_bm:
+  integration_tests_bm_1:
     runs-on: ubuntu-24.04
     needs:
       - unit_and_sanity
       - lint
     concurrency:
-      group: BM
+      group: BM1
       cancel-in-progress: false
     steps:
       - name: Checkout
@@ -131,17 +131,92 @@ jobs:
           envsubst < integration_config.yml.template > ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
         env:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
-      - name: Integration tests
-        run: ansible-test integration --requirements --python 3.13
+      - name: Integration tests (server1)
+        run: ansible-test integration --requirements --python 3.13 --color yes
           ssh_key
           baremetal_locations_info
+          dedicated_server_reinstall_quick
+          dedicated_server_reinstall_1
+          dedicated_server_power
+
+        working-directory: ansible_collections/serverscom/sc_api
+      - name: Cleanup secrets
+        if: always()
+        run: |
+          dd if=/dev/zero bs=4k count=4 of=ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
+          sync
+          sync
+
+  integration_tests_bm_2:
+    runs-on: ubuntu-24.04
+    needs:
+      - unit_and_sanity
+      - lint
+    concurrency:
+      group: BM2
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Configure integration tests
+        run: |
+          envsubst < integration_config.yml.template > ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
+        env:
+          SC_TOKEN: "${{ secrets.SC_TOKEN }}"
+      - name: Integration tests (server2)
+        run: ansible-test integration --requirements --python 3.13 --color yes
           baremetal_servers_info
+          dedicated_server_reinstall_2
+          dedicated_server_rescue
+          dedicated_server_reinstall_raid0
+
+        working-directory: ansible_collections/serverscom/sc_api
+      - name: Cleanup secrets
+        if: always()
+        run: |
+          dd if=/dev/zero bs=4k count=4 of=ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
+          sync
+          sync
+
+  integration_tests_bm_3:
+    runs-on: ubuntu-24.04
+    needs:
+      - unit_and_sanity
+      - lint
+    concurrency:
+      group: BM3
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Configure integration tests
+        run: |
+          envsubst < integration_config.yml.template > ansible_collections/serverscom/sc_api/tests/integration/integration_config.yml
+        env:
+          SC_TOKEN: "${{ secrets.SC_TOKEN }}"
+      - name: Integration tests (server3)
+        run: ansible-test integration --requirements --python 3.13 --color yes
           baremetal_os_list
           dedicated_server_info
-          dedicated_server_reinstall_quick
-          dedicated_server_reinstall_long
-          dedicated_server_power
-          dedicated_server_rescue
+          dedicated_server_reinstall_3
+          dedicated_server_ipxe
+          dedicated_server_reinstall_noraid
 
         working-directory: ansible_collections/serverscom/sc_api
       - name: Cleanup secrets
@@ -153,7 +228,10 @@ jobs:
 
   integration_tests_l2:
     runs-on: ubuntu-24.04
-    needs: integration_tests_bm
+    needs:
+      - integration_tests_bm_1
+      - integration_tests_bm_2
+      - integration_tests_bm_3
     concurrency:
       group: BM
       cancel-in-progress: false
@@ -174,7 +252,7 @@ jobs:
         env:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
-        run: ansible-test integration --requirements --python 3.13
+        run: ansible-test integration --requirements --python 3.13 --color yes
           l2_segment
           l2_segment_aliases
           l2_segments_info
@@ -212,7 +290,7 @@ jobs:
         env:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
-        run: ansible-test integration --requirements --python 3.13
+        run: ansible-test integration --requirements --python 3.13 --color yes
           load_balancer_instance_info
           load_balancer_instance_l4
           load_balancer_instance_l7
@@ -251,7 +329,7 @@ jobs:
         env:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
-        run: ansible-test integration --requirements --python 3.13
+        run: ansible-test integration --requirements --python 3.13 --color yes
           rbs_flavors_info
           rbs_volume
           rbs_volume_info
@@ -290,7 +368,7 @@ jobs:
         env:
           SC_TOKEN: "${{ secrets.SC_TOKEN }}"
       - name: Integration tests
-        run: ansible-test integration --requirements --python 3.13
+        run: ansible-test integration --requirements --python 3.13 --color yes
           sbm_flavor_models_info
           sbm_server_lifecycle
           sbm_servers_info
@@ -307,7 +385,9 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     needs:
-      - integration_tests_bm
+      - integration_tests_bm_1
+      - integration_tests_bm_2
+      - integration_tests_bm_3
       - integration_tests_cloud
       - integration_tests_l2
       - integration_tests_lb_instances

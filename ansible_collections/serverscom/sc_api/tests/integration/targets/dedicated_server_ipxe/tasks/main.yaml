@@ -5,11 +5,22 @@
     msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
   when: not sc_endpoint or not sc_token
 
+- name: Wait until server is ready after reinstall
+  sc_dedicated_server_info:
+    name: '{{ existing_server3_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+  register: info
+  until: info.ready == 1
+  delay: 30
+  retries: 180
+
 # --- Activate public iPXE boot ---
 
 - name: Activate public iPXE boot
   serverscom.sc_api.dedicated_server_ipxe:
-    server_id: "{{ existing_server1_id }}"
+    server_id: "{{ existing_server3_id }}"
     state: public
     ipxe_config: |
       #!ipxe
@@ -29,7 +40,7 @@
 
 - name: Activate public iPXE boot (idempotency)
   serverscom.sc_api.dedicated_server_ipxe:
-    server_id: "{{ existing_server1_id }}"
+    server_id: "{{ existing_server3_id }}"
     state: public
     ipxe_config: |
       #!ipxe
@@ -50,7 +61,7 @@
 
 - name: Update iPXE config on activated public feature
   serverscom.sc_api.dedicated_server_ipxe:
-    server_id: "{{ existing_server1_id }}"
+    server_id: "{{ existing_server3_id }}"
     state: public
     ipxe_config: |
       #!ipxe
@@ -69,7 +80,7 @@
 
 - name: Update iPXE config on activated public feature (idempotency)
   serverscom.sc_api.dedicated_server_ipxe:
-    server_id: "{{ existing_server1_id }}"
+    server_id: "{{ existing_server3_id }}"
     state: public
     ipxe_config: |
       #!ipxe
@@ -89,7 +100,7 @@
 
 - name: Deactivate iPXE boot (check mode)
   serverscom.sc_api.dedicated_server_ipxe:
-    server_id: "{{ existing_server1_id }}"
+    server_id: "{{ existing_server3_id }}"
     state: absent
     wait: 0
   environment:
@@ -107,7 +118,7 @@
 
 - name: Deactivate iPXE boot
   serverscom.sc_api.dedicated_server_ipxe:
-    server_id: "{{ existing_server1_id }}"
+    server_id: "{{ existing_server3_id }}"
     state: absent
     wait: 600
   environment:
@@ -124,7 +135,7 @@
 
 - name: Deactivate iPXE boot (idempotency)
   serverscom.sc_api.dedicated_server_ipxe:
-    server_id: "{{ existing_server1_id }}"
+    server_id: "{{ existing_server3_id }}"
     state: absent
     wait: 0
   environment:
@@ -141,7 +152,7 @@
 
 - name: Activate public iPXE boot (check mode)
   serverscom.sc_api.dedicated_server_ipxe:
-    server_id: "{{ existing_server1_id }}"
+    server_id: "{{ existing_server3_id }}"
     state: public
     ipxe_config: |
       #!ipxe
@@ -160,7 +171,7 @@
 
 - name: Confirm feature is still deactivated after check mode
   serverscom.sc_api.dedicated_server_ipxe:
-    server_id: "{{ existing_server1_id }}"
+    server_id: "{{ existing_server3_id }}"
     state: absent
     wait: 0
   environment:
@@ -177,7 +188,7 @@
 
 - name: Activate public iPXE boot (setup for switch)
   serverscom.sc_api.dedicated_server_ipxe:
-    server_id: "{{ existing_server1_id }}"
+    server_id: "{{ existing_server3_id }}"
     state: public
     ipxe_config: |
       #!ipxe
@@ -195,7 +206,7 @@
 
 - name: Switch from public to private iPXE boot
   serverscom.sc_api.dedicated_server_ipxe:
-    server_id: "{{ existing_server1_id }}"
+    server_id: "{{ existing_server3_id }}"
     state: private
     ipxe_config: |
       #!ipxe
@@ -215,7 +226,7 @@
 
 - name: Switch to private iPXE boot (idempotency)
   serverscom.sc_api.dedicated_server_ipxe:
-    server_id: "{{ existing_server1_id }}"
+    server_id: "{{ existing_server3_id }}"
     state: private
     ipxe_config: |
       #!ipxe
@@ -234,7 +245,7 @@
 
 - name: Switch from private back to public iPXE boot
   serverscom.sc_api.dedicated_server_ipxe:
-    server_id: "{{ existing_server1_id }}"
+    server_id: "{{ existing_server3_id }}"
     state: public
     ipxe_config: |
       #!ipxe
@@ -254,7 +265,7 @@
 
 - name: Switch to private iPXE boot (check mode)
   serverscom.sc_api.dedicated_server_ipxe:
-    server_id: "{{ existing_server1_id }}"
+    server_id: "{{ existing_server3_id }}"
     state: private
     ipxe_config: |
       #!ipxe
@@ -273,7 +284,7 @@
 
 - name: Confirm public is still activated after check mode switch
   serverscom.sc_api.dedicated_server_ipxe:
-    server_id: "{{ existing_server1_id }}"
+    server_id: "{{ existing_server3_id }}"
     state: public
     ipxe_config: |
       #!ipxe
@@ -294,7 +305,7 @@
 
 - name: Deactivate iPXE boot (cleanup)
   serverscom.sc_api.dedicated_server_ipxe:
-    server_id: "{{ existing_server1_id }}"
+    server_id: "{{ existing_server3_id }}"
     state: absent
     wait: 600
   environment:

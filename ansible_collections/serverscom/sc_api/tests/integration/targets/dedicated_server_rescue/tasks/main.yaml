@@ -5,12 +5,23 @@
     msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
   when: not sc_endpoint or not sc_token
 
+- name: Wait until server is ready after reinstall
+  sc_dedicated_server_info:
+    name: '{{ existing_server2_id }}'
+  environment:
+    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
+    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+  register: info
+  until: info.ready == 1
+  delay: 30
+  retries: 180
+
 - name: Dedicated server rescue test series
   block:
     - name: Ensure server starts in normal mode
       serverscom.sc_api.dedicated_server_rescue:
         state: normal
-        server_id: "{{ existing_server1_id }}"
+        server_id: "{{ existing_server2_id }}"
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
         SERVERSCOM_API_URL: '{{ sc_endpoint }}'
@@ -18,7 +29,7 @@
     - name: Activate rescue mode with password
       serverscom.sc_api.dedicated_server_rescue:
         state: rescue
-        server_id: "{{ existing_server1_id }}"
+        server_id: "{{ existing_server2_id }}"
         auth_methods:
           - password
         wait: 600
@@ -36,7 +47,7 @@
     - name: Activate rescue mode again (idempotency)
       serverscom.sc_api.dedicated_server_rescue:
         state: rescue
-        server_id: "{{ existing_server1_id }}"
+        server_id: "{{ existing_server2_id }}"
         auth_methods:
           - password
       environment:
@@ -53,7 +64,7 @@
     - name: Deactivate rescue mode without waiting
       serverscom.sc_api.dedicated_server_rescue:
         state: normal
-        server_id: "{{ existing_server1_id }}"
+        server_id: "{{ existing_server2_id }}"
         wait: 0
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
@@ -68,7 +79,7 @@
     - name: Deactivate rescue mode again with wait (waits for in-progress deactivation)
       serverscom.sc_api.dedicated_server_rescue:
         state: normal
-        server_id: "{{ existing_server1_id }}"
+        server_id: "{{ existing_server2_id }}"
         wait: 600
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
@@ -85,7 +96,7 @@
     - name: Ensure server is back to normal mode
       serverscom.sc_api.dedicated_server_rescue:
         state: normal
-        server_id: "{{ existing_server1_id }}"
+        server_id: "{{ existing_server2_id }}"
         wait: 600
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
