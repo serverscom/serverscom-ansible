@@ -1,0 +1,379 @@
+---
+- name: Check sc_token and sc_endpoint
+  no_log: true
+  fail:
+    msg: "Define sc_token and sc_endpoint in tests/integration/integration_config.yml"
+  when: not sc_endpoint or not sc_token
+
+- name: Create temp dir for rendered inventory configs
+  tempfile:
+    state: directory
+    suffix: sc_inventory
+  register: tmp
+  changed_when: false
+
+- name: Stash tmp dir path
+  set_fact:
+    inv_tmpdir: "{{ tmp.path }}"
+
+# ------------------------------------------------------------------ #
+# Prep: read server1's title, location, and IPs once
+# ------------------------------------------------------------------ #
+- name: Fetch server1 metadata
+  sc_dedicated_server_info:
+    id: "{{ existing_server1_id }}"
+  environment:
+    SERVERSCOM_API_TOKEN: "{{ sc_token }}"
+    SERVERSCOM_API_URL: "{{ sc_endpoint }}"
+  register: server1
+
+- name: Fetch server2 metadata
+  sc_dedicated_server_info:
+    id: "{{ existing_server2_id }}"
+  environment:
+    SERVERSCOM_API_TOKEN: "{{ sc_token }}"
+    SERVERSCOM_API_URL: "{{ sc_endpoint }}"
+  register: server2
+
+- name: Capture shared facts
+  set_fact:
+    server1_title: "{{ server1.title }}"
+    server1_public_ipv4: "{{ server1.public_ipv4_address }}"
+    server2_title: "{{ server2.title }}"
+    shared_location_code: "{{ server1.location_code }}"
+
+# ------------------------------------------------------------------ #
+# Prep: cloud — discover region/flavor/image so we can build a VM
+# ------------------------------------------------------------------ #
+- name: List cloud regions
+  sc_cloud_computing_regions_info:
+  environment:
+    SERVERSCOM_API_TOKEN: "{{ sc_token }}"
+    SERVERSCOM_API_URL: "{{ sc_endpoint }}"
+  register: regions
+  changed_when: false
+
+- name: List flavors in the first region
+  sc_cloud_computing_flavors_info:
+    region_id: "{{ regions.regions[0].id }}"
+  environment:
+    SERVERSCOM_API_TOKEN: "{{ sc_token }}"
+    SERVERSCOM_API_URL: "{{ sc_endpoint }}"
+  register: flavors
+  changed_when: false
+
+- name: List images in the first region
+  sc_cloud_computing_images_info:
+    region_id: "{{ regions.regions[0].id }}"
+  environment:
+    SERVERSCOM_API_TOKEN: "{{ sc_token }}"
+    SERVERSCOM_API_URL: "{{ sc_endpoint }}"
+  register: images
+  changed_when: false
+
+- name: Pick the unique cloud VM name
+  set_fact:
+    cloud_vm_name: "sc-inv-test-{{ 99999999 | random | to_uuid }}"
+    cloud_region_id: "{{ regions.regions[0].id }}"
+    cloud_region_code: "{{ regions.regions[0].code }}"
+    cloud_flavor_id: "{{ (flavors.cloud_flavors | sort(attribute='disk'))[0].id }}"
+    cloud_image_id: "{{ (images.cloud_images | selectattr('allowed_flavors', 'equalto', []) | first).id }}"
+
+# ------------------------------------------------------------------ #
+# Main test block — labels + cloud VM, always cleaned up
+# ------------------------------------------------------------------ #
+- block:
+    # --- Set labels on bare-metal servers ---
+    - name: Label server1
+      uri:
+        url: "{{ sc_endpoint }}/hosts/dedicated_servers/{{ existing_server1_id }}"
+        method: PUT
+        headers:
+          Authorization: "Bearer {{ sc_token }}"
+          Content-Type: "application/json"
+        body:
+          labels:
+            inv_test_marker: "server1"
+            inv_test_mixed: "mixed"
+        body_format: json
+        status_code: 200
+
+    - name: Label server2
+      uri:
+        url: "{{ sc_endpoint }}/hosts/dedicated_servers/{{ existing_server2_id }}"
+        method: PUT
+        headers:
+          Authorization: "Bearer {{ sc_token }}"
+          Content-Type: "application/json"
+        body:
+          labels:
+            inv_test_marker: "server2"
+        body_format: json
+        status_code: 200
+
+    # --- Create one cloud VM with our test marker label ---
+    - name: Create test cloud VM
+      sc_cloud_computing_instance:
+        state: present
+        region_id: "{{ cloud_region_id }}"
+        flavor_id: "{{ cloud_flavor_id }}"
+        image_id: "{{ cloud_image_id }}"
+        name: "{{ cloud_vm_name }}"
+        backup_copies: 0
+        ipv6: true
+        wait: 600
+        update_interval: 5
+        labels:
+          inv_test_marker: "cloud"
+          inv_test_mixed: "mixed"
+      environment:
+        SERVERSCOM_API_TOKEN: "{{ sc_token }}"
+        SERVERSCOM_API_URL: "{{ sc_endpoint }}"
+      register: cloud_vm
+
+    # ---------------------------------------------------------------- #
+    # 1. Default — no `resources:` at all → all kinds, 3 known BMs present
+    # ---------------------------------------------------------------- #
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: default_no_resources.sc_api.yml.j2
+
+    - name: "default: 3 known bare-metal servers present"
+      assert:
+        that:
+          - server1_title in inv_json._meta.hostvars
+          - server2_title in inv_json._meta.hostvars
+          - inv_json._meta.hostvars[server1_title].sc_kind == "baremetal"
+
+    # ---------------------------------------------------------------- #
+    # 2. kind: baremetal — IDs of the 3 known servers appear
+    # ---------------------------------------------------------------- #
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: baremetal_basic.sc_api.yml.j2
+
+    - name: "kind=baremetal: known servers present, all sc_kind=baremetal"
+      assert:
+        that:
+          - server1_title in inv_json._meta.hostvars
+          - inv_json._meta.hostvars.values()
+            | map(attribute='sc_kind') | unique | list == ['baremetal']
+
+    # ---------------------------------------------------------------- #
+    # 3. Region filter — shared region returns all 3 BMs; bogus returns 0
+    # ---------------------------------------------------------------- #
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: region_match.sc_api.yml.j2
+
+    - name: "region match: server1 present"
+      assert:
+        that:
+          - server1_title in inv_json._meta.hostvars
+
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: region_nomatch.sc_api.yml.j2
+
+    - name: "region nomatch: hostvars is empty"
+      assert:
+        that:
+          - inv_json._meta.hostvars | length == 0
+
+    # ---------------------------------------------------------------- #
+    # 4. name_regex — exact-anchored regex returns only server1
+    # ---------------------------------------------------------------- #
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: name_regex.sc_api.yml.j2
+
+    - name: "name_regex: exactly server1 returned"
+      assert:
+        that:
+          - inv_json._meta.hostvars | list == [server1_title]
+
+    # ---------------------------------------------------------------- #
+    # 5. Label filter — only the server we labeled `server1`
+    # ---------------------------------------------------------------- #
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: label_match.sc_api.yml.j2
+
+    - name: "labels: only server1 (the one with marker=server1)"
+      assert:
+        that:
+          - inv_json._meta.hostvars | list == [server1_title]
+
+    # ---------------------------------------------------------------- #
+    # 6. Exclusion — server1 absent, server2 still present
+    # ---------------------------------------------------------------- #
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: exclude_label.sc_api.yml.j2
+
+    - name: "exclude: server1 absent, server2 present"
+      assert:
+        that:
+          - server1_title not in inv_json._meta.hostvars
+          - server2_title in inv_json._meta.hostvars
+
+    # ---------------------------------------------------------------- #
+    # 7. ansible_host: public_ipv4 → matches server1's real public IP;
+    #    normalized vars set
+    # ---------------------------------------------------------------- #
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: ansible_host_public.sc_api.yml.j2
+
+    - name: "ansible_host=public_ipv4 maps to real IP"
+      assert:
+        that:
+          - inv_json._meta.hostvars[server1_title].ansible_host == server1_public_ipv4
+          - inv_json._meta.hostvars[server1_title].public_ip == server1_public_ipv4
+          - inv_json._meta.hostvars[server1_title].sc_kind == "baremetal"
+          - inv_json._meta.hostvars[server1_title].additional_ip_addresses == []
+
+    # ---------------------------------------------------------------- #
+    # 8. assign_inventory_group — server1 lands in static group
+    # ---------------------------------------------------------------- #
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: group_static.sc_api.yml.j2
+
+    - name: "assign_inventory_group: server1 in inv_test_group"
+      assert:
+        that:
+          - "'inv_test_group' in inv_json"
+          - server1_title in inv_json.inv_test_group.hosts
+
+    # ---------------------------------------------------------------- #
+    # 9. group_by: location_code — group named after the shared region
+    # ---------------------------------------------------------------- #
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: group_by_location.sc_api.yml.j2
+
+    - name: "group_by: location_code group exists and contains server1"
+      vars:
+        loc_group: "{{ shared_location_code | regex_replace('[^A-Za-z0-9_]', '_') }}"
+      assert:
+        that:
+          - loc_group in inv_json
+          - server1_title in inv_json[loc_group].hosts
+
+    # ---------------------------------------------------------------- #
+    # 10. ${VAR} substitution — env var fills regions
+    # ---------------------------------------------------------------- #
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: env_subst.sc_api.yml.j2
+        inv_extra_env:
+          INV_TEST_REGION: "{{ shared_location_code }}"
+
+    - name: "env subst: server1 found via ${INV_TEST_REGION}"
+      assert:
+        that:
+          - server1_title in inv_json._meta.hostvars
+
+    # ---------------------------------------------------------------- #
+    # 11. ${VAR} substitution — unset variable fails with named error
+    # ---------------------------------------------------------------- #
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: env_subst_missing.sc_api.yml.j2
+        inv_expect_fail: true
+
+    - name: "env subst missing: rc != 0 and var name in stderr"
+      assert:
+        that:
+          - inv_run.rc != 0
+          - "'INV_TEST_VAR_THAT_IS_NOT_SET' in inv_run.stderr"
+
+    # ---------------------------------------------------------------- #
+    # 12. Cloud — VM appears with correct sc_kind and ansible_host
+    # ---------------------------------------------------------------- #
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: cloud_filter.sc_api.yml.j2
+
+    - name: "cloud: created VM present with cloud sc_kind"
+      assert:
+        that:
+          - cloud_vm_name in inv_json._meta.hostvars
+          - inv_json._meta.hostvars[cloud_vm_name].sc_kind == "cloud"
+          - inv_json._meta.hostvars[cloud_vm_name].ansible_host == cloud_vm.public_ipv4_address
+          - inv_json._meta.hostvars[cloud_vm_name].public_ip == cloud_vm.public_ipv4_address
+          - inv_json._meta.hostvars[cloud_vm_name].oob_ip is none
+          - inv_json._meta.hostvars[cloud_vm_name].region_code == cloud_region_code
+
+    # ---------------------------------------------------------------- #
+    # 13. Cloud — ansible_host: public_ipv6 picks the v6 address
+    # ---------------------------------------------------------------- #
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: cloud_ipv6_host.sc_api.yml.j2
+
+    - name: "cloud: ansible_host=public_ipv6 → matches v6 address"
+      assert:
+        that:
+          - inv_json._meta.hostvars[cloud_vm_name].ansible_host == cloud_vm.public_ipv6_address
+
+    # ---------------------------------------------------------------- #
+    # 14. Mixed: no kind, label `inv_test_mixed: mixed` finds both kinds
+    # ---------------------------------------------------------------- #
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: all_kinds.sc_api.yml.j2
+
+    - name: "mixed inventory: bare-metal AND cloud present in one run"
+      assert:
+        that:
+          - server1_title in inv_json._meta.hostvars
+          - cloud_vm_name in inv_json._meta.hostvars
+          - inv_json._meta.hostvars[server1_title].sc_kind == "baremetal"
+          - inv_json._meta.hostvars[cloud_vm_name].sc_kind == "cloud"
+
+  always:
+    - name: Remove labels from server1
+      uri:
+        url: "{{ sc_endpoint }}/hosts/dedicated_servers/{{ existing_server1_id }}"
+        method: PUT
+        headers:
+          Authorization: "Bearer {{ sc_token }}"
+          Content-Type: "application/json"
+        body:
+          labels: {}
+        body_format: json
+        status_code: 200
+      ignore_errors: true
+
+    - name: Remove labels from server2
+      uri:
+        url: "{{ sc_endpoint }}/hosts/dedicated_servers/{{ existing_server2_id }}"
+        method: PUT
+        headers:
+          Authorization: "Bearer {{ sc_token }}"
+          Content-Type: "application/json"
+        body:
+          labels: {}
+        body_format: json
+        status_code: 200
+      ignore_errors: true
+
+    - name: Tear down test cloud VM
+      sc_cloud_computing_instance:
+        name: "{{ cloud_vm_name }}"
+        region_id: "{{ cloud_region_id }}"
+        state: absent
+        wait: 300
+        update_interval: 5
+      environment:
+        SERVERSCOM_API_TOKEN: "{{ sc_token }}"
+        SERVERSCOM_API_URL: "{{ sc_endpoint }}"
+      ignore_errors: true
+
+    - name: Remove tmp dir
+      file:
+        path: "{{ inv_tmpdir }}"
+        state: absent
+      changed_when: false
