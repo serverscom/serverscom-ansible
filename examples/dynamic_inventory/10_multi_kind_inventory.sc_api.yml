@@ -1,0 +1,29 @@
+---
+# One inventory covering three resource kinds, each with its own settings.
+# Use separate blocks when filters / IP choice / groups differ per kind.
+# If they don't differ, omit `kind:` from a single block instead (see 01).
+plugin: serverscom.sc_api.sc_inventory
+resources:
+  - kind: baremetal
+    regions: [AMS1, FRA1]
+    labels: {managed: "true"}
+    status_filter: [active]
+    ansible_host: public_ipv4
+    assign_inventory_group: baremetal_fleet
+    extra_vars:
+      ansible_user: root
+
+  - kind: cloud
+    regions: [AMS1, FRA1]
+    labels: {managed: "true"}
+    status_filter: [ACTIVE]
+    ansible_host: public_ipv4
+    group_by: region_code
+    extra_vars:
+      ansible_user: ubuntu
+
+  - kind: k8s_nodes
+    ansible_host: private_ipv4
+    assign_inventory_group: k8s_nodes
+    extra_vars:
+      ansible_user: root

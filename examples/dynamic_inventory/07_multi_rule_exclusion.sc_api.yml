@@ -1,0 +1,14 @@
+---
+# Two independent exclusion rules combined with OR: a host is dropped if it
+# matches EITHER rule.
+#   - rule 1: every host in AMS2
+#   - rule 2: every host labeled `decommissioned: "true"` in any region
+# Everything left ends up in the `active_fleet` group.
+plugin: serverscom.sc_api.sc_inventory
+resources:
+  - kind: baremetal
+    exclude:
+      - regions: [AMS2]
+      - labels:
+          decommissioned: "true"
+    assign_inventory_group: active_fleet
