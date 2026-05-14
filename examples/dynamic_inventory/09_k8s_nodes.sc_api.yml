@@ -1,0 +1,11 @@
+---
+# Bare-metal Kubernetes nodes (servers with type=kubernetes_baremetal_node).
+# Reached over their private network, gathered into one group for cluster-wide
+# playbooks.
+plugin: serverscom.sc_api.sc_inventory
+resources:
+  - kind: k8s_nodes
+    ansible_host: private_ipv4
+    assign_inventory_group: kubernetes_nodes
+    extra_vars:
+      ansible_user: root

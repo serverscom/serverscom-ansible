@@ -1,0 +1,7 @@
+---
+# All cloud-computing instances, dynamically grouped by their region_code.
+# Creates one group per region (e.g. ams1, fra1, ...).
+plugin: serverscom.sc_api.sc_inventory
+resources:
+  - kind: cloud
+    group_by: region_code

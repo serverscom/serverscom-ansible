@@ -1,0 +1,7 @@
+---
+# All dedicated bare-metal servers, dynamically grouped by location_code.
+# Creates one group per location (e.g. AMS1, FRA1, ...).
+plugin: serverscom.sc_api.sc_inventory
+resources:
+  - kind: baremetal
+    group_by: location_code

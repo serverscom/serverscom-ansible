@@ -1,0 +1,6 @@
+---
+# Minimal config: no `resources:` at all.
+# The plugin defaults to a single empty resource block, which fetches every
+# kind (baremetal + sbm + k8s_nodes + cloud) with no filtering.
+# Token is read from SERVERSCOM_API_TOKEN (or SC_TOKEN) env var.
+plugin: serverscom.sc_api.sc_inventory

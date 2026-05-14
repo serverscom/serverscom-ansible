@@ -1,0 +1,15 @@
+---
+# `name_regex` is applied with `re.search` against the host's title
+# (bare-metal) or name (cloud). Both blocks point at `web_tier`, so cloud and
+# bare-metal hosts matching `^web-` land in the same Ansible group.
+plugin: serverscom.sc_api.sc_inventory
+resources:
+  - kind: cloud
+    name_regex: "^web-"
+    status_filter: [ACTIVE]
+    assign_inventory_group: web_tier
+
+  - kind: baremetal
+    name_regex: "^web-"
+    status_filter: [active]
+    assign_inventory_group: web_tier
