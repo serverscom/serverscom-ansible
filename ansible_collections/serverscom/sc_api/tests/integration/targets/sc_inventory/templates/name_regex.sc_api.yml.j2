@@ -1,0 +1,4 @@
+plugin: serverscom.sc_api.sc_inventory
+resources:
+  - kind: baremetal
+    name_regex: "^{{ server1_title | regex_escape }}$"
