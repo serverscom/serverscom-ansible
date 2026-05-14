@@ -36,7 +36,16 @@
     msg: "ansible-inventory exited rc={{ inv_run.rc }}: {{ inv_run.stderr }}"
   when: inv_run.rc != 0 and not (inv_expect_fail | default(false))
 
-- name: "[{{ inv_template }}] parse stdout"
-  set_fact:
-    inv_json: "{{ inv_run.stdout | from_json }}"
+- name: "[{{ inv_template }}] stash stdout to file"
+  copy:
+    content: "{{ inv_run.stdout }}"
+    dest: "{{ inv_tmpdir }}/last_inventory.json"
+    mode: "0600"
+  changed_when: false
+  when: inv_run.rc == 0
+
+- name: "[{{ inv_template }}] parse stdout (via include_vars, avoids unsafe-tag issue)"
+  include_vars:
+    file: "{{ inv_tmpdir }}/last_inventory.json"
+    name: inv_json
   when: inv_run.rc == 0

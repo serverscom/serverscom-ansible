@@ -629,3 +629,54 @@ def test_apply_resource_group_and_group_by_raises(plugin):
                 "group_by": "location_code",
             },
         )
+
+
+# ------------------------------------------------------------------- #
+# parse(): resources contract
+# ------------------------------------------------------------------- #
+
+
+def _stub_parse_deps(p, resources):
+    """Stub out parse() side-effects so we can drive validation only."""
+    p._read_config_data = mock.MagicMock()
+    p._resolve_token_endpoint = mock.MagicMock(return_value=("T", "E"))
+    p._build_api = mock.MagicMock(return_value=mock.MagicMock())
+    p._apply_resource = mock.MagicMock()
+    p.get_option = mock.MagicMock(return_value=resources)
+    # BaseInventoryPlugin.parse() needs inventory/loader/path; mock them.
+    with mock.patch.object(
+        InventoryModule.__bases__[0], "parse", return_value=None
+    ):
+        p.parse(mock.MagicMock(), mock.MagicMock(), "/tmp/foo.sc_api.yml")
+
+
+def test_parse_no_resources_fetches_all(plugin):
+    _stub_parse_deps(plugin, None)
+    plugin._apply_resource.assert_called_once_with(mock.ANY, {})
+
+
+def test_parse_empty_resources_fetches_all(plugin):
+    _stub_parse_deps(plugin, [])
+    plugin._apply_resource.assert_called_once_with(mock.ANY, {})
+
+
+def test_parse_block_without_kind_raises(plugin):
+    plugin._read_config_data = mock.MagicMock()
+    plugin._resolve_token_endpoint = mock.MagicMock(return_value=("T", "E"))
+    plugin._build_api = mock.MagicMock(return_value=mock.MagicMock())
+    plugin._apply_resource = mock.MagicMock()
+    plugin.get_option = mock.MagicMock(return_value=[{}])
+    with mock.patch.object(
+        InventoryModule.__bases__[0], "parse", return_value=None
+    ):
+        with pytest.raises(AnsibleParserError, match="must specify `kind`"):
+            plugin.parse(
+                mock.MagicMock(), mock.MagicMock(), "/tmp/foo.sc_api.yml"
+            )
+
+
+def test_parse_block_with_kind_runs(plugin):
+    _stub_parse_deps(plugin, [{"kind": "baremetal"}])
+    plugin._apply_resource.assert_called_once_with(
+        mock.ANY, {"kind": "baremetal"}
+    )

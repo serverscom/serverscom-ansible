@@ -283,11 +283,27 @@
         inv_template: env_subst_missing.sc_api.yml.j2
         inv_expect_fail: true
 
-    - name: "env subst missing: rc != 0 and var name in stderr"
+    # ansible-inventory catches AnsibleParserError from plugins and prints it
+    # as a warning (rc stays 0, hostvars come back empty). The real signal that
+    # our plugin rejected the bad ${VAR} is the variable name showing up in
+    # stderr.
+    - name: "env subst missing: variable name reported in stderr"
       assert:
         that:
-          - inv_run.rc != 0
           - "'INV_TEST_VAR_THAT_IS_NOT_SET' in inv_run.stderr"
+
+    # ---------------------------------------------------------------- #
+    # 11b. Resource block without kind is rejected
+    # ---------------------------------------------------------------- #
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: missing_kind.sc_api.yml.j2
+        inv_expect_fail: true
+
+    - name: "missing kind: parser error in stderr"
+      assert:
+        that:
+          - "'must specify `kind`' in inv_run.stderr"
 
     # ---------------------------------------------------------------- #
     # 12. Cloud — VM appears with correct sc_kind and ansible_host

@@ -48,18 +48,21 @@ options:
   resources:
     description:
       - List of resource blocks describing what to fetch and how to expose it.
-      - If omitted, defaults to a single empty block which fetches every
-        resource kind with default settings and no filters.
+      - If omitted or empty, every resource kind is fetched with no filters
+        (via the bulk /hosts endpoint plus /cloud_computing/instances).
+      - When at least one block is present, every block must specify C(kind).
     type: list
     elements: dict
     required: false
-    default: [{}]
+    default: []
     suboptions:
       kind:
         description:
-          - Resource kind to fetch.
-          - If unset, all kinds are fetched in one block.
+          - Resource kind to fetch — required for every entry in C(resources).
+          - To fetch every kind, omit C(resources) entirely (or set it to an
+            empty list) instead of relying on per-block fallback.
         type: str
+        required: true
         choices: [baremetal, sbm, k8s_nodes, cloud]
       regions:
         description:
@@ -309,11 +312,23 @@ class InventoryModule(BaseInventoryPlugin, Cacheable):
         token, endpoint = self._resolve_token_endpoint()
         api = self._build_api(token, endpoint)
 
-        resources = self.get_option("resources") or [{}]
+        resources = self.get_option("resources")
 
         try:
+            if not resources:
+                # No `resources:` (or empty list) → fetch every kind, no filters.
+                self._apply_resource(api, {})
+                return
+
             for raw_block in resources:
                 block = self._substitute_env_vars(raw_block or {})
+                if not block.get("kind"):
+                    raise AnsibleParserError(
+                        "Every entry in `resources:` must specify `kind` "
+                        "(one of baremetal/sbm/k8s_nodes/cloud). "
+                        "To fetch all kinds, omit `resources:` entirely "
+                        "or set it to an empty list."
+                    )
                 self._apply_resource(api, block)
         except SCBaseError as e:
             raise AnsibleError(e.msg)

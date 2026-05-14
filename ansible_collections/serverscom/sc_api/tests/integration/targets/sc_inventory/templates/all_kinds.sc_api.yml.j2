@@ -1,4 +1,8 @@
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - labels:
-      inv_test_marker: "mixed"
+  - kind: baremetal
+    labels:
+      inv_test_marker: "server1"
+  - kind: cloud
+    labels:
+      inv_test_marker: "cloud"
