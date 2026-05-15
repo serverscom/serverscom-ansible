@@ -99,6 +99,7 @@
     - block:
         - include_tasks: setup.yaml
         - include_tasks: test_info.yaml
+        - include_tasks: test_inventory_discovery.yaml
         - include_tasks: test_labels.yaml
         - include_tasks: test_networks.yaml
         - include_tasks: test_ptr.yaml

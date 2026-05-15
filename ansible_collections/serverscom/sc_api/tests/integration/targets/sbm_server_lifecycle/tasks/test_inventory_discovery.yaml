@@ -1,0 +1,59 @@
+---
+# Verify that the sc_inventory plugin discovers this just-created SBM server.
+
+- name: Create temp dir for inventory config
+  tempfile:
+    state: directory
+    suffix: sbm_inv
+  register: inv_tmp
+  changed_when: false
+
+- name: Render sc_inventory config (kind=sbm)
+  copy:
+    content: |
+      plugin: serverscom.sc_api.sc_inventory
+      resources:
+        - kind: sbm
+    dest: "{{ inv_tmp.path }}/sbm.sc_api.yml"
+    mode: "0600"
+
+- name: Run ansible-inventory against the sc_inventory config
+  command:
+    argv:
+      - ansible-inventory
+      - -i
+      - "{{ inv_tmp.path }}/sbm.sc_api.yml"
+      - --list
+  environment:
+    SERVERSCOM_API_TOKEN: "{{ sc_token }}"
+    SERVERSCOM_API_URL: "{{ sc_endpoint }}"
+  register: inv_run
+  changed_when: false
+
+- name: Stash inventory JSON to a file
+  copy:
+    content: "{{ inv_run.stdout }}"
+    dest: "{{ inv_tmp.path }}/inventory.json"
+    mode: "0600"
+  changed_when: false
+
+- name: Load inventory JSON
+  include_vars:
+    file: "{{ inv_tmp.path }}/inventory.json"
+    name: inv_json
+
+- name: Created SBM server is discovered by sc_inventory
+  assert:
+    that:
+      - test_hostname in inv_json._meta.hostvars
+      - inv_json._meta.hostvars[test_hostname].sc_kind == "sbm"
+      - inv_json._meta.hostvars[test_hostname].type == "sbm_server"
+    fail_msg: >-
+      Expected to find SBM host {{ test_hostname }} in sc_inventory output.
+      hostvars seen: {{ inv_json._meta.hostvars | list }}
+
+- name: Cleanup inventory temp dir
+  file:
+    path: "{{ inv_tmp.path }}"
+    state: absent
+  changed_when: false
