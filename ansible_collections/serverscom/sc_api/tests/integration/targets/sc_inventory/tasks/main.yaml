@@ -352,6 +352,7 @@
           - inv_json._meta.hostvars[cloud_vm_name].sc_kind == "cloud"
           - inv_json._meta.hostvars[cloud_vm_name].ansible_host == cloud_vm.public_ipv4_address
           - inv_json._meta.hostvars[cloud_vm_name].public_ip == cloud_vm.public_ipv4_address
+          - inv_json._meta.hostvars[cloud_vm_name].public_ipv6 == cloud_vm.public_ipv6_address
           - inv_json._meta.hostvars[cloud_vm_name].oob_ip is none
           - inv_json._meta.hostvars[cloud_vm_name].region_code == cloud_region_code
 

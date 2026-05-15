@@ -316,14 +316,23 @@ class InventoryModule(BaseInventoryPlugin):
     def verify_file(self, path):
         if not super(InventoryModule, self).verify_file(path):
             return False
-        return path.endswith(
+        if not path.endswith(
             (
                 ".sc_api.yml",
                 ".sc_api.yaml",
                 ".sc_inventory.yml",
                 ".sc_inventory.yaml",
             )
-        )
+        ):
+            return False
+        # Must also contain `plugin: serverscom.sc_api.sc_inventory` so we
+        # don't claim foreign files that just happen to share the suffix.
+        try:
+            with open(path, "r") as f:
+                content = f.read()
+        except (OSError, IOError):
+            return False
+        return "plugin: %s" % self.NAME in content
 
     def parse(self, inventory, loader, path, cache=True):
         super(InventoryModule, self).parse(inventory, loader, path, cache)

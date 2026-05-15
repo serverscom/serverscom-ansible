@@ -81,29 +81,64 @@ def plugin():
 # ------------------------------------------------------------------- #
 
 
+_OUR_PLUGIN_HEADER = "plugin: serverscom.sc_api.sc_inventory\n"
+
+
 @pytest.mark.parametrize(
-    "path,expected",
+    "suffix,expected",
     [
-        ("/tmp/x.sc_api.yml", True),
-        ("/tmp/x.sc_api.yaml", True),
-        ("/tmp/x.sc_inventory.yml", True),
-        ("/tmp/x.sc_inventory.yaml", True),
-        ("/tmp/x.yml", False),
-        ("/tmp/x.aws_ec2.yml", False),
+        (".sc_api.yml", True),
+        (".sc_api.yaml", True),
+        (".sc_inventory.yml", True),
+        (".sc_inventory.yaml", True),
+        (".yml", False),
+        (".aws_ec2.yml", False),
     ],
 )
-def test_verify_file(plugin, path, expected):
+def test_verify_file_suffix(plugin, tmp_path, suffix, expected):
+    f = tmp_path / ("x" + suffix)
+    f.write_text(_OUR_PLUGIN_HEADER)
     with mock.patch.object(
         InventoryModule.__bases__[0], "verify_file", return_value=True
     ):
-        assert plugin.verify_file(path) is expected
+        assert plugin.verify_file(str(f)) is expected
 
 
-def test_verify_file_super_false(plugin):
+def test_verify_file_super_false(plugin, tmp_path):
+    f = tmp_path / "x.sc_api.yml"
+    f.write_text(_OUR_PLUGIN_HEADER)
     with mock.patch.object(
         InventoryModule.__bases__[0], "verify_file", return_value=False
     ):
-        assert plugin.verify_file("/tmp/x.sc_api.yml") is False
+        assert plugin.verify_file(str(f)) is False
+
+
+def test_verify_file_wrong_plugin_key(plugin, tmp_path):
+    """Suffix matches but `plugin:` key names a different plugin -> reject."""
+    f = tmp_path / "foreign.sc_api.yml"
+    f.write_text("plugin: amazon.aws.aws_ec2\n")
+    with mock.patch.object(
+        InventoryModule.__bases__[0], "verify_file", return_value=True
+    ):
+        assert plugin.verify_file(str(f)) is False
+
+
+def test_verify_file_missing_plugin_key(plugin, tmp_path):
+    """Suffix matches but no `plugin:` line at all -> reject."""
+    f = tmp_path / "x.sc_api.yml"
+    f.write_text("hosts: []\n")
+    with mock.patch.object(
+        InventoryModule.__bases__[0], "verify_file", return_value=True
+    ):
+        assert plugin.verify_file(str(f)) is False
+
+
+def test_verify_file_unreadable_path(plugin):
+    """Suffix matches but path is not openable -> reject (no crash)."""
+    with mock.patch.object(
+        InventoryModule.__bases__[0], "verify_file", return_value=True
+    ):
+        assert plugin.verify_file("/nonexistent/no/such/path.sc_api.yml") is False
 
 
 # ------------------------------------------------------------------- #
