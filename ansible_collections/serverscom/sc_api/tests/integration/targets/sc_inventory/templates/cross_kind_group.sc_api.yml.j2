@@ -1,0 +1,9 @@
+plugin: serverscom.sc_api.sc_inventory
+resources:
+  - kind: baremetal
+    name_regex: "^{{ server1_title | regex_escape }}$"
+    assign_inventory_group: web_tier
+  - kind: cloud
+    labels:
+      inv_test_marker: "cloud"
+    assign_inventory_group: web_tier
