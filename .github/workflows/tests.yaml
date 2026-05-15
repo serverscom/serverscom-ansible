@@ -114,6 +114,11 @@ jobs:
     uses: ./.github/workflows/baremetal.yaml
     secrets: inherit
 
+  inventory:
+    needs: baremetal
+    uses: ./.github/workflows/inventory.yaml
+    secrets: inherit
+
   l2:
     needs: baremetal
     uses: ./.github/workflows/l2.yaml
@@ -241,6 +246,7 @@ jobs:
     needs:
       - baremetal
       - integration_tests_cloud
+      - inventory
       - l2
       - integration_tests_lb_instances
       - integration_tests_rbs_volumes
