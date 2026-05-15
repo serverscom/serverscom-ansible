@@ -720,7 +720,6 @@ def test_accept_all_known_keys(plugin):
             "plugin": "serverscom.sc_api.sc_inventory",
             "token": "T",
             "endpoint": "E",
-            "cache": False,
             "resources": [
                 {
                     "kind": "baremetal",

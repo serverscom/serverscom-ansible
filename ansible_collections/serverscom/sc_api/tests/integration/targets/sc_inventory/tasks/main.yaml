@@ -132,7 +132,7 @@
       register: cloud_vm
 
     # ---------------------------------------------------------------- #
-    # 1. Default — no `resources:` at all → all kinds, 3 known BMs present
+    # 1. Default — no `resources:` at all → all kinds; known BMs present
     # ---------------------------------------------------------------- #
     - include_tasks: _run.yaml
       vars:
@@ -368,7 +368,7 @@
           - inv_json._meta.hostvars[cloud_vm_name].ansible_host == cloud_vm.public_ipv6_address
 
     # ---------------------------------------------------------------- #
-    # 14. Mixed: no kind, label `inv_test_mixed: mixed` finds both kinds
+    # 14. Mixed inventory: explicit baremetal + cloud blocks, distinct labels
     # ---------------------------------------------------------------- #
     - include_tasks: _run.yaml
       vars:
