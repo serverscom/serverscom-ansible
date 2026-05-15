@@ -19,8 +19,6 @@ description:
     arbitrary exclusion rules.
   - Hosts can be assigned to a static group or dynamically grouped by
     a server attribute.
-extends_documentation_fragment:
-  - constructed
 options:
   plugin:
     description: Token that identifies the file as a config for this plugin.
@@ -59,11 +57,10 @@ options:
       kind:
         description:
           - Resource kind to fetch — required for every entry in C(resources).
+          - One of C(baremetal), C(sbm), C(k8s_nodes), C(cloud).
           - To fetch every kind, omit C(resources) entirely (or set it to an
             empty list) instead of relying on per-block fallback.
         type: str
-        required: true
-        choices: [baremetal, sbm, k8s_nodes, cloud]
       regions:
         description:
           - List of location_code (baremetal) or region_code (cloud) values.

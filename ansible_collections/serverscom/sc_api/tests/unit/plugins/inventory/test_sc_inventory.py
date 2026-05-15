@@ -675,6 +675,21 @@ def test_parse_block_without_kind_raises(plugin):
             )
 
 
+def test_apply_resource_tolerates_unknown_keys(plugin):
+    """Plugin code reads documented keys via .get(); unknown keys are no-ops."""
+    api = mock.MagicMock()
+    api.list_hosts.return_value = iter([_make_baremetal()])
+    plugin._apply_resource(
+        api,
+        {
+            "kind": "baremetal",
+            "unknown_extra_key": "noise",
+            "another_typo": {"nested": "value"},
+        },
+    )
+    assert plugin.inventory.add_host.called
+
+
 def test_parse_block_with_kind_runs(plugin):
     _stub_parse_deps(plugin, [{"kind": "baremetal"}])
     plugin._apply_resource.assert_called_once_with(
