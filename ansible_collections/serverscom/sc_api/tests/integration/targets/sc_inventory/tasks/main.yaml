@@ -397,6 +397,23 @@
           - server2_title in inv_json.combined_group.hosts
           - inv_json.combined_group.hosts | length == 2
 
+    # ---------------------------------------------------------------- #
+    # 16. Cross-kind: bare-metal + cloud blocks pointed at the same group
+    # ---------------------------------------------------------------- #
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: cross_kind_group.sc_api.yml.j2
+
+    - name: "same group across kinds: contains server1 AND cloud VM"
+      assert:
+        that:
+          - "'web_tier' in inv_json"
+          - server1_title in inv_json.web_tier.hosts
+          - cloud_vm_name in inv_json.web_tier.hosts
+          - inv_json.web_tier.hosts | length == 2
+          - inv_json._meta.hostvars[server1_title].sc_kind == "baremetal"
+          - inv_json._meta.hostvars[cloud_vm_name].sc_kind == "cloud"
+
   always:
     - name: Remove labels from server1
       uri:
