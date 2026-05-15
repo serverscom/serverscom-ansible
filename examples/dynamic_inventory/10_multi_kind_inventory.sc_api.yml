@@ -1,7 +1,8 @@
 ---
 # One inventory covering three resource kinds, each with its own settings.
 # Use separate blocks when filters / IP choice / groups differ per kind.
-# If they don't differ, omit `kind:` from a single block instead (see 01).
+# Every `resources:` entry must specify `kind:`; if you want every kind
+# with no filters, omit `resources:` entirely instead (see 01).
 plugin: serverscom.sc_api.sc_inventory
 resources:
   - kind: baremetal

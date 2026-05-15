@@ -245,7 +245,7 @@ import os
 import re
 
 from ansible.errors import AnsibleError, AnsibleParserError
-from ansible.plugins.inventory import BaseInventoryPlugin, Cacheable
+from ansible.plugins.inventory import BaseInventoryPlugin
 from ansible.utils.display import Display
 
 from ansible_collections.serverscom.sc_api.plugins.module_utils.api import (
@@ -287,12 +287,6 @@ _KNOWN_TOP_KEYS = {
     "token",
     "endpoint",
     "resources",
-    # inherited from Cacheable
-    "cache",
-    "cache_plugin",
-    "cache_timeout",
-    "cache_connection",
-    "cache_prefix",
 }
 
 _KNOWN_BLOCK_KEYS = {
@@ -311,7 +305,7 @@ _KNOWN_BLOCK_KEYS = {
 _KNOWN_EXCLUDE_RULE_KEYS = {"regions", "labels"}
 
 
-class InventoryModule(BaseInventoryPlugin, Cacheable):
+class InventoryModule(BaseInventoryPlugin):
 
     NAME = "serverscom.sc_api.sc_inventory"
 
@@ -622,6 +616,8 @@ class InventoryModule(BaseInventoryPlugin, Cacheable):
             "local_ip",
             server.get("local_ipv4_address") if kind == "cloud" else None,
         )
+        # v1: placeholder; the /hosts list endpoint returns only
+        # `additional_ip_addresses_count`, not the actual addresses.
         self.inventory.set_variable(hostname, "additional_ip_addresses", [])
         self.inventory.set_variable(hostname, "sc_kind", kind)
 
