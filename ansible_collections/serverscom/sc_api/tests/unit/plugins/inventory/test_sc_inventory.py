@@ -638,6 +638,7 @@ def test_apply_resource_group_and_group_by_raises(plugin):
 
 def _stub_parse_deps(p, resources):
     """Stub out parse() side-effects so we can drive validation only."""
+    p._reject_unknown_keys = mock.MagicMock()
     p._read_config_data = mock.MagicMock()
     p._resolve_token_endpoint = mock.MagicMock(return_value=("T", "E"))
     p._build_api = mock.MagicMock(return_value=mock.MagicMock())
@@ -661,6 +662,7 @@ def test_parse_empty_resources_fetches_all(plugin):
 
 
 def test_parse_block_without_kind_raises(plugin):
+    plugin._reject_unknown_keys = mock.MagicMock()
     plugin._read_config_data = mock.MagicMock()
     plugin._resolve_token_endpoint = mock.MagicMock(return_value=("T", "E"))
     plugin._build_api = mock.MagicMock(return_value=mock.MagicMock())
@@ -675,19 +677,72 @@ def test_parse_block_without_kind_raises(plugin):
             )
 
 
-def test_apply_resource_tolerates_unknown_keys(plugin):
-    """Plugin code reads documented keys via .get(); unknown keys are no-ops."""
-    api = mock.MagicMock()
-    api.list_hosts.return_value = iter([_make_baremetal()])
-    plugin._apply_resource(
-        api,
-        {
-            "kind": "baremetal",
-            "unknown_extra_key": "noise",
-            "another_typo": {"nested": "value"},
-        },
+def _fake_loader(yaml_obj):
+    """Build a MagicMock loader.load_from_file that returns the given dict."""
+    loader = mock.MagicMock()
+    loader.load_from_file.return_value = yaml_obj
+    return loader
+
+
+def test_reject_unknown_top_key(plugin):
+    loader = _fake_loader({"plugin": "x", "bogus_top": 1})
+    with pytest.raises(AnsibleParserError, match="bogus_top"):
+        plugin._reject_unknown_keys(loader, "/tmp/x.sc_api.yml")
+
+
+def test_reject_unknown_block_key(plugin):
+    loader = _fake_loader(
+        {"plugin": "x", "resources": [{"kind": "baremetal", "bogus_sub": "v"}]}
     )
-    assert plugin.inventory.add_host.called
+    with pytest.raises(AnsibleParserError, match="bogus_sub"):
+        plugin._reject_unknown_keys(loader, "/tmp/x.sc_api.yml")
+
+
+def test_reject_unknown_exclude_rule_key(plugin):
+    loader = _fake_loader(
+        {
+            "plugin": "x",
+            "resources": [
+                {
+                    "kind": "baremetal",
+                    "exclude": [{"regions": ["AMS1"], "bogus_rule": "x"}],
+                }
+            ],
+        }
+    )
+    with pytest.raises(AnsibleParserError, match="bogus_rule"):
+        plugin._reject_unknown_keys(loader, "/tmp/x.sc_api.yml")
+
+
+def test_accept_all_known_keys(plugin):
+    loader = _fake_loader(
+        {
+            "plugin": "serverscom.sc_api.sc_inventory",
+            "token": "T",
+            "endpoint": "E",
+            "cache": False,
+            "resources": [
+                {
+                    "kind": "baremetal",
+                    "regions": ["AMS1"],
+                    "name_regex": "^x",
+                    "labels": {"a": "b"},
+                    "status_filter": ["active"],
+                    "exclude": [{"regions": ["AMS2"], "labels": {"k": "v"}}],
+                    "ansible_host": "public_ipv4",
+                    "assign_inventory_group": "g",
+                    "extra_vars": {"x": 1},
+                }
+            ],
+        }
+    )
+    plugin._reject_unknown_keys(loader, "/tmp/x.sc_api.yml")  # no raise
+
+
+def test_reject_non_mapping_root(plugin):
+    loader = _fake_loader(["not", "a", "dict"])
+    with pytest.raises(AnsibleParserError, match="YAML mapping"):
+        plugin._reject_unknown_keys(loader, "/tmp/x.sc_api.yml")
 
 
 def test_parse_block_with_kind_runs(plugin):

@@ -306,7 +306,7 @@
           - "'must specify `kind`' in inv_run.stderr"
 
     # ---------------------------------------------------------------- #
-    # 11c. Unknown keys are rejected by Ansible's schema validator
+    # 11c. Unknown keys are rejected by the plugin's strict validator
     # ---------------------------------------------------------------- #
     - include_tasks: _run.yaml
       vars:
@@ -327,6 +327,16 @@
       assert:
         that:
           - "'bogus_sub_key' in inv_run.stderr"
+
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: unknown_exclude_key.sc_api.yml.j2
+        inv_expect_fail: true
+
+    - name: "unknown exclude-rule key: name reported in stderr"
+      assert:
+        that:
+          - "'bogus_rule_key' in inv_run.stderr"
 
     # ---------------------------------------------------------------- #
     # 12. Cloud — VM appears with correct sc_kind and ansible_host
@@ -371,6 +381,21 @@
           - cloud_vm_name in inv_json._meta.hostvars
           - inv_json._meta.hostvars[server1_title].sc_kind == "baremetal"
           - inv_json._meta.hostvars[cloud_vm_name].sc_kind == "cloud"
+
+    # ---------------------------------------------------------------- #
+    # 15. Two same-kind blocks pointed at the same group → group merges
+    # ---------------------------------------------------------------- #
+    - include_tasks: _run.yaml
+      vars:
+        inv_template: same_group_combine.sc_api.yml.j2
+
+    - name: "same group from two baremetal blocks: contains both servers"
+      assert:
+        that:
+          - "'combined_group' in inv_json"
+          - server1_title in inv_json.combined_group.hosts
+          - server2_title in inv_json.combined_group.hosts
+          - inv_json.combined_group.hosts | length == 2
 
   always:
     - name: Remove labels from server1

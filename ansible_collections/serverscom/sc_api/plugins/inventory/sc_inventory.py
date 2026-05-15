@@ -281,6 +281,35 @@ _VALID_ANSIBLE_HOST = {
     "local_ipv4",
 }
 
+# Strict key validation: any key not listed below is rejected at parse time.
+_KNOWN_TOP_KEYS = {
+    "plugin",
+    "token",
+    "endpoint",
+    "resources",
+    # inherited from Cacheable
+    "cache",
+    "cache_plugin",
+    "cache_timeout",
+    "cache_connection",
+    "cache_prefix",
+}
+
+_KNOWN_BLOCK_KEYS = {
+    "kind",
+    "regions",
+    "name_regex",
+    "labels",
+    "status_filter",
+    "exclude",
+    "ansible_host",
+    "assign_inventory_group",
+    "group_by",
+    "extra_vars",
+}
+
+_KNOWN_EXCLUDE_RULE_KEYS = {"regions", "labels"}
+
 
 class InventoryModule(BaseInventoryPlugin, Cacheable):
 
@@ -304,6 +333,7 @@ class InventoryModule(BaseInventoryPlugin, Cacheable):
 
     def parse(self, inventory, loader, path, cache=True):
         super(InventoryModule, self).parse(inventory, loader, path, cache)
+        self._reject_unknown_keys(loader, path)
         self._read_config_data(path)
 
         token, endpoint = self._resolve_token_endpoint()
@@ -329,6 +359,47 @@ class InventoryModule(BaseInventoryPlugin, Cacheable):
                 self._apply_resource(api, block)
         except SCBaseError as e:
             raise AnsibleError(e.msg)
+
+    # ------------------------------------------------------------------ #
+    # Strict key validation
+    # ------------------------------------------------------------------ #
+
+    def _reject_unknown_keys(self, loader, path):
+        """Raise AnsibleParserError if the config file contains any key
+        not listed in the plugin's schema. Ansible's own validator is
+        lenient and silently drops unknowns, which lets typos slip past;
+        this restores strict behavior."""
+        raw = loader.load_from_file(path, cache="none", unsafe=True)
+        if not isinstance(raw, dict):
+            raise AnsibleParserError(
+                "Inventory config %r must be a YAML mapping." % path
+            )
+
+        extras = set(raw.keys()) - _KNOWN_TOP_KEYS
+        if extras:
+            raise AnsibleParserError(
+                "Unknown top-level keys in %s: %s. Known keys: %s"
+                % (path, sorted(extras), sorted(_KNOWN_TOP_KEYS))
+            )
+
+        for i, block in enumerate(raw.get("resources") or []):
+            if not isinstance(block, dict):
+                continue
+            block_extras = set(block.keys()) - _KNOWN_BLOCK_KEYS
+            if block_extras:
+                raise AnsibleParserError(
+                    "Unknown keys in resources[%d] of %s: %s. Known keys: %s"
+                    % (i, path, sorted(block_extras), sorted(_KNOWN_BLOCK_KEYS))
+                )
+            for j, rule in enumerate(block.get("exclude") or []):
+                if not isinstance(rule, dict):
+                    continue
+                rule_extras = set(rule.keys()) - _KNOWN_EXCLUDE_RULE_KEYS
+                if rule_extras:
+                    raise AnsibleParserError(
+                        "Unknown keys in resources[%d].exclude[%d] of %s: %s"
+                        % (i, j, path, sorted(rule_extras))
+                    )
 
     # ------------------------------------------------------------------ #
     # Token / endpoint / api
