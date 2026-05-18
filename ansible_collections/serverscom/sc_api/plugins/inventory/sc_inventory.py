@@ -32,8 +32,6 @@ description:
     null if unavailable)."
   - "  C(public_ipv6), C(local_ip) — cloud-only (null on bare-metal/SBM/k8s)."
   - "  C(oob_ip) — dedicated-server-only (null on cloud/SBM/k8s)."
-  - "  C(additional_ip_addresses) — placeholder, always C([]) in v1
-    (the /hosts list endpoint returns only a count, not the addresses)."
   - "  C(sc_type) — the resource type
     (C(dedicated_server)/C(sbm_server)/C(kubernetes_baremetal_node)/C(cloud_server))."
   - "  Every raw field from the API response is also exposed as a host
@@ -673,9 +671,6 @@ class InventoryModule(BaseInventoryPlugin):
             "local_ip",
             server.get("local_ipv4_address") if server_type == "cloud_server" else None,
         )
-        # v1: placeholder; the /hosts list endpoint returns only
-        # `additional_ip_addresses_count`, not the actual addresses.
-        self.inventory.set_variable(hostname, "additional_ip_addresses", [])
         self.inventory.set_variable(hostname, "sc_type", server_type)
 
         for key, value in server.items():

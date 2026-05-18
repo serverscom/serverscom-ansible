@@ -231,7 +231,6 @@
           - inv_json._meta.hostvars[server1_title].ansible_host == server1_public_ipv4
           - inv_json._meta.hostvars[server1_title].public_ip == server1_public_ipv4
           - inv_json._meta.hostvars[server1_title].sc_type == "dedicated_server"
-          - inv_json._meta.hostvars[server1_title].additional_ip_addresses == []
 
     # ---------------------------------------------------------------- #
     # 8. assign_inventory_group — server1 lands in static group

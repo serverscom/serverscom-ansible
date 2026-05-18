@@ -510,7 +510,6 @@ def test_set_host_vars_baremetal(plugin):
     assert calls["oob_ip"] == "192.168.0.1"
     assert calls["public_ipv6"] is None  # baremetal
     assert calls["local_ip"] is None
-    assert calls["additional_ip_addresses"] == []
     assert calls["sc_type"] == "dedicated_server"
     assert calls["title"] == "bm-host-1"
     assert calls["status"] == "active"
