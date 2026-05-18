@@ -19,6 +19,12 @@ description:
     arbitrary exclusion rules.
   - Hosts can be assigned to a static group or dynamically grouped by
     a server attribute.
+  - If two servers of different types share a hostname (e.g. a dedicated
+    server titled C(web-01) and a cloud VM named C(web-01)), they collide
+    in the inventory under a single entry. Last write wins — host
+    variables from the later-processed server overwrite the earlier one
+    — and a warning is emitted. Processing order is BMs/SBM/k8s nodes
+    first, then cloud, and resource blocks are processed top-to-bottom.
 options:
   plugin:
     description: Token that identifies the file as a config for this plugin.
@@ -341,6 +347,11 @@ class InventoryModule(BaseInventoryPlugin):
         self._reject_unknown_keys(loader, path)
         self._read_config_data(path)
 
+        # Tracks hostnames already added so we can warn on collisions
+        # (e.g. a cloud VM and a dedicated server sharing the same name).
+        # Last write wins; this just makes the overwrite visible.
+        self._seen_hosts = {}
+
         token, endpoint = self._resolve_token_endpoint()
         api = self._build_api(token, endpoint)
 
@@ -643,6 +654,8 @@ class InventoryModule(BaseInventoryPlugin):
     # ------------------------------------------------------------------ #
 
     def _apply_resource(self, api, config):
+        if not hasattr(self, "_seen_hosts"):
+            self._seen_hosts = {}
         server_type = config.get("type")
         regions = _resolve_locations(config, "resource block") or []
         name_regex = config.get("name_regex")
@@ -683,6 +696,16 @@ class InventoryModule(BaseInventoryPlugin):
 
             if self._is_excluded(server, srv_type, exclude_rules):
                 continue
+
+            prior = self._seen_hosts.get(hostname)
+            if prior is not None and prior != srv_type:
+                display.warning(
+                    "Hostname collision: %r already added as %s; overwriting "
+                    "with %s. All host variables will be overwritten by the "
+                    "later entry."
+                    % (hostname, prior, srv_type)
+                )
+            self._seen_hosts[hostname] = srv_type
 
             self.inventory.add_host(hostname)
             self._set_host_vars(
