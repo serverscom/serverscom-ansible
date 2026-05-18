@@ -25,6 +25,26 @@ description:
     variables from the later-processed server overwrite the earlier one
     — and a warning is emitted. Processing order is BMs/SBM/k8s nodes
     first, then cloud, and resource blocks are processed top-to-bottom.
+  - "Host variables exposed on every matched host:"
+  - "  C(ansible_host) — the IP selected by the C(ansible_host) option
+    (default C(public_ipv4))."
+  - "  C(public_ip), C(private_ip) — IPv4 addresses (always set, may be
+    null if unavailable)."
+  - "  C(public_ipv6), C(local_ip) — cloud-only (null on bare-metal/SBM/k8s)."
+  - "  C(oob_ip) — dedicated-server-only (null on cloud/SBM/k8s)."
+  - "  C(additional_ip_addresses) — placeholder, always C([]) in v1
+    (the /hosts list endpoint returns only a count, not the addresses)."
+  - "  C(sc_type) — the resource type
+    (C(dedicated_server)/C(sbm_server)/C(kubernetes_baremetal_node)/C(cloud_server))."
+  - "  Every raw field from the API response is also exposed as a host
+    variable (e.g. C(location_code), C(region_code), C(labels), C(status),
+    C(id), C(title), C(name), C(flavor_name), ...). For the authoritative
+    list of fields per type, see the Servers.com API documentation:"
+  - "  Bare-metal / SBM / k8s nodes:
+    U(https://developers.servers.com/api-documentation/v1/#tag/Host/operation/ListHosts)"
+  - "  Cloud instances:
+    U(https://developers.servers.com/api-documentation/v1/#tag/Cloud-Instance/operation/ListCloudInstances)"
+  - "Any key in C(extra_vars) overrides a raw API field with the same name."
 options:
   plugin:
     description: Token that identifies the file as a config for this plugin.
@@ -241,6 +261,21 @@ resources:
   - type: dedicated_server
     name_regex: "^web-"
     assign_inventory_group: web_tier
+
+# ---
+# 12. Using host variables in a playbook
+# Every raw API field is exposed as a hostvar. Example playbook:
+#
+#   - hosts: all
+#     tasks:
+#       - debug:
+#           msg: "{{ inventory_hostname }} sc_type={{ sc_type }}
+#                 location={{ location_code | default(region_code) }}
+#                 labels={{ labels | default({}) }}"
+#
+# See the Servers.com API reference for the full per-type field list:
+#   https://developers.servers.com/api-documentation/v1/#tag/Host/operation/ListHosts
+#   https://developers.servers.com/api-documentation/v1/#tag/Cloud-Instance/operation/ListCloudInstances
 """
 
 import os
