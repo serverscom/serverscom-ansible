@@ -152,7 +152,7 @@
       vars:
         inv_template: baremetal_basic.sc_api.yml.j2
 
-    - name: "kind=baremetal: known servers present, all sc_type=baremetal"
+    - name: "type=dedicated_server: known servers present, all sc_type=dedicated_server"
       assert:
         that:
           - server1_title in inv_json._meta.hostvars
@@ -373,7 +373,7 @@
     # ---------------------------------------------------------------- #
     - include_tasks: _run.yaml
       vars:
-        inv_template: all_kinds.sc_api.yml.j2
+        inv_template: all_types.sc_api.yml.j2
 
     - name: "mixed inventory: bare-metal AND cloud present in one run"
       assert:
@@ -384,7 +384,7 @@
           - inv_json._meta.hostvars[cloud_vm_name].sc_type == "cloud_server"
 
     # ---------------------------------------------------------------- #
-    # 15. Two same-kind blocks pointed at the same group → group merges
+    # 15. Two same-type blocks pointed at the same group → group merges
     # ---------------------------------------------------------------- #
     - include_tasks: _run.yaml
       vars:
@@ -403,7 +403,7 @@
     # ---------------------------------------------------------------- #
     - include_tasks: _run.yaml
       vars:
-        inv_template: cross_kind_group.sc_api.yml.j2
+        inv_template: cross_type_group.sc_api.yml.j2
 
     - name: "same group across kinds: contains server1 AND cloud VM"
       assert:

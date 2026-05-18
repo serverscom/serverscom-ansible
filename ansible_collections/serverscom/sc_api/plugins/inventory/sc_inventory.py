@@ -15,7 +15,7 @@ description:
   - Builds Ansible inventory from the Servers.com API.
   - Fetches dedicated bare-metal servers, Scalable Bare-Metal (SBM) servers,
     Kubernetes bare-metal nodes, and cloud computing instances.
-  - Supports filtering by type, region, name regexp, labels, status, and
+  - Supports filtering by type, location, name regexp, labels, and
     arbitrary exclusion rules.
   - Hosts can be assigned to a static group or dynamically grouped by
     a server attribute.

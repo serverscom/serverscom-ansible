@@ -8,7 +8,7 @@
   register: inv_tmp
   changed_when: false
 
-- name: Render sc_inventory config (kind=sbm)
+- name: Render sc_inventory config (type=sbm_server)
   copy:
     content: |
       plugin: serverscom.sc_api.sc_inventory
