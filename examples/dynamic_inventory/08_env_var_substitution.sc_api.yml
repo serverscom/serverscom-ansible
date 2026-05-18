@@ -8,8 +8,8 @@
 # An unset variable raises AnsibleParserError naming the missing variable.
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: baremetal
-    regions:
+  - type: dedicated_server
+    locations:
       - ${DEPLOY_REGION}
     labels:
       environment: ${SC_ENV}

@@ -3,5 +3,5 @@
 # Creates one group per location (e.g. AMS1, FRA1, ...).
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: baremetal
+  - type: dedicated_server
     group_by: location_code

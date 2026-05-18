@@ -243,25 +243,25 @@ def test_endpoint_env_fallback(plugin, monkeypatch):
 
 
 # ------------------------------------------------------------------- #
-# _list_for_kind dispatch
+# _list_for_type dispatch
 # ------------------------------------------------------------------- #
 
 
 def test_list_kind_baremetal(plugin):
     api = mock.MagicMock()
     api.list_hosts.return_value = iter([_make_baremetal()])
-    result = list(plugin._list_for_kind(api, "baremetal"))
+    result = list(plugin._list_for_type(api, "dedicated_server"))
     api.list_hosts.assert_called_once_with(type="dedicated_server")
     assert len(result) == 1
-    assert result[0][1] == "baremetal"
+    assert result[0][1] == "dedicated_server"
 
 
 def test_list_kind_sbm(plugin):
     api = mock.MagicMock()
     api.list_hosts.return_value = iter([_make_baremetal(type_="sbm_server")])
-    result = list(plugin._list_for_kind(api, "sbm"))
+    result = list(plugin._list_for_type(api, "sbm_server"))
     api.list_hosts.assert_called_once_with(type="sbm_server")
-    assert result[0][1] == "sbm"
+    assert result[0][1] == "sbm_server"
 
 
 def test_list_kind_k8s(plugin):
@@ -269,18 +269,18 @@ def test_list_kind_k8s(plugin):
     api.list_hosts.return_value = iter(
         [_make_baremetal(type_="kubernetes_baremetal_node")]
     )
-    result = list(plugin._list_for_kind(api, "k8s_nodes"))
+    result = list(plugin._list_for_type(api, "kubernetes_baremetal_node"))
     api.list_hosts.assert_called_once_with(type="kubernetes_baremetal_node")
-    assert result[0][1] == "k8s_nodes"
+    assert result[0][1] == "kubernetes_baremetal_node"
 
 
 def test_list_kind_cloud(plugin):
     api = mock.MagicMock()
     api.list_instances.return_value = iter([_make_cloud()])
-    result = list(plugin._list_for_kind(api, "cloud"))
+    result = list(plugin._list_for_type(api, "cloud_server"))
     api.list_instances.assert_called_once_with()
     assert not api.list_hosts.called
-    assert result[0][1] == "cloud"
+    assert result[0][1] == "cloud_server"
 
 
 def test_list_kind_none_two_calls(plugin):
@@ -293,11 +293,11 @@ def test_list_kind_none_two_calls(plugin):
         ]
     )
     api.list_instances.return_value = iter([_make_cloud()])
-    result = list(plugin._list_for_kind(api, None))
+    result = list(plugin._list_for_type(api, None))
     api.list_hosts.assert_called_once_with()
     api.list_instances.assert_called_once_with()
     kinds = [k for _server, k in result]
-    assert kinds == ["baremetal", "sbm", "k8s_nodes", "cloud"]
+    assert kinds == ["dedicated_server", "sbm_server", "kubernetes_baremetal_node", "cloud_server"]
 
 
 def test_list_kind_none_skips_unknown_type(plugin):
@@ -306,14 +306,14 @@ def test_list_kind_none_skips_unknown_type(plugin):
         [_make_baremetal(type_="some_future_type", id_="x1")]
     )
     api.list_instances.return_value = iter([])
-    result = list(plugin._list_for_kind(api, None))
+    result = list(plugin._list_for_type(api, None))
     assert result == []
 
 
 def test_list_kind_invalid_raises(plugin):
     api = mock.MagicMock()
-    with pytest.raises(AnsibleParserError, match="Unknown resource kind"):
-        list(plugin._list_for_kind(api, "vm"))
+    with pytest.raises(AnsibleParserError, match="Unknown resource type"):
+        list(plugin._list_for_type(api, "vm"))
 
 
 # ------------------------------------------------------------------- #
@@ -322,25 +322,25 @@ def test_list_kind_invalid_raises(plugin):
 
 
 def test_hostname_baremetal(plugin):
-    assert plugin._hostname(_make_baremetal(), "baremetal") == "bm-host-1"
+    assert plugin._hostname(_make_baremetal(), "dedicated_server") == "bm-host-1"
 
 
 def test_hostname_cloud(plugin):
-    assert plugin._hostname(_make_cloud(), "cloud") == "cloud-host-1"
+    assert plugin._hostname(_make_cloud(), "cloud_server") == "cloud-host-1"
 
 
 def test_hostname_fallback_to_id(plugin):
     s = _make_baremetal()
     s["title"] = ""
-    assert plugin._hostname(s, "baremetal") == "bm1"
+    assert plugin._hostname(s, "dedicated_server") == "bm1"
 
 
 def test_region_baremetal(plugin):
-    assert plugin._region(_make_baremetal(), "baremetal") == "AMS1"
+    assert plugin._region(_make_baremetal(), "dedicated_server") == "AMS1"
 
 
 def test_region_cloud(plugin):
-    assert plugin._region(_make_cloud(), "cloud") == "ams1"
+    assert plugin._region(_make_cloud(), "cloud_server") == "ams1"
 
 
 # ------------------------------------------------------------------- #
@@ -359,7 +359,7 @@ def test_region_cloud(plugin):
     ],
 )
 def test_ip_baremetal(plugin, ip_type, expected):
-    assert plugin._ip(_make_baremetal(), "baremetal", ip_type) == expected
+    assert plugin._ip(_make_baremetal(), "dedicated_server", ip_type) == expected
 
 
 @pytest.mark.parametrize(
@@ -373,13 +373,13 @@ def test_ip_baremetal(plugin, ip_type, expected):
     ],
 )
 def test_ip_cloud(plugin, ip_type, expected):
-    assert plugin._ip(_make_cloud(), "cloud", ip_type) == expected
+    assert plugin._ip(_make_cloud(), "cloud_server", ip_type) == expected
 
 
 def test_ip_oob_only_for_baremetal(plugin):
     sbm = _make_baremetal(type_="sbm_server")
     # sbm/k8s don't expose oob in our mapping
-    assert plugin._ip(sbm, "sbm", "oob_ipv4") is None
+    assert plugin._ip(sbm, "sbm_server", "oob_ipv4") is None
 
 
 # ------------------------------------------------------------------- #
@@ -405,32 +405,32 @@ def test_matches_labels_missing_key(plugin):
 
 def test_exclude_no_rules(plugin):
     assert (
-        plugin._is_excluded(_make_baremetal(), "baremetal", []) is False
+        plugin._is_excluded(_make_baremetal(), "dedicated_server", []) is False
     )
 
 
 def test_exclude_by_region(plugin):
     rules = [{"regions": ["AMS1"]}]
-    assert plugin._is_excluded(_make_baremetal(), "baremetal", rules) is True
+    assert plugin._is_excluded(_make_baremetal(), "dedicated_server", rules) is True
 
 
 def test_exclude_by_region_no_match(plugin):
     rules = [{"regions": ["FRA1"]}]
-    assert plugin._is_excluded(_make_baremetal(), "baremetal", rules) is False
+    assert plugin._is_excluded(_make_baremetal(), "dedicated_server", rules) is False
 
 
 def test_exclude_by_label(plugin):
     rules = [{"labels": {"env": "prod"}}]
     s = _make_baremetal(labels={"env": "prod"})
-    assert plugin._is_excluded(s, "baremetal", rules) is True
+    assert plugin._is_excluded(s, "dedicated_server", rules) is True
 
 
 def test_exclude_region_and_label_both_required(plugin):
     rules = [{"regions": ["AMS1"], "labels": {"env": "prod"}}]
     s_match = _make_baremetal(labels={"env": "prod"})
     s_region_only = _make_baremetal(labels={"env": "dev"})
-    assert plugin._is_excluded(s_match, "baremetal", rules) is True
-    assert plugin._is_excluded(s_region_only, "baremetal", rules) is False
+    assert plugin._is_excluded(s_match, "dedicated_server", rules) is True
+    assert plugin._is_excluded(s_region_only, "dedicated_server", rules) is False
 
 
 def test_exclude_multiple_rules_or(plugin):
@@ -441,9 +441,9 @@ def test_exclude_multiple_rules_or(plugin):
     s1 = _make_baremetal(location_code="AMS2")
     s2 = _make_baremetal(labels={"decommissioned": "true"})
     s3 = _make_baremetal()
-    assert plugin._is_excluded(s1, "baremetal", rules) is True
-    assert plugin._is_excluded(s2, "baremetal", rules) is True
-    assert plugin._is_excluded(s3, "baremetal", rules) is False
+    assert plugin._is_excluded(s1, "dedicated_server", rules) is True
+    assert plugin._is_excluded(s2, "dedicated_server", rules) is True
+    assert plugin._is_excluded(s3, "dedicated_server", rules) is False
 
 
 # ------------------------------------------------------------------- #
@@ -502,7 +502,7 @@ def test_add_to_groups_neither_set(plugin):
 
 def test_set_host_vars_baremetal(plugin):
     s = _make_baremetal()
-    plugin._set_host_vars("h1", s, "baremetal", "public_ipv4", {})
+    plugin._set_host_vars("h1", s, "dedicated_server", "public_ipv4", {})
     calls = {c.args[1]: c.args[2] for c in plugin.inventory.set_variable.mock_calls}
     assert calls["ansible_host"] == "1.1.1.1"
     assert calls["public_ip"] == "1.1.1.1"
@@ -511,25 +511,25 @@ def test_set_host_vars_baremetal(plugin):
     assert calls["public_ipv6"] is None  # baremetal
     assert calls["local_ip"] is None
     assert calls["additional_ip_addresses"] == []
-    assert calls["sc_kind"] == "baremetal"
+    assert calls["sc_type"] == "dedicated_server"
     assert calls["title"] == "bm-host-1"
     assert calls["status"] == "active"
 
 
 def test_set_host_vars_cloud(plugin):
     s = _make_cloud()
-    plugin._set_host_vars("h1", s, "cloud", "public_ipv6", {})
+    plugin._set_host_vars("h1", s, "cloud_server", "public_ipv6", {})
     calls = {c.args[1]: c.args[2] for c in plugin.inventory.set_variable.mock_calls}
     assert calls["ansible_host"] == "2001:db8::1"
     assert calls["public_ipv6"] == "2001:db8::1"
     assert calls["local_ip"] == "172.16.0.1"
     assert calls["oob_ip"] is None
-    assert calls["sc_kind"] == "cloud"
+    assert calls["sc_type"] == "cloud_server"
 
 
 def test_set_host_vars_missing_ansible_host_ip(plugin):
     s = _make_baremetal(public=None)
-    plugin._set_host_vars("h1", s, "baremetal", "public_ipv4", {})
+    plugin._set_host_vars("h1", s, "dedicated_server", "public_ipv4", {})
     calls = {c.args[1]: c.args[2] for c in plugin.inventory.set_variable.mock_calls}
     assert "ansible_host" not in calls
     assert calls["public_ip"] is None
@@ -538,7 +538,7 @@ def test_set_host_vars_missing_ansible_host_ip(plugin):
 def test_set_host_vars_extra_vars_override_raw(plugin):
     s = _make_baremetal()
     plugin._set_host_vars(
-        "h1", s, "baremetal", "public_ipv4", {"status": "overridden"}
+        "h1", s, "dedicated_server", "public_ipv4", {"status": "overridden"}
     )
     # Last write wins; collect ordered (host, key, value) tuples
     assignments = [
@@ -563,7 +563,7 @@ def test_apply_resource_region_filter(plugin):
         ]
     )
     plugin._apply_resource(
-        api, {"kind": "baremetal", "regions": ["AMS1"]}
+        api, {"type": "dedicated_server", "regions": ["AMS1"]}
     )
     added = [c.args[0] for c in plugin.inventory.add_host.mock_calls]
     assert added == ["ha"]
@@ -578,7 +578,7 @@ def test_apply_resource_name_regex(plugin):
         ]
     )
     plugin._apply_resource(
-        api, {"kind": "baremetal", "name_regex": "^web-"}
+        api, {"type": "dedicated_server", "name_regex": "^web-"}
     )
     added = [c.args[0] for c in plugin.inventory.add_host.mock_calls]
     assert added == ["web-1"]
@@ -597,25 +597,10 @@ def test_apply_resource_labels_and(plugin):
     )
     plugin._apply_resource(
         api,
-        {"kind": "baremetal", "labels": {"env": "prod", "tier": "web"}},
+        {"type": "dedicated_server", "labels": {"env": "prod", "tier": "web"}},
     )
     added = [c.args[0] for c in plugin.inventory.add_host.mock_calls]
     assert added == ["hb"]
-
-
-def test_apply_resource_status_filter(plugin):
-    api = mock.MagicMock()
-    api.list_hosts.return_value = iter(
-        [
-            _make_baremetal(id_="a", title="ha", status="active"),
-            _make_baremetal(id_="b", title="hb", status="pending"),
-        ]
-    )
-    plugin._apply_resource(
-        api, {"kind": "baremetal", "status_filter": ["active"]}
-    )
-    added = [c.args[0] for c in plugin.inventory.add_host.mock_calls]
-    assert added == ["ha"]
 
 
 def test_apply_resource_exclude(plugin):
@@ -635,7 +620,7 @@ def test_apply_resource_exclude(plugin):
     plugin._apply_resource(
         api,
         {
-            "kind": "baremetal",
+            "type": "dedicated_server",
             "regions": ["AMS1"],
             "exclude": [{"labels": {"env": "production"}}],
         },
@@ -648,7 +633,7 @@ def test_apply_resource_invalid_ansible_host_raises(plugin):
     api = mock.MagicMock()
     with pytest.raises(AnsibleParserError, match="Invalid ansible_host"):
         plugin._apply_resource(
-            api, {"kind": "baremetal", "ansible_host": "bogus"}
+            api, {"type": "dedicated_server", "ansible_host": "bogus"}
         )
 
 
@@ -659,7 +644,7 @@ def test_apply_resource_group_and_group_by_raises(plugin):
         plugin._apply_resource(
             api,
             {
-                "kind": "baremetal",
+                "type": "dedicated_server",
                 "assign_inventory_group": "g",
                 "group_by": "location_code",
             },
@@ -706,7 +691,7 @@ def test_parse_block_without_kind_raises(plugin):
     with mock.patch.object(
         InventoryModule.__bases__[0], "parse", return_value=None
     ):
-        with pytest.raises(AnsibleParserError, match="must specify `kind`"):
+        with pytest.raises(AnsibleParserError, match="must specify `type`"):
             plugin.parse(
                 mock.MagicMock(), mock.MagicMock(), "/tmp/foo.sc_api.yml"
             )
@@ -727,7 +712,7 @@ def test_reject_unknown_top_key(plugin):
 
 def test_reject_unknown_block_key(plugin):
     loader = _fake_loader(
-        {"plugin": "x", "resources": [{"kind": "baremetal", "bogus_sub": "v"}]}
+        {"plugin": "x", "resources": [{"type": "dedicated_server", "bogus_sub": "v"}]}
     )
     with pytest.raises(AnsibleParserError, match="bogus_sub"):
         plugin._reject_unknown_keys(loader, "/tmp/x.sc_api.yml")
@@ -739,7 +724,7 @@ def test_reject_unknown_exclude_rule_key(plugin):
             "plugin": "x",
             "resources": [
                 {
-                    "kind": "baremetal",
+                    "type": "dedicated_server",
                     "exclude": [{"regions": ["AMS1"], "bogus_rule": "x"}],
                 }
             ],
@@ -757,11 +742,10 @@ def test_accept_all_known_keys(plugin):
             "endpoint": "E",
             "resources": [
                 {
-                    "kind": "baremetal",
+                    "type": "dedicated_server",
                     "regions": ["AMS1"],
                     "name_regex": "^x",
                     "labels": {"a": "b"},
-                    "status_filter": ["active"],
                     "exclude": [{"regions": ["AMS2"], "labels": {"k": "v"}}],
                     "ansible_host": "public_ipv4",
                     "assign_inventory_group": "g",
@@ -780,7 +764,7 @@ def test_reject_non_mapping_root(plugin):
 
 
 def test_parse_block_with_kind_runs(plugin):
-    _stub_parse_deps(plugin, [{"kind": "baremetal"}])
+    _stub_parse_deps(plugin, [{"type": "dedicated_server"}])
     plugin._apply_resource.assert_called_once_with(
-        mock.ANY, {"kind": "baremetal"}
+        mock.ANY, {"type": "dedicated_server"}
     )

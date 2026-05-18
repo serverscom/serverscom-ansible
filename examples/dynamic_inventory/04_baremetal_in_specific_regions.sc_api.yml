@@ -1,8 +1,8 @@
 ---
 # Bare-metal servers in a fixed list of regions, all into one static group.
-# `regions:` is matched against the host's location_code.
+# `locations:` is matched against the host's location_code.
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: baremetal
-    regions: [AMS1, AMS7]
+  - type: dedicated_server
+    locations: [AMS1, AMS7]
     assign_inventory_group: amsterdam_servers

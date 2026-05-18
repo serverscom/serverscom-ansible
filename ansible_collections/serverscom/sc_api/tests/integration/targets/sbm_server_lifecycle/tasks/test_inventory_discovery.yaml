@@ -13,7 +13,7 @@
     content: |
       plugin: serverscom.sc_api.sc_inventory
       resources:
-        - kind: sbm
+        - type: sbm_server
     dest: "{{ inv_tmp.path }}/sbm.sc_api.yml"
     mode: "0600"
 
@@ -46,7 +46,7 @@
   assert:
     that:
       - test_hostname in inv_json._meta.hostvars
-      - inv_json._meta.hostvars[test_hostname].sc_kind == "sbm"
+      - inv_json._meta.hostvars[test_hostname].sc_type == "sbm_server"
       - inv_json._meta.hostvars[test_hostname].type == "sbm_server"
     fail_msg: >-
       Expected to find SBM host {{ test_hostname }} in sc_inventory output.

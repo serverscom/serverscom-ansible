@@ -6,9 +6,9 @@
 # Everything left ends up in the `active_fleet` group.
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: baremetal
+  - type: dedicated_server
     exclude:
-      - regions: [AMS2]
+      - locations: [AMS2]
       - labels:
           decommissioned: "true"
     assign_inventory_group: active_fleet

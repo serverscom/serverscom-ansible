@@ -4,12 +4,10 @@
 # bare-metal hosts matching `^web-` land in the same Ansible group.
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: cloud
+  - type: cloud_server
     name_regex: "^web-"
-    status_filter: [ACTIVE]
     assign_inventory_group: web_tier
 
-  - kind: baremetal
+  - type: dedicated_server
     name_regex: "^web-"
-    status_filter: [active]
     assign_inventory_group: web_tier

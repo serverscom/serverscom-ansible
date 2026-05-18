@@ -3,10 +3,9 @@
 # All matched hosts go into the `staging` group and pick up extra connection vars.
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: cloud
+  - type: cloud_server
     labels:
       environment: staging
-    status_filter: [ACTIVE]
     ansible_host: private_ipv4
     assign_inventory_group: staging
     extra_vars:

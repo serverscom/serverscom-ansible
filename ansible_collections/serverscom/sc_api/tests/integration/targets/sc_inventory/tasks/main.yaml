@@ -143,21 +143,21 @@
         that:
           - server1_title in inv_json._meta.hostvars
           - server2_title in inv_json._meta.hostvars
-          - inv_json._meta.hostvars[server1_title].sc_kind == "baremetal"
+          - inv_json._meta.hostvars[server1_title].sc_type == "dedicated_server"
 
     # ---------------------------------------------------------------- #
-    # 2. kind: baremetal — IDs of the 3 known servers appear
+    # 2. type: dedicated_server — IDs of the 3 known servers appear
     # ---------------------------------------------------------------- #
     - include_tasks: _run.yaml
       vars:
         inv_template: baremetal_basic.sc_api.yml.j2
 
-    - name: "kind=baremetal: known servers present, all sc_kind=baremetal"
+    - name: "kind=baremetal: known servers present, all sc_type=baremetal"
       assert:
         that:
           - server1_title in inv_json._meta.hostvars
           - inv_json._meta.hostvars.values()
-            | map(attribute='sc_kind') | unique | list == ['baremetal']
+            | map(attribute='sc_type') | unique | list == ['dedicated_server']
 
     # ---------------------------------------------------------------- #
     # 3. Region filter — shared region returns all 3 BMs; bogus returns 0
@@ -230,7 +230,7 @@
         that:
           - inv_json._meta.hostvars[server1_title].ansible_host == server1_public_ipv4
           - inv_json._meta.hostvars[server1_title].public_ip == server1_public_ipv4
-          - inv_json._meta.hostvars[server1_title].sc_kind == "baremetal"
+          - inv_json._meta.hostvars[server1_title].sc_type == "dedicated_server"
           - inv_json._meta.hostvars[server1_title].additional_ip_addresses == []
 
     # ---------------------------------------------------------------- #
@@ -297,13 +297,13 @@
     # ---------------------------------------------------------------- #
     - include_tasks: _run.yaml
       vars:
-        inv_template: missing_kind.sc_api.yml.j2
+        inv_template: missing_type.sc_api.yml.j2
         inv_expect_fail: true
 
-    - name: "missing kind: parser error in stderr"
+    - name: "missing type: parser error in stderr"
       assert:
         that:
-          - "'must specify `kind`' in inv_run.stderr"
+          - "'must specify `type`' in inv_run.stderr"
 
     # ---------------------------------------------------------------- #
     # 11c. Unknown keys are rejected by the plugin's strict validator
@@ -339,17 +339,17 @@
           - "'bogus_rule_key' in inv_run.stderr"
 
     # ---------------------------------------------------------------- #
-    # 12. Cloud — VM appears with correct sc_kind and ansible_host
+    # 12. Cloud — VM appears with correct sc_type and ansible_host
     # ---------------------------------------------------------------- #
     - include_tasks: _run.yaml
       vars:
         inv_template: cloud_filter.sc_api.yml.j2
 
-    - name: "cloud: created VM present with cloud sc_kind"
+    - name: "cloud: created VM present with cloud sc_type"
       assert:
         that:
           - cloud_vm_name in inv_json._meta.hostvars
-          - inv_json._meta.hostvars[cloud_vm_name].sc_kind == "cloud"
+          - inv_json._meta.hostvars[cloud_vm_name].sc_type == "cloud_server"
           - inv_json._meta.hostvars[cloud_vm_name].ansible_host == cloud_vm.public_ipv4_address
           - inv_json._meta.hostvars[cloud_vm_name].public_ip == cloud_vm.public_ipv4_address
           - inv_json._meta.hostvars[cloud_vm_name].public_ipv6 == cloud_vm.public_ipv6_address
@@ -380,8 +380,8 @@
         that:
           - server1_title in inv_json._meta.hostvars
           - cloud_vm_name in inv_json._meta.hostvars
-          - inv_json._meta.hostvars[server1_title].sc_kind == "baremetal"
-          - inv_json._meta.hostvars[cloud_vm_name].sc_kind == "cloud"
+          - inv_json._meta.hostvars[server1_title].sc_type == "dedicated_server"
+          - inv_json._meta.hostvars[cloud_vm_name].sc_type == "cloud_server"
 
     # ---------------------------------------------------------------- #
     # 15. Two same-kind blocks pointed at the same group → group merges
@@ -399,7 +399,7 @@
           - inv_json.combined_group.hosts | length == 2
 
     # ---------------------------------------------------------------- #
-    # 16. Cross-kind: bare-metal + cloud blocks pointed at the same group
+    # 16. Cross-type: bare-metal + cloud blocks pointed at the same group
     # ---------------------------------------------------------------- #
     - include_tasks: _run.yaml
       vars:
@@ -412,8 +412,8 @@
           - server1_title in inv_json.web_tier.hosts
           - cloud_vm_name in inv_json.web_tier.hosts
           - inv_json.web_tier.hosts | length == 2
-          - inv_json._meta.hostvars[server1_title].sc_kind == "baremetal"
-          - inv_json._meta.hostvars[cloud_vm_name].sc_kind == "cloud"
+          - inv_json._meta.hostvars[server1_title].sc_type == "dedicated_server"
+          - inv_json._meta.hostvars[cloud_vm_name].sc_type == "cloud_server"
 
   always:
     - name: Remove labels from server1

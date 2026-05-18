@@ -4,7 +4,7 @@
 # playbooks.
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: k8s_nodes
+  - type: kubernetes_baremetal_node
     ansible_host: private_ipv4
     assign_inventory_group: kubernetes_nodes
     extra_vars:

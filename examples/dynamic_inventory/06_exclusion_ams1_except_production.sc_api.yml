@@ -4,8 +4,8 @@
 # carries the `environment: production` label (exclusion rule).
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: baremetal
-    regions: [AMS1]
+  - type: dedicated_server
+    locations: [AMS1]
     exclude:
       - labels:
           environment: production

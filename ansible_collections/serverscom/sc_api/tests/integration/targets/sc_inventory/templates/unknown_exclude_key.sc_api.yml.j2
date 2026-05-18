@@ -1,6 +1,6 @@
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: baremetal
+  - type: dedicated_server
     exclude:
-      - regions: [AMS1]
+      - locations: [AMS1]
         bogus_rule_key: "this exclude-rule key does not exist"

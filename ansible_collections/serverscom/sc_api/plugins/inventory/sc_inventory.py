@@ -15,7 +15,7 @@ description:
   - Builds Ansible inventory from the Servers.com API.
   - Fetches dedicated bare-metal servers, Scalable Bare-Metal (SBM) servers,
     Kubernetes bare-metal nodes, and cloud computing instances.
-  - Supports filtering by kind, region, name regexp, labels, status, and
+  - Supports filtering by type, region, name regexp, labels, status, and
     arbitrary exclusion rules.
   - Hosts can be assigned to a static group or dynamically grouped by
     a server attribute.
@@ -46,28 +46,31 @@ options:
   resources:
     description:
       - List of resource blocks describing what to fetch and how to expose it.
-      - If omitted or empty, every resource kind is fetched with no filters
+      - If omitted or empty, every resource type is fetched with no filters
         (via the bulk /hosts endpoint plus /cloud_computing/instances).
-      - When at least one block is present, every block must specify C(kind).
+      - When at least one block is present, every block must specify C(type).
     type: list
     elements: dict
     required: false
     default: []
     suboptions:
-      kind:
+      type:
         description:
-          - Resource kind to fetch — required for every entry in C(resources).
-          - One of C(baremetal), C(sbm), C(k8s_nodes), C(cloud).
-          - To fetch every kind, omit C(resources) entirely (or set it to an
+          - Resource type to fetch — required for every entry in C(resources).
+          - One of C(dedicated_server), C(sbm_server), C(kubernetes_baremetal_node), C(cloud_server).
+          - To fetch every type, omit C(resources) entirely (or set it to an
             empty list) instead of relying on per-block fallback.
         type: str
-      regions:
+      locations:
         description:
-          - List of location_code (baremetal) or region_code (cloud) values.
-          - Empty list means all regions.
+          - List of location_code (baremetal/sbm/k8s) or region_code (cloud) values.
+          - Empty list means all locations.
+          - Accepts C(regions) as an alias; specifying both in the same
+            block is an error.
         type: list
         elements: str
         default: []
+        aliases: [regions]
       name_regex:
         description: Regexp matched against the server title (baremetal) or name (cloud).
         type: str
@@ -75,11 +78,6 @@ options:
         description: Every key=value pair must be present on the server (AND match).
         type: dict
         default: {}
-      status_filter:
-        description: Status whitelist; empty means all statuses.
-        type: list
-        elements: str
-        default: []
       exclude:
         description:
           - List of exclusion rules. A host is dropped if any rule matches.
@@ -88,11 +86,14 @@ options:
         elements: dict
         default: []
         suboptions:
-          regions:
-            description: Empty means any region.
+          locations:
+            description:
+              - Empty means any location.
+              - Accepts C(regions) as an alias; specifying both is an error.
             type: list
             elements: str
             default: []
+            aliases: [regions]
           labels:
             description: Empty means no label test for this rule.
             type: dict
@@ -126,33 +127,32 @@ plugin: serverscom.sc_api.sc_inventory
 # 2. All cloud instances, grouped by region
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: cloud
+  - type: cloud_server
     group_by: region_code
 
 ---
 # 3. All baremetal servers, grouped by location
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: baremetal
+  - type: dedicated_server
     group_by: location_code
 
 ---
 # 4. Baremetal in specific regions only
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: baremetal
-    regions: [AMS1, AMS7]
+  - type: dedicated_server
+    locations: [AMS1, AMS7]
     assign_inventory_group: amsterdam_servers
 
 ---
 # 5. Cloud filtered by label, using private IP
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: cloud
+  - type: cloud_server
     labels:
       environment: staging
     ansible_host: private_ipv4
-    status_filter: [ACTIVE]
     assign_inventory_group: staging
     extra_vars:
       ansible_user: ubuntu
@@ -162,8 +162,8 @@ resources:
 # 6. Exclusion — all AMS1 servers except those labeled production
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: baremetal
-    regions: [AMS1]
+  - type: dedicated_server
+    locations: [AMS1]
     exclude:
       - labels:
           environment: production
@@ -173,9 +173,9 @@ resources:
 # 7. Multi-rule exclusion — exclude AMS2 OR decommissioned
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: baremetal
+  - type: dedicated_server
     exclude:
-      - regions: [AMS2]
+      - locations: [AMS2]
       - labels: { decommissioned: "true" }
     assign_inventory_group: active_fleet
 
@@ -184,8 +184,8 @@ resources:
 # Usage: DEPLOY_REGION=AMS1 SC_ENV=production ansible-inventory -i dynamic.sc_api.yml --list
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: baremetal
-    regions:
+  - type: dedicated_server
+    locations:
       - ${DEPLOY_REGION}
     labels:
       environment: ${SC_ENV}
@@ -195,49 +195,45 @@ resources:
 # 9. K8s nodes on private IPs
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: k8s_nodes
+  - type: kubernetes_baremetal_node
     ansible_host: private_ipv4
     assign_inventory_group: kubernetes_nodes
     extra_vars:
       ansible_user: root
 
 ---
-# 10. Multiple kinds with different per-kind configs
+# 10. Multiple types with different per-type configs
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: baremetal
-    regions: [AMS1, FRA1]
+  - type: dedicated_server
+    locations: [AMS1, FRA1]
     labels: { managed: "true" }
-    status_filter: [active]
     ansible_host: public_ipv4
     assign_inventory_group: baremetal_fleet
     extra_vars:
       ansible_user: root
-  - kind: cloud
-    regions: [AMS1, FRA1]
+  - type: cloud_server
+    locations: [AMS1, FRA1]
     labels: { managed: "true" }
-    status_filter: [ACTIVE]
     ansible_host: public_ipv4
     group_by: region_code
     extra_vars:
       ansible_user: ubuntu
-  - kind: k8s_nodes
+  - type: kubernetes_baremetal_node
     ansible_host: private_ipv4
     assign_inventory_group: k8s_nodes
     extra_vars:
       ansible_user: root
 
 ---
-# 11. Name regexp — only hosts matching a pattern, across two kinds
+# 11. Name regexp — only hosts matching a pattern, across two types
 plugin: serverscom.sc_api.sc_inventory
 resources:
-  - kind: cloud
+  - type: cloud_server
     name_regex: "^web-"
-    status_filter: [ACTIVE]
     assign_inventory_group: web_tier
-  - kind: baremetal
+  - type: dedicated_server
     name_regex: "^web-"
-    status_filter: [active]
     assign_inventory_group: web_tier
 """
 
@@ -259,19 +255,14 @@ display = Display()
 _ENV_VAR_RE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
 _GROUP_NAME_SANITIZE_RE = re.compile(r"[^A-Za-z0-9_]")
 
-_HOST_TYPE_TO_KIND = {
-    "dedicated_server": "baremetal",
-    "sbm_server": "sbm",
-    "kubernetes_baremetal_node": "k8s_nodes",
-}
+_HOST_TYPES = {"dedicated_server", "sbm_server", "kubernetes_baremetal_node"}
 
-_KIND_TO_HOST_TYPE = {
-    "baremetal": "dedicated_server",
-    "sbm": "sbm_server",
-    "k8s_nodes": "kubernetes_baremetal_node",
+_VALID_TYPES = {
+    "dedicated_server",
+    "sbm_server",
+    "kubernetes_baremetal_node",
+    "cloud_server",
 }
-
-_VALID_KINDS = {"baremetal", "sbm", "k8s_nodes", "cloud"}
 
 _VALID_ANSIBLE_HOST = {
     "public_ipv4",
@@ -290,11 +281,11 @@ _KNOWN_TOP_KEYS = {
 }
 
 _KNOWN_BLOCK_KEYS = {
-    "kind",
+    "type",
     "regions",
+    "locations",
     "name_regex",
     "labels",
-    "status_filter",
     "exclude",
     "ansible_host",
     "assign_inventory_group",
@@ -302,7 +293,18 @@ _KNOWN_BLOCK_KEYS = {
     "extra_vars",
 }
 
-_KNOWN_EXCLUDE_RULE_KEYS = {"regions", "labels"}
+_KNOWN_EXCLUDE_RULE_KEYS = {"regions", "locations", "labels"}
+
+
+def _resolve_locations(block, where):
+    locations = block.get("locations")
+    regions = block.get("regions")
+    if locations is not None and regions is not None:
+        raise AnsibleParserError(
+            "%s sets both `locations` and `regions`; use one (they are aliases)."
+            % where
+        )
+    return locations if locations is not None else regions
 
 
 class InventoryModule(BaseInventoryPlugin):
@@ -346,17 +348,18 @@ class InventoryModule(BaseInventoryPlugin):
 
         try:
             if not resources:
-                # No `resources:` (or empty list) → fetch every kind, no filters.
+                # No `resources:` (or empty list) → fetch every type, no filters.
                 self._apply_resource(api, {})
                 return
 
             for raw_block in resources:
                 block = self._substitute_env_vars(raw_block or {})
-                if not block.get("kind"):
+                if not block.get("type"):
                     raise AnsibleParserError(
-                        "Every entry in `resources:` must specify `kind` "
-                        "(one of baremetal/sbm/k8s_nodes/cloud). "
-                        "To fetch all kinds, omit `resources:` entirely "
+                        "Every entry in `resources:` must specify `type` "
+                        "(one of dedicated_server/sbm_server/"
+                        "kubernetes_baremetal_node/cloud_server). "
+                        "To fetch all types, omit `resources:` entirely "
                         "or set it to an empty list."
                     )
                 self._apply_resource(api, block)
@@ -455,45 +458,44 @@ class InventoryModule(BaseInventoryPlugin):
         return value
 
     # ------------------------------------------------------------------ #
-    # Listing / kind dispatch
+    # Listing / type dispatch
     # ------------------------------------------------------------------ #
 
-    def _list_for_kind(self, api, kind):
-        if kind is None:
+    def _list_for_type(self, api, server_type):
+        if server_type is None:
             for host in api.list_hosts():
-                mapped = _HOST_TYPE_TO_KIND.get(host.get("type"))
-                if mapped is None:
+                host_type = host.get("type")
+                if host_type not in _HOST_TYPES:
                     display.warning(
                         "Skipping host id=%r with unknown type=%r"
-                        % (host.get("id"), host.get("type"))
+                        % (host.get("id"), host_type)
                     )
                     continue
-                yield host, mapped
+                yield host, host_type
             for instance in api.list_instances():
-                yield instance, "cloud"
+                yield instance, "cloud_server"
             return
 
-        if kind not in _VALID_KINDS:
+        if server_type not in _VALID_TYPES:
             raise AnsibleParserError(
-                "Unknown resource kind %r; valid: %s"
-                % (kind, sorted(_VALID_KINDS))
+                "Unknown resource type %r; valid: %s"
+                % (server_type, sorted(_VALID_TYPES))
             )
 
-        if kind == "cloud":
+        if server_type == "cloud_server":
             for instance in api.list_instances():
-                yield instance, "cloud"
+                yield instance, "cloud_server"
             return
 
-        host_type = _KIND_TO_HOST_TYPE[kind]
-        for host in api.list_hosts(type=host_type):
-            yield host, kind
+        for host in api.list_hosts(type=server_type):
+            yield host, server_type
 
     # ------------------------------------------------------------------ #
     # Per-host accessors
     # ------------------------------------------------------------------ #
 
-    def _hostname(self, server, kind):
-        field = "name" if kind == "cloud" else "title"
+    def _hostname(self, server, server_type):
+        field = "name" if server_type == "cloud_server" else "title"
         name = server.get(field)
         if not name:
             server_id = server.get("id")
@@ -504,26 +506,26 @@ class InventoryModule(BaseInventoryPlugin):
             return str(server_id) if server_id is not None else None
         return name
 
-    def _region(self, server, kind):
-        if kind == "cloud":
+    def _region(self, server, server_type):
+        if server_type == "cloud_server":
             return server.get("region_code")
         return server.get("location_code")
 
-    def _ip(self, server, kind, ip_type):
+    def _ip(self, server, server_type, ip_type):
         if ip_type == "public_ipv4":
             return server.get("public_ipv4_address")
         if ip_type == "private_ipv4":
             return server.get("private_ipv4_address")
         if ip_type == "public_ipv6":
-            if kind == "cloud":
+            if server_type == "cloud_server":
                 return server.get("public_ipv6_address")
             return None
         if ip_type == "oob_ipv4":
-            if kind == "baremetal":
+            if server_type == "dedicated_server":
                 return server.get("oob_ipv4_address")
             return None
         if ip_type == "local_ipv4":
-            if kind == "cloud":
+            if server_type == "cloud_server":
                 return server.get("local_ipv4_address")
             return None
         return None
@@ -542,14 +544,14 @@ class InventoryModule(BaseInventoryPlugin):
                 return False
         return True
 
-    def _is_excluded(self, server, kind, exclude_rules):
+    def _is_excluded(self, server, server_type, exclude_rules):
         if not exclude_rules:
             return False
-        region = self._region(server, kind)
+        region = self._region(server, server_type)
         host_labels = server.get("labels") or {}
         for rule in exclude_rules:
             rule = rule or {}
-            rule_regions = rule.get("regions") or []
+            rule_regions = _resolve_locations(rule, "exclude rule") or []
             rule_labels = rule.get("labels") or {}
             region_ok = (not rule_regions) or (region in rule_regions)
             labels_ok = self._matches_labels(host_labels, rule_labels)
@@ -592,9 +594,9 @@ class InventoryModule(BaseInventoryPlugin):
     # ------------------------------------------------------------------ #
 
     def _set_host_vars(
-        self, hostname, server, kind, ansible_host_type, extra_vars
+        self, hostname, server, server_type, ansible_host_type, extra_vars
     ):
-        ip = self._ip(server, kind, ansible_host_type)
+        ip = self._ip(server, server_type, ansible_host_type)
         if ip:
             self.inventory.set_variable(hostname, "ansible_host", ip)
         else:
@@ -613,22 +615,22 @@ class InventoryModule(BaseInventoryPlugin):
         self.inventory.set_variable(
             hostname,
             "public_ipv6",
-            server.get("public_ipv6_address") if kind == "cloud" else None,
+            server.get("public_ipv6_address") if server_type == "cloud_server" else None,
         )
         self.inventory.set_variable(
             hostname,
             "oob_ip",
-            server.get("oob_ipv4_address") if kind == "baremetal" else None,
+            server.get("oob_ipv4_address") if server_type == "dedicated_server" else None,
         )
         self.inventory.set_variable(
             hostname,
             "local_ip",
-            server.get("local_ipv4_address") if kind == "cloud" else None,
+            server.get("local_ipv4_address") if server_type == "cloud_server" else None,
         )
         # v1: placeholder; the /hosts list endpoint returns only
         # `additional_ip_addresses_count`, not the actual addresses.
         self.inventory.set_variable(hostname, "additional_ip_addresses", [])
-        self.inventory.set_variable(hostname, "sc_kind", kind)
+        self.inventory.set_variable(hostname, "sc_type", server_type)
 
         for key, value in server.items():
             self.inventory.set_variable(hostname, key, value)
@@ -641,11 +643,10 @@ class InventoryModule(BaseInventoryPlugin):
     # ------------------------------------------------------------------ #
 
     def _apply_resource(self, api, config):
-        kind = config.get("kind")
-        regions = config.get("regions") or []
+        server_type = config.get("type")
+        regions = _resolve_locations(config, "resource block") or []
         name_regex = config.get("name_regex")
         labels = config.get("labels") or {}
-        status_filter = config.get("status_filter") or []
         exclude_rules = config.get("exclude") or []
         ansible_host_type = config.get("ansible_host") or "public_ipv4"
         if ansible_host_type not in _VALID_ANSIBLE_HOST:
@@ -664,12 +665,12 @@ class InventoryModule(BaseInventoryPlugin):
 
         compiled_regex = re.compile(name_regex) if name_regex else None
 
-        for server, server_kind in self._list_for_kind(api, kind):
-            region = self._region(server, server_kind)
+        for server, srv_type in self._list_for_type(api, server_type):
+            region = self._region(server, srv_type)
             if regions and region not in regions:
                 continue
 
-            hostname = self._hostname(server, server_kind)
+            hostname = self._hostname(server, srv_type)
             if not hostname:
                 continue
             if compiled_regex and not compiled_regex.search(hostname):
@@ -680,15 +681,12 @@ class InventoryModule(BaseInventoryPlugin):
             ):
                 continue
 
-            if status_filter and server.get("status") not in status_filter:
-                continue
-
-            if self._is_excluded(server, server_kind, exclude_rules):
+            if self._is_excluded(server, srv_type, exclude_rules):
                 continue
 
             self.inventory.add_host(hostname)
             self._set_host_vars(
-                hostname, server, server_kind, ansible_host_type, extra_vars
+                hostname, server, srv_type, ansible_host_type, extra_vars
             )
             self._add_to_groups(
                 hostname, server, assign_inventory_group, group_by

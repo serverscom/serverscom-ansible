@@ -1,7 +1,8 @@
 ---
 # Minimal config: no `resources:` at all.
-# Omitting `resources:` (or setting it to []) fetches every kind
-# (baremetal + sbm + k8s_nodes + cloud) with no filters. If you add any
-# entry to `resources:`, that entry must specify `kind:`.
+# Omitting `resources:` (or setting it to []) fetches every type
+# (dedicated_server + sbm_server + kubernetes_baremetal_node + cloud_server)
+# with no filters. If you add any entry to `resources:`, that entry must
+# specify `type:`.
 # Token is read from SERVERSCOM_API_TOKEN (or SC_TOKEN) env var.
 plugin: serverscom.sc_api.sc_inventory
