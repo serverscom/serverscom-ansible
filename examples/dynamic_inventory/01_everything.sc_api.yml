@@ -5,4 +5,25 @@
 # with no filters. If you add any entry to `resources:`, that entry must
 # specify `type:`.
 # Token is read from SERVERSCOM_API_TOKEN (or SC_TOKEN) env var.
+#
+# Given one server of each type, the resulting inventory is equivalent to:
+#
+#   all:
+#     hosts:
+#       bm-01:
+#         ansible_host: 203.0.113.10
+#         sc_type: dedicated_server
+#         location_code: AMS1
+#       sbm-01:
+#         ansible_host: 203.0.113.20
+#         sc_type: sbm_server
+#         location_code: FRA1
+#       k8s-01:
+#         ansible_host: 203.0.113.30
+#         sc_type: kubernetes_baremetal_node
+#         location_code: AMS1
+#       cloud-01:
+#         ansible_host: 198.51.100.10
+#         sc_type: cloud_server
+#         region_code: ams1
 plugin: serverscom.sc_api.sc_inventory

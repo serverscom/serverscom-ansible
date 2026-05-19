@@ -1,6 +1,32 @@
 ---
 # Cloud instances filtered by label, addressed over private IPv4.
 # All matched hosts go into the `staging` group and pick up extra connection vars.
+#
+# Given two cloud instances labeled environment=staging, the resulting
+# inventory is equivalent to:
+#
+#   all:
+#     children:
+#       staging:
+#         hosts:
+#           stg-app-01:
+#             ansible_host: 10.0.0.10
+#             private_ip: 10.0.0.10
+#             public_ip: 198.51.100.10
+#             sc_type: cloud_server
+#             region_code: ams1
+#             labels: {environment: staging}
+#             ansible_user: ubuntu
+#             ansible_python_interpreter: /usr/bin/python3
+#           stg-app-02:
+#             ansible_host: 10.0.0.11
+#             private_ip: 10.0.0.11
+#             public_ip: 198.51.100.11
+#             sc_type: cloud_server
+#             region_code: fra1
+#             labels: {environment: staging}
+#             ansible_user: ubuntu
+#             ansible_python_interpreter: /usr/bin/python3
 plugin: serverscom.sc_api.sc_inventory
 resources:
   - type: cloud_server

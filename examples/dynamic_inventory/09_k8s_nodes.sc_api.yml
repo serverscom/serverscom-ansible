@@ -2,6 +2,28 @@
 # Bare-metal Kubernetes nodes (servers with type=kubernetes_baremetal_node).
 # Reached over their private network, gathered into one group for cluster-wide
 # playbooks.
+#
+# Given two Kubernetes bare-metal nodes, the resulting inventory is
+# equivalent to:
+#
+#   all:
+#     children:
+#       kubernetes_nodes:
+#         hosts:
+#           k8s-node-01:
+#             ansible_host: 10.0.0.10
+#             private_ip: 10.0.0.10
+#             public_ip: 203.0.113.30
+#             sc_type: kubernetes_baremetal_node
+#             location_code: AMS1
+#             ansible_user: root
+#           k8s-node-02:
+#             ansible_host: 10.0.0.11
+#             private_ip: 10.0.0.11
+#             public_ip: 203.0.113.31
+#             sc_type: kubernetes_baremetal_node
+#             location_code: AMS1
+#             ansible_user: root
 plugin: serverscom.sc_api.sc_inventory
 resources:
   - type: kubernetes_baremetal_node

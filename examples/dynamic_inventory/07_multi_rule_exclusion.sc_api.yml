@@ -4,6 +4,23 @@
 #   - rule 1: every host in AMS2
 #   - rule 2: every host labeled `decommissioned: "true"` in any region
 # Everything left ends up in the `active_fleet` group.
+#
+# Given four dedicated servers — one in AMS2 (rule 1), one labeled
+# decommissioned=true (rule 2), and two unaffected — the resulting
+# inventory is equivalent to:
+#
+#   all:
+#     children:
+#       active_fleet:
+#         hosts:
+#           web-01:
+#             ansible_host: 203.0.113.10
+#             sc_type: dedicated_server
+#             location_code: AMS1
+#           db-01:
+#             ansible_host: 203.0.113.11
+#             sc_type: dedicated_server
+#             location_code: FRA1
 plugin: serverscom.sc_api.sc_inventory
 resources:
   - type: dedicated_server
