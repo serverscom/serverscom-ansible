@@ -124,3 +124,39 @@ List of modules
 * `sbm_server_network` - Create/delete networks for SBM servers
 * `sbm_flavor_models_info` - List of available SBM flavor models per location
 * `sbm_os_list` - List of the available OS options for SBM servers by location and flavor model
+
+Dynamic inventory
+=================
+
+The collection ships a dynamic inventory plugin, `serverscom.sc_api.sc_inventory`,
+that builds Ansible inventory directly from the Servers.com API. It can fetch
+dedicated bare-metal servers, Scalable Bare-Metal (SBM), Kubernetes bare-metal
+nodes and cloud-computing instances; filter by location, name regexp, labels
+or status; exclude hosts; pick which IP becomes `ansible_host`; and place
+matched hosts into static or attribute-derived Ansible groups.
+
+To use it, create an inventory file ending in `.sc_api.yml` (or
+`.sc_inventory.yml`) and set `plugin: serverscom.sc_api.sc_inventory`. The
+plugin picks up the API token from `SERVERSCOM_API_TOKEN` (or `SC_TOKEN`) the
+same way the modules do.
+
+Minimal example — fetch every Servers.com resource with no filters:
+
+```yaml
+# inventory.sc_api.yml
+plugin: serverscom.sc_api.sc_inventory
+```
+
+Run it with:
+
+```
+export SERVERSCOM_API_TOKEN=...
+ansible-inventory -i inventory.sc_api.yml --list
+```
+
+A set of runnable examples covering region filters, label selection,
+exclusion rules, grouping, env-var substitution and multi-kind inventories
+lives under [`examples/dynamic_inventory/`](../../../examples/dynamic_inventory).
+
+Full option reference: `ansible-doc -t inventory serverscom.sc_api.sc_inventory`.
+
