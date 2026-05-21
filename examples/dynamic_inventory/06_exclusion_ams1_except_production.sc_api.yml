@@ -1,0 +1,31 @@
+---
+# All bare-metal servers in AMS1 EXCEPT those labeled environment=production.
+# Implementation: keep AMS1 hosts (positive filter), then drop the subset that
+# carries the `environment: production` label (exclusion rule).
+#
+# Given three AMS1 servers — one labeled environment=production (dropped
+# by the exclude rule) and two labeled otherwise (kept) — the resulting
+# inventory is equivalent to:
+#
+#   all:
+#     children:
+#       ams1_nonprod:
+#         hosts:
+#           web-dev-01:
+#             ansible_host: 203.0.113.20
+#             sc_type: dedicated_server
+#             location_code: AMS1
+#             labels: {environment: development}
+#           web-stg-01:
+#             ansible_host: 203.0.113.21
+#             sc_type: dedicated_server
+#             location_code: AMS1
+#             labels: {environment: staging}
+plugin: serverscom.sc_api.sc_inventory
+resources:
+  - type: dedicated_server
+    locations: [AMS1]
+    exclude:
+      - labels:
+          environment: production
+    assign_inventory_group: ams1_nonprod

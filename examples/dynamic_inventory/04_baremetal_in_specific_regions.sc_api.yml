@@ -1,0 +1,24 @@
+---
+# Bare-metal servers in a fixed list of regions, all into one static group.
+# `locations:` is matched against the host's location_code.
+#
+# Given two dedicated servers in the listed locations, the resulting
+# inventory is equivalent to:
+#
+#   all:
+#     children:
+#       amsterdam_servers:
+#         hosts:
+#           bm-ams1-01:
+#             ansible_host: 203.0.113.10
+#             sc_type: dedicated_server
+#             location_code: AMS1
+#           bm-ams7-01:
+#             ansible_host: 203.0.113.20
+#             sc_type: dedicated_server
+#             location_code: AMS7
+plugin: serverscom.sc_api.sc_inventory
+resources:
+  - type: dedicated_server
+    locations: [AMS1, AMS7]
+    assign_inventory_group: amsterdam_servers

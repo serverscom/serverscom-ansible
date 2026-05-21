@@ -1,0 +1,51 @@
+---
+# Helper: render `inv_template` into the per-test tmp dir and run
+# `ansible-inventory --list` against it. Captures the parsed JSON as
+# `inv_json`, plus rc/stderr.
+#
+# Arguments (set by include_tasks):
+#   inv_template       - basename of the .j2 template (e.g. "label_match.sc_api.yml.j2")
+#   inv_extra_env      - optional dict of extra env vars for the subprocess
+#   inv_expect_fail    - bool; if true, allow non-zero rc and skip JSON parse
+
+- name: "[{{ inv_template }}] render config"
+  template:
+    src: "{{ inv_template }}"
+    dest: "{{ inv_tmpdir }}/{{ inv_template | regex_replace('\\.j2$', '') }}"
+    mode: "0600"
+
+- name: "[{{ inv_template }}] run ansible-inventory"
+  command:
+    argv:
+      - ansible-inventory
+      - -i
+      - "{{ inv_tmpdir }}/{{ inv_template | regex_replace('\\.j2$', '') }}"
+      - --list
+  environment: "{{ {'SERVERSCOM_API_TOKEN': sc_token, 'SERVERSCOM_API_URL': sc_endpoint} | combine(inv_extra_env | default({})) }}"
+  register: inv_run
+  changed_when: false
+  failed_when: false
+
+- name: "[{{ inv_template }}] show stderr on failure"
+  debug:
+    var: inv_run
+  when: inv_run.rc != 0 and not (inv_expect_fail | default(false))
+
+- name: "[{{ inv_template }}] fail if unexpected non-zero rc"
+  fail:
+    msg: "ansible-inventory exited rc={{ inv_run.rc }}: {{ inv_run.stderr }}"
+  when: inv_run.rc != 0 and not (inv_expect_fail | default(false))
+
+- name: "[{{ inv_template }}] stash stdout to file"
+  copy:
+    content: "{{ inv_run.stdout }}"
+    dest: "{{ inv_tmpdir }}/last_inventory.json"
+    mode: "0600"
+  changed_when: false
+  when: inv_run.rc == 0
+
+- name: "[{{ inv_template }}] parse stdout (via include_vars, avoids unsafe-tag issue)"
+  include_vars:
+    file: "{{ inv_tmpdir }}/last_inventory.json"
+    name: inv_json
+  when: inv_run.rc == 0

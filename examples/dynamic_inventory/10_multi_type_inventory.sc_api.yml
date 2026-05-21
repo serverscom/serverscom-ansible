@@ -1,0 +1,58 @@
+---
+# One inventory covering three resource types, each with its own settings.
+# Use separate blocks when filters / IP choice / groups differ per type.
+# Every `resources:` entry must specify `type:`; if you want every type
+# with no filters, omit `resources:` entirely instead (see 01).
+#
+# Given one matching server per block (a managed bare-metal in AMS1, a
+# managed cloud VM in fra1, and a k8s node), the resulting inventory is
+# equivalent to:
+#
+#   all:
+#     children:
+#       baremetal_fleet:
+#         hosts:
+#           bm-ams1-01:
+#             ansible_host: 203.0.113.10
+#             sc_type: dedicated_server
+#             location_code: AMS1
+#             labels: {managed: "true"}
+#             ansible_user: root
+#       fra1:
+#         hosts:
+#           cloud-fra1-01:
+#             ansible_host: 198.51.100.10
+#             sc_type: cloud_server
+#             region_code: fra1
+#             labels: {managed: "true"}
+#             ansible_user: ubuntu
+#       k8s_nodes:
+#         hosts:
+#           k8s-node-01:
+#             ansible_host: 10.0.0.10
+#             sc_type: kubernetes_baremetal_node
+#             location_code: AMS1
+#             ansible_user: root
+plugin: serverscom.sc_api.sc_inventory
+resources:
+  - type: dedicated_server
+    locations: [AMS1, FRA1]
+    labels: {managed: "true"}
+    ansible_host: public_ipv4
+    assign_inventory_group: baremetal_fleet
+    extra_vars:
+      ansible_user: root
+
+  - type: cloud_server
+    locations: [AMS1, FRA1]
+    labels: {managed: "true"}
+    ansible_host: public_ipv4
+    group_by: region_code
+    extra_vars:
+      ansible_user: ubuntu
+
+  - type: kubernetes_baremetal_node
+    ansible_host: private_ipv4
+    assign_inventory_group: k8s_nodes
+    extra_vars:
+      ansible_user: root

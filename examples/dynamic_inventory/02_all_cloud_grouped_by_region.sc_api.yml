@@ -1,0 +1,25 @@
+---
+# All cloud-computing instances, dynamically grouped by their region_code.
+# Creates one group per region (e.g. ams1, fra1, ...).
+#
+# Given two cloud instances in different regions, the resulting inventory
+# is equivalent to:
+#
+#   all:
+#     children:
+#       ams1:
+#         hosts:
+#           web-01:
+#             ansible_host: 198.51.100.10
+#             sc_type: cloud_server
+#             region_code: ams1
+#       fra1:
+#         hosts:
+#           db-01:
+#             ansible_host: 198.51.100.20
+#             sc_type: cloud_server
+#             region_code: fra1
+plugin: serverscom.sc_api.sc_inventory
+resources:
+  - type: cloud_server
+    group_by: region_code

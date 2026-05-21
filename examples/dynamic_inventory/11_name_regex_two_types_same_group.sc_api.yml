@@ -1,0 +1,30 @@
+---
+# `name_regex` is applied with `re.search` against the host's title
+# (bare-metal) or name (cloud). Both blocks point at `web_tier`, so cloud and
+# bare-metal hosts matching `^web-` land in the same Ansible group.
+#
+# Given one matching host of each type (a cloud VM `web-frontend-01` and
+# a dedicated server titled `web-backend-01`), the resulting inventory is
+# equivalent to:
+#
+#   all:
+#     children:
+#       web_tier:
+#         hosts:
+#           web-frontend-01:
+#             ansible_host: 198.51.100.10
+#             sc_type: cloud_server
+#             region_code: ams1
+#           web-backend-01:
+#             ansible_host: 203.0.113.10
+#             sc_type: dedicated_server
+#             location_code: AMS1
+plugin: serverscom.sc_api.sc_inventory
+resources:
+  - type: cloud_server
+    name_regex: "^web-"
+    assign_inventory_group: web_tier
+
+  - type: dedicated_server
+    name_regex: "^web-"
+    assign_inventory_group: web_tier

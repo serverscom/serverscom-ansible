@@ -1,0 +1,8 @@
+plugin: serverscom.sc_api.sc_inventory
+resources:
+  - type: dedicated_server
+    name_regex: "^{{ server1_title | regex_escape }}$"
+    assign_inventory_group: combined_group
+  - type: dedicated_server
+    name_regex: "^{{ server2_title | regex_escape }}$"
+    assign_inventory_group: combined_group

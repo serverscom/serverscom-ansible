@@ -1,0 +1,47 @@
+---
+# ${VAR} substitution is applied recursively to every string in the config
+# (including inside lists and dicts) before the API calls run.
+# Usage:
+#   export DEPLOY_REGION=AMS1
+#   export SC_ENV=production
+#   ansible-inventory -i 08_env_var_substitution.sc_api.yml --list
+# An unset variable raises AnsibleParserError naming the missing variable.
+#
+# Given two dedicated servers in AMS1 labeled environment=production
+# (`web-01` and `db-01`), the resulting inventory is equivalent to the
+# following static YAML inventory:
+#
+#   all:
+#     children:
+#       AMS1:
+#         hosts:
+#           web-01:
+#             ansible_host: 203.0.113.10
+#             public_ip: 203.0.113.10
+#             private_ip: 10.0.0.10
+#             oob_ip: 192.0.2.10
+#             sc_type: dedicated_server
+#             id: H1
+#             title: web-01
+#             location_code: AMS1
+#             status: active
+#             labels: {environment: production}
+#           db-01:
+#             ansible_host: 203.0.113.11
+#             public_ip: 203.0.113.11
+#             private_ip: 10.0.0.11
+#             oob_ip: 192.0.2.11
+#             sc_type: dedicated_server
+#             id: H2
+#             title: db-01
+#             location_code: AMS1
+#             status: active
+#             labels: {environment: production}
+plugin: serverscom.sc_api.sc_inventory
+resources:
+  - type: dedicated_server
+    locations:
+      - ${DEPLOY_REGION}
+    labels:
+      environment: ${SC_ENV}
+    group_by: location_code

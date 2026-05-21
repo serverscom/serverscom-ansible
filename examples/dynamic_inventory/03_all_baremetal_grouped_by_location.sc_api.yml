@@ -1,0 +1,25 @@
+---
+# All dedicated bare-metal servers, dynamically grouped by location_code.
+# Creates one group per location (e.g. AMS1, FRA1, ...).
+#
+# Given two dedicated servers in different locations, the resulting
+# inventory is equivalent to:
+#
+#   all:
+#     children:
+#       AMS1:
+#         hosts:
+#           bm-01:
+#             ansible_host: 203.0.113.10
+#             sc_type: dedicated_server
+#             location_code: AMS1
+#       FRA1:
+#         hosts:
+#           bm-02:
+#             ansible_host: 203.0.113.20
+#             sc_type: dedicated_server
+#             location_code: FRA1
+plugin: serverscom.sc_api.sc_inventory
+resources:
+  - type: dedicated_server
+    group_by: location_code
