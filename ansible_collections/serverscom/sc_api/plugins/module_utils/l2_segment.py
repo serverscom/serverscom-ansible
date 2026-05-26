@@ -14,6 +14,26 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
 __metaclass__ = type
 
 
+def _find_l2_segment_id(api, segment_id=None, name=None, type=None, must=False):
+    existing_segment_id = None
+    if segment_id:
+        if must:
+            return api.get_l2_segment(segment_id)["id"]
+        return api.get_l2_segment_or_none(segment_id)["id"]
+
+    for segment in api.list_l2_segments():
+        name_matches = segment["name"] == name
+        type_matches = not type or segment["type"] == type
+        if name_matches and type_matches:
+            if existing_segment_id:
+                raise ModuleError(msg=f"Duplicate segment with name {name} found.")
+            existing_segment_id = segment["id"]
+
+    if must and not existing_segment_id:
+        raise ModuleError(f"Segment {name} is not found.")
+    return existing_segment_id
+
+
 class ScL2SegmentsInfo:
     def __init__(self, endpoint, token, label_selector):
         self.api = ScApi(token, endpoint)
@@ -86,26 +106,10 @@ class ScL2Segment:
         if update_interval > wait:
             raise ModuleError("update_interval is longer than wait")
 
-    @staticmethod
-    def _match_segment(api_object, segment_name, type):
-        if type:
-            return api_object["name"] == segment_name and api_object["type"] == type
-        else:
-            return api_object["name"] == segment_name
-
     def get_segment_id(self):
-        existing_segment_id = None
-        if self.segment_id:
-            existing_segment_id = self.api.get_l2_segment_or_none(self.segment_id)["id"]
-        else:
-            for segment in self.api.list_l2_segments():
-                if self._match_segment(segment, self.name, self.type):
-                    if existing_segment_id:  # duplicate found
-                        raise ModuleError(
-                            msg=f"Duplicate segment with name {self.name} found."
-                        )
-                    existing_segment_id = segment["id"]
-        return existing_segment_id
+        return _find_l2_segment_id(
+            self.api, segment_id=self.segment_id, name=self.name, type=self.type
+        )
 
     def wait_for_active_segment(self, segment_id):
         ready = False
@@ -347,22 +351,10 @@ class ScL2SegmentAliases:
         self.update_interval = update_interval
         self.checkmode = checkmode
 
-    # TODO: code repeated from ScL2Segment
     def get_segment_id(self):
-        existing_segment_id = None
-        if self.segment_id:
-            existing_segment_id = self.api.get_l2_segment(self.segment_id)["id"]
-        else:
-            for segment in self.api.list_l2_segments():
-                if segment["name"] == self.name:
-                    if existing_segment_id:  # duplicate found
-                        raise ModuleError(
-                            msg=f"Duplicate segment with name {self.name} found."
-                        )
-                    existing_segment_id = segment["id"]
-            if not existing_segment_id:
-                raise ModuleError(f"Segment {self.name} is not found.")
-        return existing_segment_id
+        return _find_l2_segment_id(
+            self.api, segment_id=self.segment_id, name=self.name, must=True
+        )
 
     def wait_for(self, l2):
         start_time = time.time()
