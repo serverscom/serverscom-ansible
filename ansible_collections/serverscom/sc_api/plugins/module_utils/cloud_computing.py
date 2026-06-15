@@ -18,6 +18,51 @@ from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
 __metaclass__ = type
 
 
+def _wait_for_instance_status(
+    api,
+    instance,
+    instance_id,
+    wait,
+    update_interval,
+    status_done,
+    statuses_continue,
+    initial_sleep=False,
+):
+    start_time = time.time()
+    if wait and initial_sleep:
+        time.sleep(update_interval)
+    while instance["status"] not in statuses_continue + [status_done]:
+        if not wait:
+            break
+        if time.time() > start_time + wait:
+            raise WaitError(
+                msg=f"Timeout waiting instance {instance['id']} "
+                f"status {status_done} or {statuses_continue}. "
+                f"Last state was {instance['status']}",
+                timeout=time.time() - start_time,
+            )
+        time.sleep(update_interval)
+        instance = api.get_instances(
+            instance_id,
+            retry_rules=_retry_rules_for_wait(
+                max_wait=max(0, wait - (time.time() - start_time)),
+                delay=update_interval,
+            ),
+        )
+    if instance["status"] == status_done:
+        return instance, True
+    if instance["status"] in statuses_continue:
+        return instance, False
+    if wait:
+        raise WaitError(
+            msg=f"Timeout waiting instance {instance['id']} "
+            f"status {status_done}. "
+            f"Last state was {instance['status']}",
+            timeout=time.time() - start_time,
+        )
+    return instance, None
+
+
 class ScCloudComputingRegionsInfo(object):
     def __init__(self, endpoint, token, search_pattern):
         self.search_pattern = search_pattern
@@ -447,38 +492,16 @@ class ScCloudComputingInstanceState:
         self.checkmode = checkmode
 
     def wait_for_statuses(self, status_done, statuses_continue):
-        start_time = time.time()
-        while self.instance["status"] not in statuses_continue + [status_done]:
-            if not self.wait:
-                break
-            if time.time() > start_time + self.wait:
-                raise WaitError(
-                    msg=f"Timeout waiting instance {self.instance['id']} "
-                    f"status {status_done} or {statuses_continue}. "
-                    f"Last state was {self.instance['status']}",
-                    timeout=time.time() - start_time,
-                )
-            time.sleep(self.update_interval)
-            self.instance = self.api.get_instances(
-                self.instance_id,
-                retry_rules=_retry_rules_for_wait(
-                    max_wait=max(0, self.wait - (time.time() - start_time)),
-                    delay=self.update_interval,
-                ),
-            )
-        if self.instance["status"] == status_done:
-            return True
-        else:
-            if self.instance["status"] in statuses_continue:
-                return False
-            else:
-                if self.wait:
-                    raise WaitError(
-                        msg=f"Timeout waiting instance {self.instance['id']} "
-                        f"status {status_done}. "
-                        f"Last state was {self.instance['status']}",
-                        timeout=time.time() - start_time,
-                    )
+        self.instance, ready = _wait_for_instance_status(
+            api=self.api,
+            instance=self.instance,
+            instance_id=self.instance_id,
+            wait=self.wait,
+            update_interval=self.update_interval,
+            status_done=status_done,
+            statuses_continue=statuses_continue,
+        )
+        return ready
 
     def shutdown(self):
         if self.instance["status"] == "RESCUE":
@@ -593,42 +616,18 @@ class ScCloudComputingInstanceReinstall:
         self.update_interval = update_interval
         self.checkmode = checkmode
 
-    #  copypaste, refactor, TODO
     def wait_for_statuses(self, status_done, statuses_continue):
-        start_time = time.time()
-        if self.wait:
-            time.sleep(self.update_interval)  # workaround around bug in APIs
-        while self.instance["status"] not in statuses_continue + [status_done]:
-            if not self.wait:
-                break
-            if time.time() > start_time + self.wait:
-                raise WaitError(
-                    msg=f"Timeout waiting instance {self.instance['id']} "
-                    f"status {status_done} or {statuses_continue}. "
-                    f"Last state was {self.instance['status']}",
-                    timeout=time.time() - start_time,
-                )
-            time.sleep(self.update_interval)
-            self.instance = self.api.get_instances(
-                self.instance["id"],
-                retry_rules=_retry_rules_for_wait(
-                    max_wait=max(0, self.wait - (time.time() - start_time)),
-                    delay=self.update_interval,
-                ),
-            )
-        if self.instance["status"] == status_done:
-            return True
-        else:
-            if self.instance["status"] in statuses_continue:
-                return False
-            else:
-                if self.wait:
-                    raise WaitError(
-                        msg=f"Timeout waiting instance {self.instance['id']} "
-                        f"status {status_done}. "
-                        f"Last state was {self.instance['status']}",
-                        timeout=time.time() - start_time,
-                    )
+        self.instance, ready = _wait_for_instance_status(
+            api=self.api,
+            instance=self.instance,
+            instance_id=self.instance["id"],
+            wait=self.wait,
+            update_interval=self.update_interval,
+            status_done=status_done,
+            statuses_continue=statuses_continue,
+            initial_sleep=True,  # workaround around bug in APIs
+        )
+        return ready
 
     def run(self):
         if self.checkmode:

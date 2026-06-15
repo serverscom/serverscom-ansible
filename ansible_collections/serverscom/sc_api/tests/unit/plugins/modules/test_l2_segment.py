@@ -3,8 +3,14 @@
 # (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
+import pytest
+import mock
+from ansible_collections.serverscom.sc_api.plugins.module_utils.modules import (
+    ModuleError,
+)
 from ansible_collections.serverscom.sc_api.plugins.module_utils.l2_segment import (
     ScL2Segment,
+    _find_l2_segment_id,
 )  # noqa
 
 
@@ -56,3 +62,36 @@ def test_simplify_members():
         }
     ]
     assert list(ScL2Segment._simplify_members(data)) == data
+
+
+def test_find_l2_segment_id_matches_type():
+    api = mock.MagicMock()
+    api.list_l2_segments.return_value = [
+        {"id": "l2-1", "name": "shared", "type": "sbm"},
+        {"id": "l2-2", "name": "shared", "type": "dedicated"},
+    ]
+
+    assert _find_l2_segment_id(api, name="shared", type="dedicated") == "l2-2"
+
+
+def test_find_l2_segment_id_raises_when_required_segment_missing():
+    api = mock.MagicMock()
+    api.list_l2_segments.return_value = []
+
+    with pytest.raises(ModuleError) as exc_info:
+        _find_l2_segment_id(api, name="missing", must=True)
+
+    assert "Segment missing is not found" in exc_info.value.msg
+
+
+def test_find_l2_segment_id_raises_on_duplicate_name():
+    api = mock.MagicMock()
+    api.list_l2_segments.return_value = [
+        {"id": "l2-1", "name": "shared", "type": "sbm"},
+        {"id": "l2-2", "name": "shared", "type": "sbm"},
+    ]
+
+    with pytest.raises(ModuleError) as exc_info:
+        _find_l2_segment_id(api, name="shared")
+
+    assert "Duplicate segment with name shared found" in exc_info.value.msg
