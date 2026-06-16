@@ -42,7 +42,7 @@
   sc_dedicated_server_reinstall:
     id: '{{ existing_server1_id }}'
     drives_layout_template: raid0-simple
-    operating_system_regex: "^debian (.*)x86_64$"
+    operating_system_regex: "{{ dedicated_test_reinstall_ambiguous_os_regex }}"
     hostname: raid0test
     ssh_key_name: "{{ dedicated_test_reinstall_ssh_key_name }}"
     wait: 3600
@@ -58,15 +58,14 @@
   assert:
     that:
       - test4 is not changed
-      - >-
-        test4.msg is match("(?s)^Multiple OS options match the
-        regex '\\^debian \\(.*\\)x86_64\\$': .*")
+      - test4.msg is match("(?s)^Multiple OS options match the regex")
+      - dedicated_test_reinstall_ambiguous_os_regex in test4.msg
 
 - name: Test5, reinstall with raid0_template and non-existing OS regex
   sc_dedicated_server_reinstall:
     id: '{{ existing_server1_id }}'
     drives_layout_template: raid0-simple
-    operating_system_regex: "^Debian 6(.*)x86_64$"
+    operating_system_regex: "{{ dedicated_test_reinstall_missing_os_regex }}"
     hostname: raid0test
     ssh_key_name: "{{ dedicated_test_reinstall_ssh_key_name }}"
     wait: 3600
@@ -82,7 +81,5 @@
   assert:
     that:
       - test5 is not changed
-      - >-
-        test5.msg is match("(?s)^No OS options match the regex
-        '\\^Debian 6\\(.*\\)x86_64\\$' for server model 'Supermicro X11DPL-i /
-        2 x Intel Xeon Silver 4114 / 32 GB RAM / 1 x 480 GB SSD' in location 'WAS1'.*")
+      - test5.msg is match("(?s)^No OS options match the regex")
+      - dedicated_test_reinstall_missing_os_regex in test5.msg

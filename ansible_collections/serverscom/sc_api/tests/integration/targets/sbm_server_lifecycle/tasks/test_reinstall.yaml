@@ -23,7 +23,7 @@
   serverscom.sc_api.sc_sbm_server_reinstall:
     server_id: '{{ test_sbm_server_id }}'
     ssh_key_name: should-not-exists
-    operating_system_id: 42
+    operating_system_id: "{{ sbm_test_reinstall_quick_os_id }}"
     hostname: somename
   environment:
     SERVERSCOM_API_TOKEN: '{{ sc_token }}'
@@ -72,7 +72,7 @@
 - name: Test4, Error on no matching OS regex
   serverscom.sc_api.sc_sbm_server_reinstall:
     server_id: '{{ test_sbm_server_id }}'
-    operating_system_regex: 'NonExistentOS12345'
+    operating_system_regex: "{{ sbm_test_invalid_os_regex }}"
     hostname: test-server
     wait: 0
   environment:
@@ -124,7 +124,7 @@
       - test6 is changed
 
 # Test real reinstall with operating_system_name
-- name: Test7, Reinstall server to Ubuntu 24.04 using operating_system_name
+- name: Test7, Reinstall server using operating_system_name
   serverscom.sc_api.sc_sbm_server_reinstall:
     server_id: '{{ test_sbm_server_id }}'
     operating_system_name: "{{ sbm_test_reinstall_os_name }}"
@@ -166,7 +166,7 @@
 - name: Test9, Reinstall with nonexistent operating_system_name
   serverscom.sc_api.sc_sbm_server_reinstall:
     server_id: '{{ test_sbm_server_id }}'
-    operating_system_name: 'NonexistentOS 99.99 64-bit'
+    operating_system_name: "{{ sbm_test_invalid_os_name }}"
     hostname: '{{ test_hostname }}'
     wait: 0
   environment:

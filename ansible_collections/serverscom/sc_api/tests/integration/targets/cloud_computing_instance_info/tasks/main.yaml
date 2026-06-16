@@ -21,7 +21,7 @@
       - "'v1/cloud_computing/instances/M7e5Ba2v' in test1.api_url"
       - test1.status_code != 200
 
-- name: Get Debian 12 image ID
+- name: Get configured image ID
   sc_cloud_computing_images_info:
     region_id: "{{ cloud_test_region_id }}"
   environment:
@@ -29,16 +29,16 @@
     SERVERSCOM_API_URL: '{{ sc_endpoint }}'
   register: images_info
 
-- name: Store Debian 12 image ID
+- name: Store configured image ID
   set_fact:
-    debian_12_image_id: "{{ images_info.cloud_images | selectattr('name','equalto','Debian 12 (64 bit)') | map(attribute='id') | first }}"
+    cloud_test_named_image_id: "{{ images_info.cloud_images | selectattr('name','equalto', cloud_test_image_name) | map(attribute='id') | first }}"
 
 - name: Create test instance
   sc_cloud_computing_instance:
     state: present
     region_id: "{{ cloud_test_region_id }}"
     flavor_id: "{{ cloud_test_flavor_id }}"
-    image_id: "{{ debian_12_image_id }}"
+    image_id: "{{ cloud_test_named_image_id }}"
     name: "sc-cloud-computing-instance-info-test"
     ssh_key_fingerprint: "{{ cloud_test_ssh_key_fingerprint }}"
     labels:
@@ -68,7 +68,7 @@
       - test2.status == "ACTIVE"
       - test2.region_id == cloud_test_region_id
       - test2.flavor_id == cloud_test_flavor_id
-      - test2.image_id == debian_12_image_id
+      - test2.image_id == cloud_test_named_image_id
       - test2.labels.test_label == "test_value"
       - test2.backup_copies == 0
       - test2.gpn_enabled == true

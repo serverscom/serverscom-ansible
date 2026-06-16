@@ -34,21 +34,31 @@ Update these to match your account's available resources.
 
 **Cloud Computing:**
 `cloud_test_region_id`, `cloud_test_flavor_id`, `cloud_test_flavor_name`,
-`cloud_test_ssh_key_fingerprint`, `cloud_test_region_search_pattern`,
-`cloud_test_region_search_match`, `cloud_test_region_search_nomatch`
+`cloud_test_ssh_key_fingerprint`, `cloud_test_image_name`,
+`cloud_test_image_regex`, `cloud_test_reinstall_image_regex`,
+`cloud_test_rescue_image_regex`, `cloud_test_invalid_image_regex`,
+`cloud_test_region_search_pattern`, `cloud_test_region_search_match`,
+`cloud_test_region_search_nomatch`
 
 **Baremetal:**
 `baremetal_test_location_search_pattern`, `baremetal_test_location_search_match`,
 `baremetal_test_location_search_nomatch`, `baremetal_test_os_location_id`,
 `baremetal_test_os_location_code`, `baremetal_test_os_server_model_id`,
-`baremetal_test_os_server_model_name`
+`baremetal_test_os_server_model_name`, `baremetal_test_os_regex`,
+`baremetal_test_os_nomatch_regex`
 
 **Dedicated server reinstall:**
-`dedicated_test_reinstall_os_id`, `dedicated_test_reinstall_ssh_key_fingerprint`,
+`dedicated_test_reinstall_os_id`, `dedicated_test_reinstall_quick_os_id`,
+`dedicated_test_reinstall_os_regex`,
+`dedicated_test_reinstall_ambiguous_os_regex`,
+`dedicated_test_reinstall_missing_os_regex`,
+`dedicated_test_reinstall_ssh_key_fingerprint`,
 `dedicated_test_reinstall_ssh_key_name`
 
 **SBM (Scalable Baremetal):**
-`sbm_test_location_code`, `sbm_test_flavor_name`, `sbm_test_os_regex`,
-`sbm_test_reinstall_os_name`
+`sbm_test_location_code`, `sbm_test_flavor_name`, `sbm_test_create_os_name`,
+`sbm_test_os_regex`, `sbm_test_os_filter_default`,
+`sbm_test_reinstall_quick_os_id`, `sbm_test_reinstall_os_name`,
+`sbm_test_invalid_os_name`, `sbm_test_invalid_os_regex`
 
 See the Justfile recipes (in the root directory of this project) for local development.

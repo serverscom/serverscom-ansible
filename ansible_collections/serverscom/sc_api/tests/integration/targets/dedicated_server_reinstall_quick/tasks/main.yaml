@@ -30,7 +30,7 @@
     id: '{{ existing_server1_id }}'
     drives_layout_template: raid1-simple
     ssh_key_name: should-not-exists
-    operating_system_id: '42'
+    operating_system_id: "{{ dedicated_test_reinstall_quick_os_id }}"
     hostname: somename
   environment:
     SERVERSCOM_API_TOKEN: '{{ sc_token }}'
@@ -50,7 +50,7 @@
     drives_layout_template: raid1-simple
     ssh_keys:
       - '58:e5:58:e9:38:10:82:57:d9:82:11:8c:f6:44:68:e8'
-    operating_system_id: '42'
+    operating_system_id: "{{ dedicated_test_reinstall_quick_os_id }}"
     hostname: somename
   environment:
     SERVERSCOM_API_TOKEN: '{{ sc_token }}'

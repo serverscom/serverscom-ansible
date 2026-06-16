@@ -21,7 +21,7 @@
   sc_dedicated_server_reinstall:
     id: '{{ existing_server3_id }}'
     drives_layout_template: no-raid
-    operating_system_regex: "^Debian 12 (.*)x86_64$"
+    operating_system_regex: "{{ dedicated_test_reinstall_os_regex }}"
     hostname: noraidtest
     ssh_key_name: "{{ dedicated_test_reinstall_ssh_key_name }}"
     wait: 3600

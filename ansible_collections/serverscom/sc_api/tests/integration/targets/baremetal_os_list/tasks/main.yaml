@@ -28,7 +28,7 @@
 - name: Test2, Get OS list by name regex
   sc_baremetal_os_list:
     server_id: "{{ existing_server1_id }}"
-    os_name_regex: "^Ubuntu 24.04-server x86_64$"
+    os_name_regex: "{{ baremetal_test_os_regex }}"
   environment:
     SERVERSCOM_API_TOKEN: '{{ sc_token }}'
     SERVERSCOM_API_URL: '{{ sc_endpoint }}'
@@ -76,7 +76,7 @@
 - name: Test5, None OS options found
   sc_baremetal_os_list:
     server_id: "{{ existing_server1_id }}"
-    os_name_regex: "^Ubuntu 24.04-server arm64$"
+    os_name_regex: "{{ baremetal_test_os_nomatch_regex }}"
   environment:
     SERVERSCOM_API_TOKEN: '{{ sc_token }}'
     SERVERSCOM_API_URL: '{{ sc_endpoint }}'

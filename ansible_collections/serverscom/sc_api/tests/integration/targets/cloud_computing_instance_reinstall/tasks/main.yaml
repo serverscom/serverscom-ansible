@@ -19,7 +19,7 @@
         state: present
         region_id: '{{ regions.regions[0].id }}'
         flavor_name: "{{ cloud_test_flavor_name }}"
-        image_regexp: 'Ubuntu.+'
+        image_regexp: "{{ cloud_test_image_regex }}"
         name: '{{ instance_name }}'
         backup_copies: 0
         gpn: true
@@ -63,7 +63,7 @@
       sc_cloud_computing_instance:
         state: reinstalled
         instance_id: '{{ instance.id }}'
-        image_regexp: 'Debian.+'
+        image_regexp: "{{ cloud_test_reinstall_image_regex }}"
         wait: 600
         update_interval: 5
       environment:

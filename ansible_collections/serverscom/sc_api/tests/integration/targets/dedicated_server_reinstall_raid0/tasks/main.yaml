@@ -21,7 +21,7 @@
   sc_dedicated_server_reinstall:
     id: '{{ existing_server2_id }}'
     drives_layout_template: raid0-simple
-    operating_system_regex: "^Debian 12 (.*)x86_64$"
+    operating_system_regex: "{{ dedicated_test_reinstall_os_regex }}"
     hostname: raid0test
     ssh_key_name: "{{ dedicated_test_reinstall_ssh_key_name }}"
     wait: 3600
