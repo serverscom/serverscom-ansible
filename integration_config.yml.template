@@ -23,7 +23,7 @@ cloud_test_region_id: 2
 cloud_test_flavor_id: "33227-1"
 cloud_test_flavor_name: SSD.30
 cloud_test_ssh_key_fingerprint: "9b:08:4d:a5:6d:45:26:72:2c:e0:9a:ee:bf:7d:03:a6"
-cloud_test_image_name: "Debian 12 (64 bit)"
+cloud_test_image_name: "Debian 13 (64 bit)"
 cloud_test_image_regex: "Ubuntu.+"
 cloud_test_reinstall_image_regex: "Debian.+"
 cloud_test_rescue_image_regex: ".*Cent.+"
@@ -44,8 +44,8 @@ baremetal_test_os_regex: "^Ubuntu 24.04-server x86_64$"
 baremetal_test_os_nomatch_regex: "^Ubuntu 24.04-server arm64$"
 
 # Dedicated server reinstall tests
-dedicated_test_reinstall_os_id: 49
-dedicated_test_reinstall_quick_os_id: 42
+dedicated_test_reinstall_os_id: 95
+dedicated_test_reinstall_quick_os_id: 100
 dedicated_test_reinstall_os_regex: "^Debian 12 (.*)x86_64$"
 dedicated_test_reinstall_ambiguous_os_regex: "^debian (.*)x86_64$"
 dedicated_test_reinstall_missing_os_regex: "^Debian 6(.*)x86_64$"
@@ -58,7 +58,7 @@ sbm_test_flavor_name: DL-01
 sbm_test_create_os_name: "Debian 13 64-bit"
 sbm_test_os_regex: "Debian 13"
 sbm_test_os_filter_default: Linux
-sbm_test_reinstall_quick_os_id: 42
+sbm_test_reinstall_quick_os_id: 95
 sbm_test_reinstall_os_name: "Ubuntu 24.04-server x86_64"
 sbm_test_invalid_os_name: "NonexistentOS 99.99 64-bit"
 sbm_test_invalid_os_regex: "NonExistentOS12345"
