@@ -74,7 +74,7 @@ options:
         type: bool
         default: false
       http2:
-        description: Enable HTTP/2 protocol.
+        description: Enable HTTP/2 protocol. Temporarily unavailable.
         type: bool
         default: false
       http_to_https_redirect:
@@ -82,7 +82,7 @@ options:
         type: bool
         default: false
       http2_push_preload:
-        description: Enable HTTP/2 push preload.
+        description: Enable HTTP/2 push preload. Temporarily unavailable.
         type: bool
         default: false
       domains:
@@ -314,7 +314,7 @@ vhost_zones:
       returned: always
       type: bool
     http2:
-      description: "Indicates if HTTP/2 is enabled."
+      description: "Indicates if HTTP/2 is enabled. Temporarily unavailable."
       returned: always
       type: bool
     http_to_https_redirect:
@@ -322,7 +322,7 @@ vhost_zones:
       returned: always
       type: bool
     http2_push_preload:
-      description: "Indicates if HTTP/2 push preload is enabled."
+      description: "Indicates if HTTP/2 push preload is enabled. Temporarily unavailable."
       returned: always
       type: bool
     domains:
@@ -475,9 +475,7 @@ EXAMPLES = """
       - id: "zone1"
         ports: [80, 443]
         ssl: true
-        http2: true
         http_to_https_redirect: false
-        http2_push_preload: false
         domains: ["example.com", "www.example.com"]
         ssl_certificate_id: "cert-12345"
         location_zones:
