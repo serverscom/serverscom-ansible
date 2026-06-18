@@ -18,9 +18,10 @@
           - id: "zone1"
             ports: [80]
             ssl: false
-            http2: true
+            # HTTP/2 is disabled in the API.
+            # http2: true
             http_to_https_redirect: false
-            http2_push_preload: false
+            # http2_push_preload: false
             domains: ["demo.test"]
             location_zones:
               - location: "/"
@@ -89,7 +90,8 @@
           - (test2.vhost_zones | length) == 1
           - (test2.vhost_zones[0].domains | length) == 1
           - test2.vhost_zones[0].domains[0] == "demo.test"
-          - test2.vhost_zones[0].http2 == true
+          # HTTP/2 is disabled in the API.
+          # - test2.vhost_zones[0].http2 == true
           - test2.vhost_zones[0].id == "zone1"
           - (test2.vhost_zones[0].location_zones | length) == 1
           - test2.vhost_zones[0].location_zones[0].location == "/"
@@ -162,9 +164,10 @@
           - id: "zone1"
             ports: [80]
             ssl: false
-            http2: true
+            # HTTP/2 is disabled in the API.
+            # http2: true
             http_to_https_redirect: false
-            http2_push_preload: false
+            # http2_push_preload: false
             domains: ["demo.test"]
             location_zones:
               - location: "/"
@@ -208,9 +211,10 @@
           - id: "zone1"
             ports: [80]
             ssl: false
-            http2: true
+            # HTTP/2 is disabled in the API.
+            # http2: true
             http_to_https_redirect: false
-            http2_push_preload: false
+            # http2_push_preload: false
             domains: ["demo.test"]
             location_zones:
               - location: "/"
