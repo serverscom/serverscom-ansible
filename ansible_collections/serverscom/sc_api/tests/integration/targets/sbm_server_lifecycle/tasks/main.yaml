@@ -44,7 +44,7 @@
         location_code: ZZZZZZ_INVALID
         flavor_name: "{{ sbm_test_flavor_name }}"
         hostname: ci-sbm-negative-test
-        operating_system_name: 'Debian 13 64-bit'
+        operating_system_name: "{{ sbm_test_create_os_name }}"
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
         SERVERSCOM_API_URL: '{{ sc_endpoint }}'
@@ -63,7 +63,7 @@
         location_code: "{{ sbm_test_location_code }}"
         flavor_name: NONEXISTENT_FLAVOR_XYZ
         hostname: ci-sbm-negative-test
-        operating_system_name: 'Debian 13 64-bit'
+        operating_system_name: "{{ sbm_test_create_os_name }}"
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
         SERVERSCOM_API_URL: '{{ sc_endpoint }}'
@@ -82,7 +82,7 @@
         location_code: "{{ sbm_test_location_code }}"
         flavor_name: "{{ sbm_test_flavor_name }}"
         hostname: ci-sbm-negative-test
-        operating_system_name: 'NonexistentOS 99.99 64-bit'
+        operating_system_name: "{{ sbm_test_invalid_os_name }}"
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
         SERVERSCOM_API_URL: '{{ sc_endpoint }}'

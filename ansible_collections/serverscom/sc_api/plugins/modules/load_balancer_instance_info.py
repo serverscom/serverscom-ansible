@@ -176,7 +176,7 @@ vhost_zones:
       type: bool
       sample: false
     http2:
-      description: Indicates if HTTP/2 protocol is enabled. (L7 only)
+      description: Indicates if HTTP/2 protocol is enabled. Temporarily unavailable. (L7 only)
       type: bool
       sample: false
     http_to_https_redirect:
@@ -184,7 +184,7 @@ vhost_zones:
       type: bool
       sample: false
     http2_push_preload:
-      description: Indicates HTTP/2 push preload status. (L7 only)
+      description: Indicates HTTP/2 push preload status. Temporarily unavailable. (L7 only)
       type: bool
       sample: false
     domains:

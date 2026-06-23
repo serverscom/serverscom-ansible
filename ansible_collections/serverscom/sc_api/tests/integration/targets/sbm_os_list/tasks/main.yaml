@@ -60,7 +60,7 @@
       serverscom.sc_api.sc_sbm_os_list:
         location_id: "{{ locations.locations[0].id }}"
         flavor_id: "{{ flavors.sbm_flavor_models[0].id }}"
-        os_name_regex: "{{ test1.os_list[0].full_name[:5] | default('Linux') }}"
+        os_name_regex: "{{ test1.os_list[0].full_name[:5] | default(sbm_test_os_filter_default) }}"
       environment:
         SERVERSCOM_API_TOKEN: '{{ sc_token }}'
         SERVERSCOM_API_URL: '{{ sc_endpoint }}'
