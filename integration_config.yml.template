@@ -37,9 +37,9 @@ baremetal_test_location_search_pattern: US
 baremetal_test_location_search_match: DFW1
 baremetal_test_location_search_nomatch: AMS1
 baremetal_test_os_location_id: 34
-baremetal_test_os_location_code: ams1
-baremetal_test_os_server_model_id: 11940
-baremetal_test_os_server_model_name: "Dell R730xd / 2xIntel Xeon E5-2680 v3 / 32 GB RAM / 4x600 GB SAS"
+baremetal_test_os_location_code: ams5
+baremetal_test_os_server_model_id: 19427
+baremetal_test_os_server_model_name: 'Dell R470 / Intel Xeon 6511P - 8x2.5" / 64 GB RAM / 2 x 1.92 TB NVMe SSD / Perc H365i'
 baremetal_test_os_regex: "^Ubuntu 24.04-server x86_64$"
 baremetal_test_os_nomatch_regex: "^Ubuntu 24.04-server arm64$"
 
