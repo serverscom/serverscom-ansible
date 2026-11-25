@@ -1,0 +1,168 @@
+---
+- name: Check if there are sc_token and sc_endpoint variables
+  no_log: true
+  fail:
+    msg: "You need to define sc_token and sc_endpoint variables in tests/integration/integration_config.yml"
+  when: not sc_endpoint or not sc_token
+
+- name: BGP group test series
+  environment:
+    SERVERSCOM_API_TOKEN: "{{ sc_token }}"
+    SERVERSCOM_API_URL: "{{ sc_endpoint }}"
+  block:
+    - name: Create BGP group in check mode
+      serverscom.sc_api.bgp_group:
+        name: test-bgp-group-module
+        location_codes: ["{{ bgp_test_location_code }}"]
+        hosts:
+          - server_id: "{{ bgp_test_server1_id }}"
+        announced_prefixes:
+          - mask: 29
+      check_mode: true
+      register: check_create
+
+    - name: Verify check mode create
+      assert:
+        that:
+          - check_create is changed
+          - check_create.bgp_group.id is none
+
+    - name: Verify nothing was created
+      serverscom.sc_api.bgp_group_info:
+        name: test-bgp-group-module
+      register: not_created
+      ignore_errors: true
+
+    - name: Check that group is not found
+      assert:
+        that:
+          - not_created is failed
+
+    - name: Create BGP group
+      serverscom.sc_api.bgp_group:
+        name: test-bgp-group-module
+        location_codes: ["{{ bgp_test_location_code }}"]
+        hosts:
+          - server_id: "{{ bgp_test_server1_id }}"
+        announced_prefixes:
+          - mask: 29
+        labels:
+          env: test
+      register: created
+
+    - name: Verify create
+      assert:
+        that:
+          - created is changed
+          - created.bgp_group.id
+          - created.bgp_group.status == "active"
+          - created.bgp_group.session_type == "ibgp"
+          - created.bgp_group.labels.env == "test"
+          - created.bgp_group.hosts | length == 1
+          - created.bgp_group.announced_prefixes | length == 1
+          - created.bgp_group.announced_prefixes[0].status == "active"
+          - created.prefixes_added == [{"mask": 29}]
+
+    - name: Create BGP group again (idempotency)
+      serverscom.sc_api.bgp_group:
+        name: test-bgp-group-module
+        location_codes: ["{{ bgp_test_location_code }}"]
+        hosts:
+          - server_id: "{{ bgp_test_server1_id }}"
+        announced_prefixes:
+          - mask: 29
+        labels:
+          env: test
+      register: idempotent
+
+    - name: Verify idempotency
+      assert:
+        that:
+          - idempotent is not changed
+          - idempotent.bgp_group.id == created.bgp_group.id
+
+    - name: Get group info by name
+      serverscom.sc_api.bgp_group_info:
+        name: test-bgp-group-module
+      register: info
+
+    - name: Verify group info
+      assert:
+        that:
+          - info.bgp_group.id == created.bgp_group.id
+
+    - name: List groups of the server
+      serverscom.sc_api.bgp_groups_info:
+        server_id: "{{ bgp_test_server1_id }}"
+      register: groups
+
+    - name: Verify groups list
+      assert:
+        that:
+          - created.bgp_group.id in groups.bgp_groups | map(attribute="id")
+
+    - name: Add host and one more prefix, pinning the first one
+      serverscom.sc_api.bgp_group:
+        name: test-bgp-group-module
+        hosts:
+          - server_id: "{{ bgp_test_server1_id }}"
+          - server_id: "{{ bgp_test_server2_id }}"
+        announced_prefixes:
+          - prefix: "{{ created.bgp_group.announced_prefixes[0].prefix }}"
+          - mask: 29
+      register: updated
+
+    - name: Verify update
+      assert:
+        that:
+          - updated is changed
+          - updated.bgp_group.status == "active"
+          - updated.bgp_group.hosts | length == 2
+          - updated.bgp_group.announced_prefixes | rejectattr("status", "eq", "removing") | list | length == 2
+          - updated.prefixes_added == [{"mask": 29}]
+
+    - name: Keep only the first prefix
+      serverscom.sc_api.bgp_group:
+        name: test-bgp-group-module
+        announced_prefixes:
+          - prefix: "{{ created.bgp_group.announced_prefixes[0].prefix }}"
+        prune_prefixes: true
+      register: pruned
+
+    - name: Verify prune
+      assert:
+        that:
+          - pruned is changed
+          - pruned.prefixes_removed | length == 1
+          - pruned.prefixes_removed[0].prefix != created.bgp_group.announced_prefixes[0].prefix
+
+    - name: Delete group
+      serverscom.sc_api.bgp_group:
+        name: test-bgp-group-module
+        state: absent
+      register: deleted
+
+    - name: Verify delete
+      assert:
+        that:
+          - deleted is changed
+
+    - name: Delete group again (idempotency)
+      serverscom.sc_api.bgp_group:
+        name: test-bgp-group-module
+        state: absent
+      register: deleted_again
+
+    - name: Verify delete idempotency
+      assert:
+        that:
+          - deleted_again is not changed
+
+  always:
+    - name: Cleanup
+      serverscom.sc_api.bgp_group:
+        token: "{{ sc_token }}"
+        endpoint: "{{ sc_endpoint }}"
+        name: test-bgp-group-module
+        state: absent
+      ignore_errors: true

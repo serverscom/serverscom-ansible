@@ -61,4 +61,8 @@ Update these to match your account's available resources.
 `sbm_test_reinstall_quick_os_id`, `sbm_test_reinstall_os_name`,
 `sbm_test_invalid_os_name`, `sbm_test_invalid_os_regex`
 
+**BGP:**
+`bgp_test_location_code`, `bgp_test_server1_id`, `bgp_test_server2_id`
+(BGP must be enabled for the account; servers must be in the location)
+
 See the Justfile recipes (in the root directory of this project) for local development.
