@@ -1316,3 +1316,82 @@ class ScApi:
             query_parameters=None,
             good_codes=[202],
         )
+
+    def list_bgp_groups(
+        self,
+        search_pattern=None,
+        status=None,
+        location_id=None,
+        asn=None,
+        server_id=None,
+        label_selector=None,
+    ):
+        query = {}
+        if search_pattern:
+            query["search_pattern"] = search_pattern
+        if status:
+            query["status"] = status
+        if location_id:
+            query["location_id"] = location_id
+        if asn:
+            query["asn"] = asn
+        if server_id:
+            query["server_id"] = server_id
+        if label_selector:
+            query["label_selector"] = label_selector
+        return self.api_helper.make_multipage_request(
+            path="/bgp_groups", query_parameters=query
+        )
+
+    def get_bgp_group(self, bgp_group_id, retry_rules=None):
+        return self.api_helper.make_get_request(
+            path=f"/bgp_groups/{bgp_group_id}",
+            retry_rules=retry_rules,
+        )
+
+    def post_bgp_group(
+        self,
+        name,
+        network_type,
+        location_ids,
+        hosts,
+        asn=None,
+        announced_prefixes=None,
+        labels=None,
+    ):
+        body = {
+            "name": name,
+            "network_type": network_type,
+            "location_ids": location_ids,
+            "hosts": hosts,
+        }
+        if asn is not None:
+            body["asn"] = asn
+        if announced_prefixes:
+            body["announced_prefixes"] = announced_prefixes
+        if labels is not None:
+            body["labels"] = labels
+        return self.api_helper.make_post_request(
+            path="/bgp_groups",
+            body=body,
+            query_parameters=None,
+            good_codes=[200, 201, 202],
+        )
+
+    def put_bgp_group(self, bgp_group_id, body):
+        """body: any subset of name, labels, location_ids, hosts,
+        announced_prefixes. List fields are replaced completely."""
+        return self.api_helper.make_put_request(
+            path=f"/bgp_groups/{bgp_group_id}",
+            body=body,
+            query_parameters=None,
+            good_codes=[200, 202],
+        )[1]
+
+    def delete_bgp_group(self, bgp_group_id):
+        return self.api_helper.make_delete_request(
+            path=f"/bgp_groups/{bgp_group_id}",
+            body=None,
+            query_parameters=None,
+            good_codes=[200, 202, 204],
+        )

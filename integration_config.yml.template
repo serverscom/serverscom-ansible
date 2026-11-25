@@ -62,3 +62,8 @@ sbm_test_reinstall_quick_os_id: 95
 sbm_test_reinstall_os_name: "Ubuntu 24.04-server x86_64"
 sbm_test_invalid_os_name: "NonexistentOS 99.99 64-bit"
 sbm_test_invalid_os_regex: "NonExistentOS12345"
+
+# BGP tests (BGP must be enabled for the account)
+bgp_test_location_code: AMS1
+bgp_test_server1_id: Vmrzwomx
+bgp_test_server2_id: 3dzAvZmK

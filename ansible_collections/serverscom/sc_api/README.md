@@ -96,6 +96,12 @@ List of modules
 * `l2_segment` - Creation/deletion/membership modification for L2 segments
 * `l2_segment_aliases` - Add and remove IP addresses to/from L2 segments
 
+**BGP**
+
+* `bgp_groups_info` - List of BGP groups with optional filtering
+* `bgp_group_info` - Information about a specific BGP group
+* `bgp_group` - Create/update/delete BGP groups (hosts, locations, announced prefixes)
+
 **Load Balancers**
 
 * `load_balancer_instances_list` - List load balancer instances

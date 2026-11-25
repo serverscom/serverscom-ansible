@@ -2,7 +2,7 @@
 
 ## Project Overview
 Ansible collection providing modules for the Servers.com public API, https://developers.servers.com/api-documentation/v1/
-It's used to manage baremetal servers, cloud computing instances, SSH keys, L2 segments, load balancers, and RBS (Remote Block Storage) volumes.
+It's used to manage baremetal servers, cloud computing instances, SSH keys, L2 segments, BGP groups, load balancers, and RBS (Remote Block Storage) volumes.
 
 There are two types of baremetal: Enterprise Baremetal (dedicated) and Scalable Baremetal (SBM).
 
@@ -17,6 +17,7 @@ There are two types of baremetal: Enterprise Baremetal (dedicated) and Scalable 
    - cloud_computing.py
    - dedicated_server.py
    - l2_segment.py
+   - bgp.py
    - load_balancer.py
    - rbs.py
    - ssh_key.py
