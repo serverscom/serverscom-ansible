@@ -643,11 +643,13 @@ class ScDedicatedOSList:
             raise ModuleError(
                 "server_model_name is required to get OS list by model name"
             )
+        # API model names may have leading/trailing whitespace
+        wanted_name = self.server_model_name.strip()
         models = self.api.list_server_models(
-            self.location_id, search_pattern=self.server_model_name
+            self.location_id, search_pattern=wanted_name
         )
         for model in models:
-            if model.get("name") == self.server_model_name:
+            if (model.get("name") or "").strip() == wanted_name:
                 return list(
                     self.api.list_os_images_by_model_id(
                         self.location_id, model.get("id")

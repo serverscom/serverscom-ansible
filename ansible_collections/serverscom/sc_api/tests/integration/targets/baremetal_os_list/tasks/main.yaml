@@ -9,8 +9,8 @@
   sc_baremetal_os_list:
     server_id: "{{ existing_server1_id }}"
   environment:
-    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
-    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+    SERVERSCOM_API_TOKEN: "{{ sc_token }}"
+    SERVERSCOM_API_URL: "{{ sc_endpoint }}"
   register: test1
 
 - name: Check Test1
@@ -30,8 +30,8 @@
     server_id: "{{ existing_server1_id }}"
     os_name_regex: "{{ baremetal_test_os_regex }}"
   environment:
-    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
-    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+    SERVERSCOM_API_TOKEN: "{{ sc_token }}"
+    SERVERSCOM_API_URL: "{{ sc_endpoint }}"
   register: test2
 
 - name: Check Test2
@@ -46,8 +46,8 @@
     location_id: "{{ baremetal_test_os_location_id }}"
     server_model_id: "{{ baremetal_test_os_server_model_id }}"
   environment:
-    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
-    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+    SERVERSCOM_API_TOKEN: "{{ sc_token }}"
+    SERVERSCOM_API_URL: "{{ sc_endpoint }}"
   register: test3
 
 - name: Check Test3
@@ -62,8 +62,8 @@
     location_code: "{{ baremetal_test_os_location_code }}"
     server_model_name: "{{ baremetal_test_os_server_model_name }}"
   environment:
-    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
-    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+    SERVERSCOM_API_TOKEN: "{{ sc_token }}"
+    SERVERSCOM_API_URL: "{{ sc_endpoint }}"
   register: test4
 
 - name: Check Test4
@@ -78,8 +78,8 @@
     server_id: "{{ existing_server1_id }}"
     os_name_regex: "{{ baremetal_test_os_nomatch_regex }}"
   environment:
-    SERVERSCOM_API_TOKEN: '{{ sc_token }}'
-    SERVERSCOM_API_URL: '{{ sc_endpoint }}'
+    SERVERSCOM_API_TOKEN: "{{ sc_token }}"
+    SERVERSCOM_API_URL: "{{ sc_endpoint }}"
   register: test5
   failed_when:
     - test5 is success
